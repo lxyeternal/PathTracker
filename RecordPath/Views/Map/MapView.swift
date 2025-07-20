@@ -208,7 +208,7 @@ struct MapStatsPanel: View {
     
     var body: some View {
         HStack(spacing: 20) {
-            StatItem(
+            MapStatItem(
                 icon: "location.fill",
                 title: "Places",
                 value: "\(user.visitCount)",
@@ -218,7 +218,7 @@ struct MapStatsPanel: View {
             Divider()
                 .frame(height: 30)
             
-            StatItem(
+            MapStatItem(
                 icon: "globe",
                 title: "Countries",
                 value: "\(user.countriesVisited.count)",
@@ -228,7 +228,7 @@ struct MapStatsPanel: View {
             Divider()
                 .frame(height: 30)
             
-            StatItem(
+            MapStatItem(
                 icon: "building.2",
                 title: "Cities",
                 value: "\(user.citiesVisited.count)",
@@ -336,6 +336,30 @@ struct VisitDetailSheet: View {
         case "usa", "united states": return "🇺🇸"
         case "uk", "united kingdom": return "🇬🇧"
         default: return "🌍"
+        }
+    }
+}
+
+struct MapStatItem: View {
+    let icon: String
+    let title: String
+    let value: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.caption)
+                .foregroundColor(color)
+            
+            Text(value)
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundColor(.primary)
+            
+            Text(title)
+                .font(.caption2)
+                .foregroundColor(.secondary)
         }
     }
 }

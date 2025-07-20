@@ -93,21 +93,21 @@ struct TimelineJourneyCard: View {
             
             // Stats
             HStack(spacing: 20) {
-                StatItem(
+                TimelineStatItem(
                     icon: "map.fill",
                     title: "Distance",
                     value: journey.formattedDistance,
                     color: .blue
                 )
                 
-                StatItem(
+                TimelineStatItem(
                     icon: "clock.fill",
                     title: "Duration",
                     value: journey.formattedDuration,
                     color: .green
                 )
                 
-                StatItem(
+                TimelineStatItem(
                     icon: "location.fill",
                     title: "Segments",
                     value: "\(journey.segments.count)",
@@ -149,7 +149,7 @@ struct TimelineJourneyCard: View {
     }
 }
 
-struct StatItem: View {
+struct TimelineStatItem: View {
     let icon: String
     let title: String
     let value: String

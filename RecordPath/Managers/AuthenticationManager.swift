@@ -28,7 +28,7 @@ class AuthenticationManager: ObservableObject {
     private func checkAuthenticationStatus() {
         // Check if user is already logged in
         if let userID = UserDefaults.standard.string(forKey: "currentUserID"),
-           let uuid = UUID(uuidString: userID) {
+           UUID(uuidString: userID) != nil {
             // Create user with sample data
             let user = createUser(
                 username: UserDefaults.standard.string(forKey: "currentUsername") ?? "Traveler",
