@@ -3,10 +3,10 @@ import Foundation
 import Combine
 
 class PathTrackingManager: NSObject, ObservableObject {
-    private let locationManager = CLLocationManager()
-    private let geocoder = CLGeocoder()
+    private let locationService = AMapLocationService()
     
     @Published var isTracking = false
+    @Published var isPaused = false
     @Published var currentLocation: CLLocation?
     @Published var currentJourney: Journey?
     @Published var authorizationStatus: CLAuthorizationStatus = .notDetermined
@@ -22,34 +22,38 @@ class PathTrackingManager: NSObject, ObservableObject {
     
     override init() {
         super.init()
-        setupLocationManager()
+        setupLocationService()
     }
     
-    private func setupLocationManager() {
-        locationManager.delegate = self
-        locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.distanceFilter = 5.0
-        locationManager.allowsBackgroundLocationUpdates = false // 需要在Info.plist中配置后台权限才能设为true
-        authorizationStatus = locationManager.authorizationStatus
+    private func setupLocationService() {
+        locationService.delegate = self
+        authorizationStatus = locationService.authorizationStatus
+        
+        // 监听位置服务状态变化
+        setupLocationServiceObservers()
+        
+        print("🗺️ PathTrackingManager初始化完成，使用高德地图定位服务")
     }
+    
+    private func setupLocationServiceObservers() {
+        // 监听当前位置变化
+        locationService.$currentLocation
+            .assign(to: \.currentLocation, on: self)
+            .store(in: &cancellables)
+        
+        // 监听权限状态变化
+        locationService.$authorizationStatus
+            .assign(to: \.authorizationStatus, on: self)
+            .store(in: &cancellables)
+    }
+    
+    private var cancellables = Set<AnyCancellable>()
     
     // MARK: - 权限管理
     
     func requestLocationPermission() {
-        switch authorizationStatus {
-        case .notDetermined:
-            locationManager.requestWhenInUseAuthorization()
-        case .denied, .restricted:
-            // 显示设置提示
-            break
-        case .authorizedWhenInUse:
-            // 可以请求总是授权以支持后台追踪
-            locationManager.requestAlwaysAuthorization()
-        case .authorizedAlways:
-            break
-        @unknown default:
-            break
-        }
+        print("📍 请求位置权限，当前状态: \(authorizationStatus.description)")
+        locationService.requestLocationPermission()
     }
     
     // MARK: - 路径追踪控制
@@ -77,16 +81,17 @@ class PathTrackingManager: NSObject, ObservableObject {
             isActive: true
         )
         
-        locationManager.startUpdatingLocation()
+        locationService.startLocationUpdates()
         
-        print("✅ Started tracking journey: \(title)")
+        print("✅ 开始追踪旅程: \(title)")
     }
     
     func stopTracking() {
         guard isTracking else { return }
         
         isTracking = false
-        locationManager.stopUpdatingLocation()
+        isPaused = false
+        locationService.stopLocationUpdates()
         
         // 完成当前路径段
         if var segment = currentSegment {
@@ -109,9 +114,10 @@ class PathTrackingManager: NSObject, ObservableObject {
     }
     
     func pauseTracking() {
-        guard isTracking else { return }
+        guard isTracking && !isPaused else { return }
         
-        locationManager.stopUpdatingLocation()
+        isPaused = true
+        locationService.stopLocationUpdates()
         
         // 完成当前路径段
         if var segment = currentSegment {
@@ -125,9 +131,10 @@ class PathTrackingManager: NSObject, ObservableObject {
     }
     
     func resumeTracking() {
-        guard isTracking else { return }
+        guard isTracking && isPaused else { return }
         
-        locationManager.startUpdatingLocation()
+        isPaused = false
+        locationService.startLocationUpdates()
         
         // 创建新的路径段
         currentSegment = PathSegment(
@@ -137,6 +144,13 @@ class PathTrackingManager: NSObject, ObservableObject {
         )
         
         print("▶️ Resumed tracking")
+    }
+    
+    // MARK: - 照片管理
+    
+    func addPhotoToCurrentJourney(_ photo: JourneyPhoto) {
+        guard isTracking else { return }
+        currentJourney?.photos.append(photo)
     }
     
     // MARK: - 数据处理
@@ -195,41 +209,30 @@ class PathTrackingManager: NSObject, ObservableObject {
     // MARK: - 地理编码
     
     private func reverseGeocodeLocation(_ location: CLLocation) {
-        geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, error in
-            guard let placemark = placemarks?.first, error == nil else { return }
+        locationService.reverseGeocode(location: location) { address in
+            guard let address = address else { return }
             
             // 这里可以识别和记录经过的地点
             let place = IdentifiedPlace(
-                name: placemark.name ?? "Unknown",
+                name: address,
                 type: .unknown,
                 coordinate: location.coordinate,
-                country: placemark.country ?? "Unknown",
-                city: placemark.locality,
+                country: "中国", // 高德地图主要用于中国境内
+                city: nil,
                 visitTime: Date(),
                 stayDuration: 0
             )
             
             // 可以添加到当前旅程的地点列表中
-            print("🏷️ Identified place: \(place.name) in \(place.country)")
+            print("🏷️ 识别地点: \(place.name)")
         }
     }
     
     // MARK: - 数据查询
     
     func getJourneysForTimeFilter(_ filter: TimeFilter, customStart: Date? = nil, customEnd: Date? = nil) -> [Journey] {
-        let (startDate, endDate): (Date, Date)
-        
-        if filter == .custom, let customStart = customStart, let customEnd = customEnd {
-            startDate = customStart
-            endDate = customEnd
-        } else {
-            let range = filter.dateRange()
-            startDate = range.start
-            endDate = range.end
-        }
-        
-        // 这里需要从数据源过滤旅程
-        // 暂时返回空数组
+        // For now, return empty array since there's no data source integration yet
+        // In the future, this would filter journeys based on the date range
         return []
     }
     
@@ -245,15 +248,13 @@ class PathTrackingManager: NSObject, ObservableObject {
     }
 }
 
-// MARK: - CLLocationManagerDelegate
+// MARK: - LocationServiceDelegate
 
-extension PathTrackingManager: CLLocationManagerDelegate {
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let location = locations.last else { return }
+extension PathTrackingManager: LocationServiceDelegate {
+    func locationService(_ service: AMapLocationService, didUpdateLocation location: CLLocation) {
+        // currentLocation已经通过Combine自动更新
         
-        currentLocation = location
-        
-        if isTracking {
+        if isTracking && !isPaused {
             addTrackPoint(from: location)
             
             // 定期进行反向地理编码（降低频率以节省资源）
@@ -264,24 +265,24 @@ extension PathTrackingManager: CLLocationManagerDelegate {
         }
     }
     
-    func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
-        DispatchQueue.main.async {
-            self.authorizationStatus = status
-        }
+    func locationService(_ service: AMapLocationService, didChangeAuthorization status: CLAuthorizationStatus) {
+        // authorizationStatus已经通过Combine自动更新
         
         switch status {
         case .authorizedWhenInUse, .authorizedAlways:
-            if isTracking {
-                locationManager.startUpdatingLocation()
+            if isTracking && !isPaused {
+                locationService.startLocationUpdates()
             }
         case .denied, .restricted:
-            stopTracking()
+            if isTracking {
+                stopTracking()
+            }
         default:
             break
         }
     }
     
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("❌ Location manager failed with error: \(error.localizedDescription)")
+    func locationService(_ service: AMapLocationService, didFailWithError error: Error) {
+        print("❌ 位置服务错误: \(error.localizedDescription)")
     }
 }

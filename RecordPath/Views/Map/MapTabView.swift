@@ -285,7 +285,11 @@ struct MapView: UIViewRepresentable {
         let mapView = MKMapView()
         mapView.delegate = context.coordinator
         mapView.showsUserLocation = true
-        mapView.userTrackingMode = .none
+        if #available(iOS 17.0, *) {
+            // Use the new annotation API for iOS 17+
+        } else {
+            mapView.userTrackingMode = .none
+        }
         return mapView
     }
     
@@ -354,7 +358,7 @@ struct MapView: UIViewRepresentable {
                 // Color code by journey
                 if let journeyIdString = polyline.title,
                    let journeyId = UUID(uuidString: journeyIdString),
-                   let journey = parent.journeys.first(where: { $0.id == journeyId }) {
+                   parent.journeys.contains(where: { $0.id == journeyId }) {
                     
                     if parent.selectedJourney?.id == journeyId {
                         renderer.strokeColor = .systemBlue

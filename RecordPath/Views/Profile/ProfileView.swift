@@ -58,7 +58,7 @@ struct ProfileTabView: View {
             EditProfileSheet()
                 .environmentObject(authManager)
         }
-        .onChange(of: selectedPhotoItem) { newItem in
+        .onChange(of: selectedPhotoItem) { oldValue, newItem in
             Task {
                 if let newItem = newItem {
                     if let data = try? await newItem.loadTransferable(type: Data.self) {
