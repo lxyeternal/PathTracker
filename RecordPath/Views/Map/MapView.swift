@@ -20,12 +20,10 @@ struct LegacyMapTabView: View {
                     interactionModes: .all,
                     showsUserLocation: true,
                     annotationItems: authManager.currentUser?.visits ?? []) { visit in
-                    MapAnnotation(coordinate: visit.location.coordinate) {
-                        LocationPin(visit: visit) {
-                            selectedVisit = visit
-                            showingVisitDetail = true
-                        }
-                    }
+                    MapPin(coordinate: visit.location.coordinate, tint: getCountryColor(visit.location.country ?? ""))
+                }
+                .onTapGesture { location in
+                    // Handle map tap if needed
                 }
                 .ignoresSafeArea()
                 
@@ -73,7 +71,7 @@ struct LegacyMapTabView: View {
                     }
                 }
             }
-            .navigationTitle("Travel Map")
+            .navigationTitle("旅行地图")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 setupInitialRegion()
@@ -119,6 +117,17 @@ struct LegacyMapTabView: View {
     
     private func zoomToAllLocations() {
         setupInitialRegion()
+    }
+    
+    private func getCountryColor(_ country: String) -> Color {
+        switch country.lowercased() {
+        case "france": return .blue
+        case "japan": return .red
+        case "china": return .red
+        case "usa", "united states": return .blue
+        case "uk", "united kingdom": return .indigo
+        default: return .gray
+        }
     }
 }
 
@@ -182,13 +191,13 @@ struct MapTypeToggle: View {
     
     var body: some View {
         Menu {
-            Button("Standard") {
+            Button("标准") {
                 mapType = .standard
             }
-            Button("Satellite") {
+            Button("卫星") {
                 mapType = .satellite
             }
-            Button("Hybrid") {
+            Button("混合") {
                 mapType = .hybrid
             }
         } label: {
@@ -210,7 +219,7 @@ struct MapStatsPanel: View {
         HStack(spacing: 20) {
             MapStatItem(
                 icon: "location.fill",
-                title: "Places",
+                title: "地点",
                 value: "\(user.visitCount)",
                 color: .blue
             )
@@ -220,7 +229,7 @@ struct MapStatsPanel: View {
             
             MapStatItem(
                 icon: "globe",
-                title: "Countries",
+                title: "国家",
                 value: "\(user.countriesVisited.count)",
                 color: .green
             )
@@ -230,7 +239,7 @@ struct MapStatsPanel: View {
             
             MapStatItem(
                 icon: "building.2",
-                title: "Cities",
+                title: "城市",
                 value: "\(user.citiesVisited.count)",
                 color: .orange
             )
@@ -274,22 +283,22 @@ struct VisitDetailSheet: View {
                     // Visit Details
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
                         DetailCard(
-                            title: "Visit Date",
+                            title: "访问日期",
                             value: visit.formattedVisitDate,
                             icon: "calendar",
                             color: .blue
                         )
                         
                         DetailCard(
-                            title: "Rating",
-                            value: visit.rating > 0 ? String(repeating: "⭐", count: visit.rating) : "No rating",
+                            title: "评分",
+                            value: visit.rating > 0 ? String(repeating: "⭐", count: visit.rating) : "无评分",
                             icon: "star.fill",
                             color: .yellow
                         )
                         
                         if let weather = visit.weather {
                             DetailCard(
-                                title: "Weather",
+                                title: "天气",
                                 value: weather,
                                 icon: "cloud.sun",
                                 color: .cyan
@@ -297,8 +306,8 @@ struct VisitDetailSheet: View {
                         }
                         
                         DetailCard(
-                            title: "Country",
-                            value: visit.location.country ?? "Unknown",
+                            title: "国家",
+                            value: visit.location.country ?? "未知",
                             icon: "flag",
                             color: .green
                         )
@@ -307,7 +316,7 @@ struct VisitDetailSheet: View {
                     // Comment
                     if visit.hasComment {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Comment")
+                            Text("评论")
                                 .font(.headline)
                                 .fontWeight(.semibold)
                             
@@ -322,9 +331,9 @@ struct VisitDetailSheet: View {
                 }
                 .padding()
             }
-            .navigationTitle("Visit Details")
+            .navigationTitle("访问详情")
             .navigationBarTitleDisplayMode(.inline)
-            .navigationBarItems(trailing: Button("Done") { dismiss() })
+            .navigationBarItems(trailing: Button("完成") { dismiss() })
         }
     }
     

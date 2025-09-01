@@ -9,11 +9,11 @@ struct HelpSupportView: View {
     var body: some View {
         NavigationView {
             List {
-                Section("Quick Actions") {
+                Section("快速操作") {
                     Button(action: { showingFeedbackSheet = true }) {
                         HelpActionRow(
-                            title: "Send Feedback",
-                            subtitle: "Report bugs or suggest improvements",
+                            title: "发送反馈",
+                            subtitle: "报告错误或提出改进建议",
                             icon: "envelope.fill",
                             color: .blue
                         )
@@ -21,8 +21,8 @@ struct HelpSupportView: View {
                     
                     Button(action: {}) {
                         HelpActionRow(
-                            title: "Contact Support",
-                            subtitle: "Get help from our support team",
+                            title: "联系支持",
+                            subtitle: "从我们的支持团队获取帮助",
                             icon: "message.fill",
                             color: .green
                         )
@@ -30,15 +30,15 @@ struct HelpSupportView: View {
                     
                     Button(action: {}) {
                         HelpActionRow(
-                            title: "User Guide",
-                            subtitle: "Learn how to use PathTracker",
+                            title: "用户指南",
+                            subtitle: "学习如何使用 PathTracker",
                             icon: "book.fill",
                             color: .orange
                         )
                     }
                 }
                 
-                Section("Frequently Asked Questions") {
+                Section("常见问题") {
                     ForEach(faqItems) { item in
                         FAQRow(item: item, isExpanded: selectedQuestion?.id == item.id) {
                             selectedQuestion = selectedQuestion?.id == item.id ? nil : item
@@ -46,29 +46,29 @@ struct HelpSupportView: View {
                     }
                 }
                 
-                Section("App Information") {
+                Section("应用信息") {
                     HStack {
-                        Text("Version")
+                        Text("版本")
                         Spacer()
                         Text("1.0.0")
                             .foregroundColor(.secondary)
                     }
                     
                     HStack {
-                        Text("Build")
+                        Text("构建版本")
                         Spacer()
                         Text("100")
                             .foregroundColor(.secondary)
                     }
                     
-                    Button("Privacy Policy") {}
-                    Button("Terms of Service") {}
+                    Button("隐私政策") {}
+                    Button("服务条款") {}
                 }
             }
-            .navigationTitle("Help & Support")
+            .navigationTitle("帮助与支持")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarItems(
-                trailing: Button("Done") { dismiss() }
+                trailing: Button("完成") { dismiss() }
             )
         }
         .sheet(isPresented: $showingFeedbackSheet) {
@@ -78,24 +78,24 @@ struct HelpSupportView: View {
     
     private let faqItems = [
         FAQItem(
-            question: "How do I start tracking my journey?",
-            answer: "Tap the record button on the Dashboard to start tracking your current location. Make sure you've granted location permissions to the app."
+            question: "如何开始追踪我的行程？",
+            answer: "点击仪表盘上的“记录”按钮即可开始追踪您当前的位置。请确保您已授予应用位置权限。"
         ),
         FAQItem(
-            question: "Why isn't my location being recorded?",
-            answer: "Check that you've granted location permissions and that your device has a clear GPS signal. Try moving to an open area away from buildings."
+            question: "为什么我的位置没有被记录？",
+            answer: "请检查您是否已授予位置权限，以及您的设备是否有清晰的GPS信号。请尝试移动到远离建筑物的开阔区域。"
         ),
         FAQItem(
-            question: "Can I edit my journey after recording?",
-            answer: "Yes! You can edit journey titles, add notes, and include photos from the Timeline view. Tap on any journey to view details and make changes."
+            question: "记录后可以编辑我的行程吗？",
+            answer: "是的！您可以从时间线视图中编辑行程标题、添加备注和包含照片。点击任何行程以查看详情并进行更改。"
         ),
         FAQItem(
-            question: "How do I export my travel data?",
-            answer: "Go to Profile > Settings > Export Data to save your journeys in various formats including JSON, GPX, and KML."
+            question: "如何导出我的旅行数据？",
+            answer: "前往“我的” > “设置” > “导出数据”，以JSON、GPX和KML等多种格式保存您的行程。"
         ),
         FAQItem(
-            question: "Is my location data private?",
-            answer: "Yes, all your location data is stored locally on your device. You control what data to share and can review privacy settings at any time."
+            question: "我的位置数据是私密的吗？",
+            answer: "是的，您所有的位置数据都存储在您的设备本地。您可以控制要共享的数据，并可以随时查看隐私设置。"
         )
     ]
 }
@@ -187,8 +187,8 @@ struct FeedbackSheet: View {
     var body: some View {
         NavigationView {
             Form {
-                Section("Feedback Type") {
-                    Picker("Type", selection: $feedbackType) {
+                Section("反馈类型") {
+                    Picker("类型", selection: $feedbackType) {
                         ForEach(FeedbackType.allCases, id: \.self) { type in
                             Text(type.rawValue).tag(type)
                         }
@@ -196,30 +196,30 @@ struct FeedbackSheet: View {
                     .pickerStyle(SegmentedPickerStyle())
                 }
                 
-                Section("Your Feedback") {
+                Section("你的反馈") {
                     TextEditor(text: $feedbackText)
                         .frame(minHeight: 100)
                 }
                 
                 Section {
-                    Button("Send Feedback") {
+                    Button("发送反馈") {
                         sendFeedback()
                     }
                     .disabled(feedbackText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
-            .navigationTitle("Send Feedback")
+            .navigationTitle("发送反馈")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarItems(
-                leading: Button("Cancel") { dismiss() },
-                trailing: Button("Send") { sendFeedback() }
+                leading: Button("取消") { dismiss() },
+                trailing: Button("发送") { sendFeedback() }
                     .disabled(feedbackText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             )
         }
-        .alert("Thank You!", isPresented: $showingSuccessAlert) {
-            Button("OK") { dismiss() }
+        .alert("谢谢！", isPresented: $showingSuccessAlert) {
+            Button("好的") { dismiss() }
         } message: {
-            Text("Your feedback has been sent. We appreciate your input!")
+            Text("您的反馈已发送。我们感谢您的意见！")
         }
     }
     
@@ -231,9 +231,9 @@ struct FeedbackSheet: View {
 }
 
 enum FeedbackType: String, CaseIterable {
-    case general = "General"
-    case bug = "Bug Report"
-    case feature = "Feature Request"
+    case general = "一般"
+    case bug = "错误报告"
+    case feature = "功能请求"
 }
 
 #Preview {

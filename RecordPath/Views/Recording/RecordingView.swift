@@ -48,7 +48,7 @@ struct RecordingView: View {
                     endPoint: .bottomTrailing
                 )
             )
-            .navigationTitle("Record Journey")
+            .navigationTitle("记录旅程")
             .navigationBarTitleDisplayMode(.inline)
         }
         .sheet(isPresented: $showingJourneyTitleInput) {
@@ -480,8 +480,8 @@ struct RecordingView: View {
             return
         }
         
-        // 使用高德地图的地理编码服务
-        let locationService = AMapLocationService()
+        // 使用Apple原生的地理编码服务
+        let locationService = CoreLocationService()
         locationService.getLocationName(from: location) { locationName in
             DispatchQueue.main.async {
                 completion(locationName)

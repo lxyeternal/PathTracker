@@ -6,16 +6,12 @@
 //
 
 import SwiftUI
-#if !targetEnvironment(simulator)
-import AMapFoundationKit
-#endif
 
 @main
 struct RecordPathApp: App {
     
     init() {
-        // 配置高德地图API Key
-        configureAMapServices()
+        configureLocationServices()
     }
     
     var body: some Scene {
@@ -24,13 +20,8 @@ struct RecordPathApp: App {
         }
     }
     
-    private func configureAMapServices() {
-        #if !targetEnvironment(simulator)
-        AMapServices.shared().apiKey = "b8383a545b59835164229ea06feedf86"
-        AMapServices.shared().enableHTTPS = true
-        print("✅ 高德地图SDK配置完成，API Key: b8383a545b59835164229ea06feedf86")
-        #else
-        print("⚠️ 模拟器环境：使用CoreLocation备用方案")
-        #endif
+    private func configureLocationServices() {
+        print("✅ 使用Apple原生CoreLocation服务")
+        print("📍 应用启动完成，准备使用系统定位服务")
     }
 }

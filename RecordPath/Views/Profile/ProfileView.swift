@@ -46,10 +46,10 @@ struct ProfileTabView: View {
                     endPoint: .bottomTrailing
                 )
             )
-            .navigationTitle("Profile")
+            .navigationTitle("我的")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarItems(
-                trailing: Button("Edit") {
+                trailing: Button("编辑") {
                     showingEditProfile = true
                 }
             )
@@ -130,7 +130,7 @@ struct ProfileTabView: View {
             
             // User Info
             VStack(spacing: 8) {
-                Text(authManager.currentUser?.username ?? "Traveler")
+                Text(authManager.currentUser?.username ?? "旅行者")
                     .font(.title)
                     .fontWeight(.bold)
                 
@@ -139,7 +139,7 @@ struct ProfileTabView: View {
                     .foregroundColor(.secondary)
                 
                 // Member since
-                Text("Member since \(formatMemberSince())")
+                Text("注册于 \(formatMemberSince())")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -153,7 +153,7 @@ struct ProfileTabView: View {
     private var statsSection: some View {
         VStack(spacing: 16) {
             HStack {
-                Text("Travel Statistics")
+                Text("旅行统计")
                     .font(.headline)
                     .fontWeight(.semibold)
                 Spacer()
@@ -161,42 +161,42 @@ struct ProfileTabView: View {
             
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 16) {
                 ProfileStatCard(
-                    title: "Journeys",
+                    title: "行程",
                     value: "\(authManager.currentUser?.totalJourneys ?? 0)",
                     icon: "location.fill",
                     color: .blue
                 )
                 
                 ProfileStatCard(
-                    title: "Countries",
+                    title: "国家",
                     value: "\(authManager.currentUser?.visitedCountries.count ?? 0)",
                     icon: "globe",
                     color: .green
                 )
                 
                 ProfileStatCard(
-                    title: "Cities",
+                    title: "城市",
                     value: "\(authManager.currentUser?.visitedCities.count ?? 0)",
                     icon: "building.2",
                     color: .orange
                 )
                 
                 ProfileStatCard(
-                    title: "Photos",
+                    title: "照片",
                     value: "\(authManager.currentUser?.totalPhotos ?? 0)",
                     icon: "camera.fill",
                     color: .purple
                 )
                 
-                ProfileStatCard(
-                    title: "Adventures",
-                    value: "\(authManager.currentUser?.totalJourneys ?? 0)",
-                    icon: "airplane",
+ProfileStatCard(
+                    title: "距离",
+                    value: authManager.currentUser?.formattedTotalDistance ?? "0 km",
+                    icon: "map",
                     color: .cyan
                 )
                 
                 ProfileStatCard(
-                    title: "Memories",
+                    title: "回忆",
                     value: "∞",
                     icon: "heart.fill",
                     color: .pink
@@ -212,20 +212,29 @@ struct ProfileTabView: View {
     private var travelSummarySection: some View {
         VStack(spacing: 16) {
             HStack {
-                Text("Travel Summary")
+                Text("旅行摘要")
                     .font(.headline)
                     .fontWeight(.semibold)
                 Spacer()
             }
             
             if let user = authManager.currentUser, !user.visitedCountries.isEmpty {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
+LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
                     ForEach(user.visitedCountries.prefix(6), id: \.self) { country in
-                        CountryBadge(country: country)
+                        NavigationLink(destination: CountryDetailView(
+                            country: country,
+                            journeys: getJourneysForCountry(country)
+                        )) {
+                            CountryBadge(country: country)
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
                     
                     if user.visitedCountries.count > 6 {
-                        MoreCountriesBadge(count: user.visitedCountries.count - 6)
+                        NavigationLink(destination: AllCountriesView()) {
+                            MoreCountriesBadge(count: user.visitedCountries.count - 6)
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
                 }
             } else {
@@ -241,7 +250,7 @@ struct ProfileTabView: View {
     private var settingsSection: some View {
         VStack(spacing: 0) {
             SettingsRow(
-                title: "Privacy Settings",
+                title: "隐私设置",
                 icon: "lock.fill",
                 color: .blue
             ) {
@@ -252,7 +261,7 @@ struct ProfileTabView: View {
                 .padding(.leading, 50)
             
             SettingsRow(
-                title: "Notifications",
+                title: "通知",
                 icon: "bell.fill",
                 color: .orange
             ) {
@@ -263,7 +272,7 @@ struct ProfileTabView: View {
                 .padding(.leading, 50)
             
             SettingsRow(
-                title: "Export Data",
+                title: "导出数据",
                 icon: "square.and.arrow.up",
                 color: .green
             ) {
@@ -274,7 +283,7 @@ struct ProfileTabView: View {
                 .padding(.leading, 50)
             
             SettingsRow(
-                title: "Help & Support",
+                title: "帮助与支持",
                 icon: "questionmark.circle.fill",
                 color: .purple
             ) {
@@ -294,7 +303,7 @@ struct ProfileTabView: View {
                 Image(systemName: "rectangle.portrait.and.arrow.right")
                     .font(.title3)
                 
-                Text("Sign Out")
+                Text("退出登录")
                     .font(.headline)
                     .fontWeight(.semibold)
             }
@@ -318,6 +327,13 @@ struct ProfileTabView: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMMM yyyy"
         return formatter.string(from: authManager.currentUser?.createdAt ?? Date())
+    }
+    
+    private func getJourneysForCountry(_ country: String) -> [Journey] {
+        guard let user = authManager.currentUser else { return [] }
+        return user.journeys.filter { journey in
+            journey.visitedCountries.contains(country)
+        }
     }
 }
 
@@ -392,7 +408,7 @@ struct MoreCountriesBadge: View {
             Text("🌍")
                 .font(.title3)
             
-            Text("+\(count) more")
+            Text("+\(count) 更多")
                 .font(.subheadline)
                 .fontWeight(.medium)
         }
@@ -410,11 +426,11 @@ struct EmptyTravelSummary: View {
                 .font(.system(size: 40))
                 .foregroundColor(.gray.opacity(0.6))
             
-            Text("No travels yet")
+            Text("还没有旅行")
                 .font(.headline)
                 .foregroundColor(.primary)
             
-            Text("Start your journey and explore the world!")
+            Text("开始你的旅程，探索世界！")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -467,39 +483,39 @@ struct EditProfileSheet: View {
     var body: some View {
         NavigationView {
             Form {
-                Section("Personal Information") {
+                Section("个人信息") {
                     HStack {
-                        Text("Username")
+                        Text("用户名")
                         Spacer()
-                        TextField("Username", text: $username)
+                        TextField("用户名", text: $username)
                             .multilineTextAlignment(.trailing)
                     }
                     
                     HStack {
-                        Text("Email")
+                        Text("邮箱")
                         Spacer()
-                        TextField("Email", text: $email)
+                        TextField("邮箱", text: $email)
                             .multilineTextAlignment(.trailing)
                             .keyboardType(.emailAddress)
                     }
                 }
                 
-                Section("Account") {
-                    Button("Change Password") {
+                Section("账户") {
+                    Button("修改密码") {
                         // Handle password change
                     }
                     
-                    Button("Delete Account") {
+                    Button("删除账户") {
                         // Handle account deletion
                     }
                     .foregroundColor(.red)
                 }
             }
-            .navigationTitle("Edit Profile")
+            .navigationTitle("编辑个人资料")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarItems(
-                leading: Button("Cancel") { dismiss() },
-                trailing: Button("Save") {
+                leading: Button("取消") { dismiss() },
+                trailing: Button("保存") {
                     // Save changes
                     dismiss()
                 }

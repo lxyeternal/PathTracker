@@ -10,49 +10,49 @@ struct PrivacySettingsView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section("Location Privacy") {
-                    Toggle("Allow Location Sharing", isOn: $locationSharing)
+                Section("位置隐私") {
+                    Toggle("允许位置共享", isOn: $locationSharing)
                     
-                    Text("When enabled, your location data may be used to enhance your travel experience and provide better recommendations.")
+                    Text("启用后，您的位置数据可能会用于增强您的旅行体验并提供更好的建议。")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
                 
-                Section("Data Collection") {
-                    Toggle("Usage Data Collection", isOn: $dataCollection)
-                    Toggle("Analytics", isOn: $analytics)
-                    Toggle("Crash Reporting", isOn: $crashReporting)
+                Section("数据收集") {
+                    Toggle("使用数据收集", isOn: $dataCollection)
+                    Toggle("分析", isOn: $analytics)
+                    Toggle("崩溃报告", isOn: $crashReporting)
                     
-                    Text("Help us improve the app by sharing anonymous usage data and crash reports.")
+                    Text("通过分享匿名使用数据和崩溃报告来帮助我们改进应用。")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
                 
-                Section("Data Management") {
-                    Button("Download My Data") {
+                Section("数据管理") {
+                    Button("下载我的数据") {
                         // Handle data download
                     }
                     
-                    Button("Delete My Data") {
+                    Button("删除我的数据") {
                         // Handle data deletion
                     }
                     .foregroundColor(.red)
                 }
                 
-                Section("Privacy Policy") {
-                    Button("View Privacy Policy") {
+                Section("隐私政策") {
+                    Button("查看隐私政策") {
                         // Open privacy policy
                     }
                     
-                    Button("View Terms of Service") {
+                    Button("查看服务条款") {
                         // Open terms of service
                     }
                 }
             }
-            .navigationTitle("Privacy Settings")
+            .navigationTitle("隐私设置")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarItems(
-                trailing: Button("Done") { dismiss() }
+                trailing: Button("完成") { dismiss() }
             )
         }
     }

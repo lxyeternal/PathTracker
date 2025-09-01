@@ -5,10 +5,8 @@ target 'RecordPath' do
   # Comment the next line if you don't want to use dynamic frameworks
   use_frameworks!
 
-  # 高德地图SDK
-  pod 'AMapLocation'
-  pod 'AMapSearch'
-  pod 'AMap3DMap'
+  # Using Apple's native CoreLocation instead of AMap SDK
+  # All location services will be handled by iOS native frameworks
 
   target 'RecordPathTests' do
     inherit! :search_paths
