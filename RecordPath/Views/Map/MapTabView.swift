@@ -38,7 +38,7 @@ struct MapTabView: View {
                     }
                 }
             }
-            .navigationTitle("Travel Map")
+            .navigationTitle("旅行地图")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarItems(
                 leading: Button(action: { showingJourneyList = true }) {
@@ -154,32 +154,45 @@ struct MapTabView: View {
                         .foregroundColor(.secondary)
                 }
                 
-                Spacer()
+Spacer()
                 
-                Button("Dismiss") {
-                    selectedJourney = nil
+                HStack(spacing: 12) {
+                    NavigationLink(destination: JourneyDetailView(journey: journey)) {
+                        Text("查看详情")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Color.blue)
+                            .cornerRadius(12)
+                    }
+                    
+                    Button("关闭") {
+                        selectedJourney = nil
+                    }
+                    .font(.caption)
+                    .foregroundColor(.gray)
                 }
-                .font(.caption)
-                .foregroundColor(.blue)
             }
             
             HStack(spacing: 20) {
                 StatBadge(
-                    title: "Distance",
+                    title: "距离",
                     value: journey.formattedDistance,
                     icon: "map.fill",
                     color: .blue
                 )
                 
                 StatBadge(
-                    title: "Duration",
+                    title: "时长",
                     value: journey.formattedDuration,
                     icon: "clock.fill",
                     color: .green
                 )
                 
                 StatBadge(
-                    title: "Countries",
+                    title: "国家",
                     value: "\(journey.visitedCountries.count)",
                     icon: "globe",
                     color: .orange
@@ -319,7 +332,7 @@ struct MapView: UIViewRepresentable {
                     let annotation = JourneyPointAnnotation(
                         coordinate: firstPoint.coordinate,
                         title: journey.title,
-                        subtitle: "Start: \(firstPoint.timestamp.formatted(date: .omitted, time: .shortened))",
+                        subtitle: "开始: \(firstPoint.timestamp.formatted(date: .omitted, time: .shortened))",
                         journeyId: journey.id,
                         isStartPoint: true
                     )
@@ -330,7 +343,7 @@ struct MapView: UIViewRepresentable {
                     let annotation = JourneyPointAnnotation(
                         coordinate: lastPoint.coordinate,
                         title: journey.title,
-                        subtitle: "End: \(lastPoint.timestamp.formatted(date: .omitted, time: .shortened))",
+                        subtitle: "结束: \(lastPoint.timestamp.formatted(date: .omitted, time: .shortened))",
                         journeyId: journey.id,
                         isStartPoint: false
                     )
@@ -463,10 +476,10 @@ struct JourneyListSheet: View {
                     onJourneySelected(journey)
                 }
             }
-            .navigationTitle("Journeys")
+            .navigationTitle("行程")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarItems(
-                trailing: Button("Done") { dismiss() }
+                trailing: Button("完成") { dismiss() }
             )
         }
     }
@@ -495,7 +508,7 @@ struct JourneyListRow: View {
                         Text("•")
                         Text(journey.formattedDuration)
                         Text("•")
-                        Text("\(journey.visitedCountries.count) countries")
+                        Text("\(journey.visitedCountries.count) 个国家")
                     }
                     .font(.caption)
                     .foregroundColor(.secondary)

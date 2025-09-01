@@ -12,8 +12,8 @@ struct ExportDataView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section("Export Format") {
-                    Picker("Format", selection: $selectedFormat) {
+                Section("导出格式") {
+                    Picker("格式", selection: $selectedFormat) {
                         ForEach(ExportFormat.allCases, id: \.self) { format in
                             HStack {
                                 Image(systemName: format.icon)
@@ -29,47 +29,47 @@ struct ExportDataView: View {
                         .foregroundColor(.secondary)
                 }
                 
-                Section("Data Options") {
-                    Toggle("Include Photos", isOn: $includePhotos)
+                Section("数据选项") {
+                    Toggle("包含照片", isOn: $includePhotos)
                     
-                    Picker("Date Range", selection: $dateRange) {
+                    Picker("日期范围", selection: $dateRange) {
                         ForEach(ExportDateRange.allCases, id: \.self) { range in
                             Text(range.rawValue).tag(range)
                         }
                     }
                     
                     if !includePhotos {
-                        Text("Photos will be excluded to reduce file size.")
+                        Text("照片将被排除以减小文件大小。")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
                 }
                 
-                Section("Data Summary") {
+                Section("数据摘要") {
                     if let user = authManager.currentUser {
                         HStack {
-                            Text("Journeys")
+                            Text("行程")
                             Spacer()
                             Text("\(user.totalJourneys)")
                                 .foregroundColor(.secondary)
                         }
                         
                         HStack {
-                            Text("Photos")
+                            Text("照片")
                             Spacer()
                             Text("\(includePhotos ? user.totalPhotos : 0)")
                                 .foregroundColor(.secondary)
                         }
                         
                         HStack {
-                            Text("Countries Visited")
+                            Text("访问过的国家")
                             Spacer()
                             Text("\(user.visitedCountries.count)")
                                 .foregroundColor(.secondary)
                         }
                         
                         HStack {
-                            Text("Estimated Size")
+                            Text("预计大小")
                             Spacer()
                             Text(estimatedFileSize)
                                 .foregroundColor(.secondary)
@@ -87,23 +87,23 @@ struct ExportDataView: View {
                                 Image(systemName: "square.and.arrow.up")
                             }
                             
-                            Text(isExporting ? "Exporting..." : "Export Data")
+                            Text(isExporting ? "正在导出..." : "导出数据")
                         }
                         .frame(maxWidth: .infinity)
                     }
                     .disabled(isExporting)
                 }
             }
-            .navigationTitle("Export Data")
+            .navigationTitle("导出数据")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarItems(
-                trailing: Button("Done") { dismiss() }
+                trailing: Button("完成") { dismiss() }
             )
         }
-        .alert("Export Complete", isPresented: $showingSuccessAlert) {
-            Button("OK") { dismiss() }
+        .alert("导出完成", isPresented: $showingSuccessAlert) {
+            Button("好的") { dismiss() }
         } message: {
-            Text("Your data has been exported successfully and saved to Files.")
+            Text("您的数据已成功导出并保存到“文件”应用中。")
         }
     }
     
@@ -148,18 +148,18 @@ enum ExportFormat: String, CaseIterable {
     
     var description: String {
         switch self {
-        case .json: return "Human-readable format with all data included"
-        case .gpx: return "GPS exchange format, compatible with most GPS devices"
-        case .kml: return "Google Earth format for visualization"
+        case .json: return "人类可读格式，包含所有数据"
+        case .gpx: return "GPS交换格式，与大多数GPS设备兼容"
+        case .kml: return "用于可视化的谷歌地球格式"
         }
     }
 }
 
 enum ExportDateRange: String, CaseIterable {
-    case all = "All Time"
-    case thisYear = "This Year"
-    case lastSixMonths = "Last 6 Months"
-    case lastMonth = "Last Month"
+    case all = "全部时间"
+    case thisYear = "今年"
+    case lastSixMonths = "过去6个月"
+    case lastMonth = "上个月"
 }
 
 #Preview {

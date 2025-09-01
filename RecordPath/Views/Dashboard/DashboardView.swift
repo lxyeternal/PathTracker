@@ -13,7 +13,7 @@ struct DashboardView: View {
                 .environmentObject(pathTrackingManager)
                 .tabItem {
                     Image(systemName: "house.fill")
-                    Text("Home")
+                    Text("主页")
                 }
                 .tag(0)
             
@@ -23,7 +23,7 @@ struct DashboardView: View {
                 .environmentObject(pathTrackingManager)
                 .tabItem {
                     Image(systemName: "map.fill")
-                    Text("Map")
+                    Text("地图")
                 }
                 .tag(1)
             
@@ -32,7 +32,7 @@ struct DashboardView: View {
                 .environmentObject(pathTrackingManager)
                 .tabItem {
                     Image(systemName: "plus.circle.fill")
-                    Text("Record")
+                    Text("记录")
                 }
                 .tag(2)
             
@@ -41,7 +41,7 @@ struct DashboardView: View {
                 .environmentObject(authManager)
                 .tabItem {
                     Image(systemName: "clock.fill")
-                    Text("Timeline")
+                    Text("时间线")
                 }
                 .tag(3)
             
@@ -50,7 +50,7 @@ struct DashboardView: View {
                 .environmentObject(authManager)
                 .tabItem {
                     Image(systemName: "person.fill")
-                    Text("Profile")
+                    Text("我的")
                 }
                 .tag(4)
         }
@@ -73,8 +73,8 @@ struct HomeTabView: View {
                     // Enhanced Quick Stats
                     statsSection
                     
-                    // Recent Adventures Section
-                    recentAdventuresSection
+                    // Recent Journeys Section
+                    recentJourneysSection
                     
                     // World Map Preview
                     worldMapPreview
@@ -104,12 +104,12 @@ struct HomeTabView: View {
         VStack(spacing: 16) {
             HStack {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Hello, \(authManager.currentUser?.username ?? "Traveler")! 👋")
+                    Text("你好, \(authManager.currentUser?.username ?? "旅行者")! 👋")
                         .font(.title)
                         .fontWeight(.bold)
                         .foregroundColor(.primary)
                     
-                    Text("Ready for your next adventure?")
+                    Text("准备好开始新的冒险了吗？")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
@@ -139,7 +139,7 @@ struct HomeTabView: View {
     private var statsSection: some View {
         VStack(spacing: 16) {
             HStack {
-                Text("Your Journey")
+                Text("你的旅程")
                     .font(.headline)
                     .fontWeight(.semibold)
                 Spacer()
@@ -147,21 +147,21 @@ struct HomeTabView: View {
             
             HStack(spacing: 12) {
                 EnhancedStatCard(
-                    title: "Journeys",
+                    title: "行程",
                     value: "\(authManager.currentUser?.totalJourneys ?? 0)",
                     icon: "location.fill",
                     gradient: [.blue, .cyan]
                 )
                 
                 EnhancedStatCard(
-                    title: "Countries",
+                    title: "国家",
                     value: "\(authManager.currentUser?.visitedCountries.count ?? 0)",
                     icon: "globe",
                     gradient: [.green, .mint]
                 )
                 
                 EnhancedStatCard(
-                    title: "Photos",
+                    title: "照片",
                     value: "\(authManager.currentUser?.totalPhotos ?? 0)",
                     icon: "camera.fill",
                     gradient: [.orange, .yellow]
@@ -170,10 +170,10 @@ struct HomeTabView: View {
         }
     }
     
-    private var recentAdventuresSection: some View {
+    private var recentJourneysSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Text("Recent Adventures")
+                Text("最近的行程")
                     .font(.headline)
                     .fontWeight(.semibold)
                 
@@ -182,7 +182,7 @@ struct HomeTabView: View {
                 Button(action: {
                     selectedTab = 3 // Switch to Timeline tab
                 }) {
-                    Text("See All")
+                    Text("查看全部")
                         .font(.subheadline)
                         .foregroundColor(.blue)
                 }
@@ -193,15 +193,18 @@ struct HomeTabView: View {
                 
                 if recentJourneys.isEmpty {
                     BeautifulEmptyState(
-                        title: "No adventures yet",
-                        message: "Start exploring and create amazing memories!",
+                        title: "还没有任何行程",
+                        message: "开始探索，创造美好回忆！",
                         icon: "airplane.departure",
                         color: .blue
                     )
                 } else {
                     VStack(spacing: 12) {
                         ForEach(Array(recentJourneys), id: \.id) { journey in
-                            EnhancedJourneyCard(journey: journey)
+                            NavigationLink(destination: JourneyDetailView(journey: journey)) {
+                                EnhancedJourneyCard(journey: journey)
+                            }
+                            .buttonStyle(PlainButtonStyle())
                         }
                     }
                 }
@@ -212,7 +215,7 @@ struct HomeTabView: View {
     private var worldMapPreview: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Text("Your Travel Map")
+                Text("你的旅行地图")
                     .font(.headline)
                     .fontWeight(.semibold)
                 
@@ -221,7 +224,7 @@ struct HomeTabView: View {
                 Button(action: {
                     selectedTab = 1 // Switch to Map tab
                 }) {
-                    Text("Open Map")
+                    Text("打开地图")
                         .font(.subheadline)
                         .foregroundColor(.blue)
                 }
@@ -246,11 +249,11 @@ struct HomeTabView: View {
                             .font(.system(size: 40))
                             .foregroundColor(.blue.opacity(0.7))
                         
-                        Text("Interactive World Map")
+                        Text("交互式世界地图")
                             .font(.headline)
                             .foregroundColor(.primary)
                         
-                        Text("Tap to explore your traveled locations")
+                        Text("点击探索你去过的地方")
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
@@ -262,13 +265,13 @@ struct HomeTabView: View {
     private var countriesCollectionSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Text("Countries Explored")
+                Text("探索过的国家")
                     .font(.headline)
                     .fontWeight(.semibold)
                 
                 Spacer()
                 
-                Text("\(authManager.currentUser?.visitedCountries.count ?? 0) countries")
+                Text("\(authManager.currentUser?.visitedCountries.count ?? 0) 个国家")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -278,19 +281,34 @@ struct HomeTabView: View {
                 
                 if countries.isEmpty {
                     BeautifulEmptyState(
-                        title: "No countries visited",
-                        message: "Start your global journey today!",
+                        title: "还没有访问过任何国家",
+                        message: "今天就开始你的环球之旅吧！",
                         icon: "globe.americas.fill",
                         color: .green
                     )
                 } else {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
                         ForEach(countries, id: \.self) { country in
-                            EnhancedCountryCard(country: country)
+                            NavigationLink(destination: CountryDetailView(
+                                country: country,
+                                journeys: getJourneysForCountry(country)
+                            )) {
+                                EnhancedCountryCard(country: country)
+                            }
+                            .buttonStyle(PlainButtonStyle())
                         }
                     }
                 }
             }
+        }
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func getJourneysForCountry(_ country: String) -> [Journey] {
+        guard let user = authManager.currentUser else { return [] }
+        return user.journeys.filter { journey in
+            journey.visitedCountries.contains(country)
         }
     }
 }
@@ -473,12 +491,12 @@ struct EnhancedCountryCard: View {
     
     private func getCountryLandmark(_ country: String) -> String {
         switch country.lowercased() {
-        case "france": return "Eiffel Tower"
-        case "japan": return "Mount Fuji"
-        case "china": return "Great Wall"
-        case "usa", "united states": return "Statue of Liberty"
-        case "uk", "united kingdom": return "Big Ben"
-        default: return "Beautiful Places"
+        case "france": return "埃菲尔铁塔"
+        case "japan": return "富士山"
+        case "china": return "长城"
+        case "usa", "united states": return "自由女神像"
+        case "uk", "united kingdom": return "大本钟"
+        default: return "美丽的地方"
         }
     }
     

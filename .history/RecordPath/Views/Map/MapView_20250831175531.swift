@@ -22,9 +22,6 @@ struct LegacyMapTabView: View {
                     annotationItems: authManager.currentUser?.visits ?? []) { visit in
                     MapPin(coordinate: visit.location.coordinate, tint: getCountryColor(visit.location.country ?? ""))
                 }
-                .onTapGesture { location in
-                    // Handle map tap if needed
-                }
                 .ignoresSafeArea()
                 
                 // Control Panel
@@ -117,17 +114,6 @@ struct LegacyMapTabView: View {
     
     private func zoomToAllLocations() {
         setupInitialRegion()
-    }
-    
-    private func getCountryColor(_ country: String) -> Color {
-        switch country.lowercased() {
-        case "france": return .blue
-        case "japan": return .red
-        case "china": return .red
-        case "usa", "united states": return .blue
-        case "uk", "united kingdom": return .indigo
-        default: return .gray
-        }
     }
 }
 

@@ -57,7 +57,7 @@ struct AuthenticationView: View {
                     .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 2)
                 
                 // Subtitle
-                Text("Track your journey around the world")
+                Text("记录你的环球之旅")
                     .font(.body)
                     .foregroundColor(.white.opacity(0.9))
                     .multilineTextAlignment(.center)
@@ -70,8 +70,8 @@ struct AuthenticationView: View {
         VStack(spacing: 20) {
             // Toggle between Login and Signup
             Picker("Auth Mode", selection: $isLogin) {
-                Text("Login").tag(true)
-                Text("Sign Up").tag(false)
+                Text("登录").tag(true)
+                Text("注册").tag(false)
             }
             .pickerStyle(SegmentedPickerStyle())
             .padding(.horizontal)
@@ -80,14 +80,14 @@ struct AuthenticationView: View {
             VStack(spacing: 16) {
                 if !isLogin {
                     CustomTextField(
-                        title: "Username",
+                        title: "用户名",
                         text: $username,
                         icon: "person.fill"
                     )
                 }
                 
                 CustomTextField(
-                    title: "Email",
+                    title: "邮箱",
                     text: $email,
                     icon: "envelope.fill"
                 )
@@ -95,7 +95,7 @@ struct AuthenticationView: View {
                 .textContentType(.emailAddress)
                 
                 CustomSecureField(
-                    title: "Password",
+                    title: "密码",
                     text: $password,
                     showPassword: $showPassword,
                     icon: "lock.fill"
@@ -103,7 +103,7 @@ struct AuthenticationView: View {
                 
                 if !isLogin {
                     CustomSecureField(
-                        title: "Confirm Password",
+                        title: "确认密码",
                         text: $confirmPassword,
                         showPassword: $showPassword,
                         icon: "lock.fill"
@@ -120,7 +120,7 @@ struct AuthenticationView: View {
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                             .scaleEffect(0.8)
                     } else {
-                        Text(isLogin ? "Login" : "Create Account")
+                        Text(isLogin ? "登录" : "创建账户")
                             .fontWeight(.semibold)
                     }
                 }
@@ -142,18 +142,18 @@ struct AuthenticationView: View {
             
             // Alternative Actions
             VStack(spacing: 8) {
-                Button("Forgot Password?") {
+                Button("忘记密码?") {
                     // Handle forgot password
                 }
                 .font(.footnote)
                 .foregroundColor(.blue)
                 
                 HStack {
-                    Text(isLogin ? "Don't have an account?" : "Already have an account?")
+                    Text(isLogin ? "还没有账户?" : "已有账户?")
                         .font(.footnote)
                         .foregroundColor(.gray)
                     
-                    Button(isLogin ? "Sign Up" : "Login") {
+                    Button(isLogin ? "注册" : "登录") {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             isLogin.toggle()
                         }
@@ -164,7 +164,7 @@ struct AuthenticationView: View {
                 }
                 
                 // Quick Test Login
-                Button("Quick Test Login") {
+                Button("快速测试登录") {
                     email = "test@example.com"
                     password = "password123"
                     username = "TestUser"

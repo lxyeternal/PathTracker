@@ -26,7 +26,7 @@ struct TimelineTabView: View {
                 // Journey Timeline
                 journeyTimelineSection
             }
-            .navigationTitle("Timeline")
+            .navigationTitle("时间线")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarItems(
                 trailing: Button(action: { showingCustomDatePicker = true }) {
@@ -73,7 +73,7 @@ struct TimelineTabView: View {
             Image(systemName: "magnifyingglass")
                 .foregroundColor(.secondary)
             
-            TextField("Search journeys...", text: $searchText)
+            TextField("搜索行程...", text: $searchText)
                 .textFieldStyle(PlainTextFieldStyle())
         }
         .padding()
@@ -86,7 +86,7 @@ struct TimelineTabView: View {
     private var statisticsSection: some View {
         VStack(spacing: 16) {
             HStack {
-                Text("Summary")
+                Text("摘要")
                     .font(.headline)
                     .fontWeight(.semibold)
                 Spacer()
@@ -97,28 +97,28 @@ struct TimelineTabView: View {
             
             HStack(spacing: 16) {
                 SummaryCard(
-                    title: "Journeys",
+                    title: "行程",
                     value: "\(filteredJourneys.count)",
                     icon: "location.north.line.fill",
                     color: .blue
                 )
                 
                 SummaryCard(
-                    title: "Distance",
+                    title: "距离",
                     value: totalDistance,
                     icon: "map.fill",
                     color: .green
                 )
                 
                 SummaryCard(
-                    title: "Duration",
+                    title: "时长",
                     value: totalDuration,
                     icon: "clock.fill",
                     color: .orange
                 )
                 
                 SummaryCard(
-                    title: "Countries",
+                    title: "国家",
                     value: "\(uniqueCountries.count)",
                     icon: "globe",
                     color: .purple
@@ -149,7 +149,7 @@ struct TimelineTabView: View {
                                 
                                 Spacer()
                                 
-                                Text("\(groupedJourneys[date]?.count ?? 0) journeys")
+                                Text("\(groupedJourneys[date]?.count ?? 0) 个行程")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -264,12 +264,12 @@ struct TimelineTabView: View {
     private func formatSectionDate(_ date: Date) -> String {
         let calendar = Calendar.current
         if calendar.isDateInToday(date) {
-            return "Today"
+            return "今天"
         } else if calendar.isDateInYesterday(date) {
-            return "Yesterday"
+            return "昨天"
         } else {
             let formatter = DateFormatter()
-            formatter.dateFormat = "MMMM d, yyyy"
+            formatter.dateFormat = "yyyy年MM月dd日"
             return formatter.string(from: date)
         }
     }
@@ -353,18 +353,18 @@ struct EmptyTimelineView: View {
                 .foregroundColor(.gray.opacity(0.6))
             
             VStack(spacing: 8) {
-                Text("No journeys for \(filter.rawValue.lowercased())")
+                Text("没有 \(filter.rawValue.lowercased()) 的行程")
                     .font(.headline)
                     .fontWeight(.semibold)
                     .foregroundColor(.primary)
                 
-                Text("Start recording your travels to see them here")
+                Text("开始记录您的旅行以在此处查看")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
             }
             
-            Button("Start Recording") {
+            Button("开始记录") {
                 // Switch to recording tab
             }
             .font(.headline)
@@ -392,11 +392,11 @@ struct CustomDateRangeSheet: View {
         NavigationView {
             VStack(spacing: 24) {
                 VStack(spacing: 16) {
-                    Text("Custom Date Range")
+                    Text("自定义日期范围")
                         .font(.title2)
                         .fontWeight(.bold)
                     
-                    Text("Select the date range for your timeline")
+                    Text("为您的时间线选择日期范围")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
@@ -404,26 +404,26 @@ struct CustomDateRangeSheet: View {
                 
                 VStack(spacing: 20) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Start Date")
+                        Text("开始日期")
                             .font(.headline)
                             .fontWeight(.medium)
                         
-                        DatePicker("Start Date", selection: $startDate, displayedComponents: .date)
+                        DatePicker("开始日期", selection: $startDate, displayedComponents: .date)
                             .datePickerStyle(GraphicalDatePickerStyle())
                     }
                     
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("End Date")
+                        Text("结束日期")
                             .font(.headline)
                             .fontWeight(.medium)
                         
-                        DatePicker("End Date", selection: $endDate, in: startDate..., displayedComponents: .date)
+                        DatePicker("结束日期", selection: $endDate, in: startDate..., displayedComponents: .date)
                             .datePickerStyle(GraphicalDatePickerStyle())
                     }
                 }
                 
                 Button(action: onApply) {
-                    Text("Apply Filter")
+                    Text("应用筛选")
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                         .background(
@@ -438,10 +438,10 @@ struct CustomDateRangeSheet: View {
                 Spacer()
             }
             .padding()
-            .navigationTitle("Date Range")
+            .navigationTitle("日期范围")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarItems(
-                trailing: Button("Cancel") { dismiss() }
+                trailing: Button("取消") { dismiss() }
             )
         }
         .onAppear {
@@ -480,16 +480,16 @@ struct JourneyDetailSheet: View {
                     
                     // Statistics
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
-                        DetailStatCard(title: "Distance", value: journey.formattedDistance, icon: "map.fill", color: .blue)
-                        DetailStatCard(title: "Duration", value: journey.formattedDuration, icon: "clock.fill", color: .green)
-                        DetailStatCard(title: "Segments", value: "\(journey.segments.count)", icon: "point.3.connected.trianglepath.dotted", color: .orange)
-                        DetailStatCard(title: "Countries", value: "\(journey.visitedCountries.count)", icon: "globe", color: .purple)
+                        DetailStatCard(title: "距离", value: journey.formattedDistance, icon: "map.fill", color: .blue)
+                        DetailStatCard(title: "时长", value: journey.formattedDuration, icon: "clock.fill", color: .green)
+                        DetailStatCard(title: "路段", value: "\(journey.segments.count)", icon: "point.3.connected.trianglepath.dotted", color: .orange)
+                        DetailStatCard(title: "国家", value: "\(journey.visitedCountries.count)", icon: "globe", color: .purple)
                     }
                     
                     // Notes
                     if !journey.notes.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Notes")
+                            Text("笔记")
                                 .font(.headline)
                                 .fontWeight(.semibold)
                             
@@ -507,7 +507,7 @@ struct JourneyDetailSheet: View {
                     VStack(spacing: 16) {
                         if !journey.visitedCountries.isEmpty {
                             VStack(alignment: .leading, spacing: 12) {
-                                Text("Countries Visited")
+                                Text("访问过的国家")
                                     .font(.headline)
                                     .fontWeight(.semibold)
                                 
@@ -521,7 +521,7 @@ struct JourneyDetailSheet: View {
                         
                         if !journey.visitedCities.isEmpty {
                             VStack(alignment: .leading, spacing: 12) {
-                                Text("Cities Visited")
+                                Text("访问过的城市")
                                     .font(.headline)
                                     .fontWeight(.semibold)
                                 
@@ -538,10 +538,10 @@ struct JourneyDetailSheet: View {
                 }
                 .padding()
             }
-            .navigationTitle("Journey Details")
+            .navigationTitle("行程详情")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarItems(
-                trailing: Button("Done") { dismiss() }
+                trailing: Button("完成") { dismiss() }
             )
         }
     }

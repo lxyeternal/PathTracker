@@ -8,7 +8,7 @@ struct TimelineView: View {
         NavigationView {
             VStack {
                 // Time Filter Picker
-                Picker("Time Filter", selection: $selectedTimeFilter) {
+                Picker("时间筛选", selection: $selectedTimeFilter) {
                     ForEach(TimeFilter.allCases, id: \.self) { filter in
                         Text(filter.rawValue).tag(filter)
                     }
@@ -24,19 +24,22 @@ struct TimelineView: View {
                             
                             if filteredJourneys.isEmpty {
                                 EmptyStateView(
-                                    title: "No journeys found",
-                                    message: "No journeys found for the selected time period",
+                                    title: "未找到行程",
+                                    message: "未找到所选时间段的行程",
                                     icon: "clock.fill"
                                 )
                             } else {
                                 ForEach(filteredJourneys, id: \.id) { journey in
-                                    TimelineJourneyCard(journey: journey)
+                                    NavigationLink(destination: JourneyDetailView(journey: journey)) {
+                                        TimelineJourneyCard(journey: journey)
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
                                 }
                             }
                         } else {
                             EmptyStateView(
-                                title: "No data",
-                                message: "Please log in to see your journey timeline",
+                                title: "无数据",
+                                message: "请登录以查看您的行程时间线",
                                 icon: "person.fill"
                             )
                         }
@@ -44,7 +47,7 @@ struct TimelineView: View {
                     .padding()
                 }
             }
-            .navigationTitle("Timeline")
+            .navigationTitle("时间线")
             .navigationBarTitleDisplayMode(.large)
         }
     }
@@ -95,21 +98,21 @@ struct TimelineJourneyCard: View {
             HStack(spacing: 20) {
                 TimelineStatItem(
                     icon: "map.fill",
-                    title: "Distance",
+                    title: "距离",
                     value: journey.formattedDistance,
                     color: .blue
                 )
                 
                 TimelineStatItem(
                     icon: "clock.fill",
-                    title: "Duration",
+                    title: "时长",
                     value: journey.formattedDuration,
                     color: .green
                 )
                 
                 TimelineStatItem(
                     icon: "location.fill",
-                    title: "Segments",
+                    title: "路段",
                     value: "\(journey.segments.count)",
                     color: .orange
                 )
@@ -120,7 +123,7 @@ struct TimelineJourneyCard: View {
             // Notes
             if !journey.notes.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Notes")
+                    Text("笔记")
                         .font(.subheadline)
                         .fontWeight(.medium)
                     

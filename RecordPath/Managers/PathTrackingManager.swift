@@ -3,7 +3,7 @@ import Foundation
 import Combine
 
 class PathTrackingManager: NSObject, ObservableObject {
-    private let locationService = AMapLocationService()
+    private let locationService = CoreLocationService()
     
     @Published var isTracking = false
     @Published var isPaused = false
@@ -32,7 +32,7 @@ class PathTrackingManager: NSObject, ObservableObject {
         // 监听位置服务状态变化
         setupLocationServiceObservers()
         
-        print("🗺️ PathTrackingManager初始化完成，使用高德地图定位服务")
+        print("🗺️ PathTrackingManager初始化完成，使用Apple原生CoreLocation服务")
     }
     
     private func setupLocationServiceObservers() {
@@ -212,19 +212,21 @@ class PathTrackingManager: NSObject, ObservableObject {
         locationService.reverseGeocode(location: location) { address in
             guard let address = address else { return }
             
-            // 这里可以识别和记录经过的地点
-            let place = IdentifiedPlace(
-                name: address,
-                type: .unknown,
-                coordinate: location.coordinate,
-                country: "中国", // 高德地图主要用于中国境内
-                city: nil,
-                visitTime: Date(),
-                stayDuration: 0
-            )
-            
-            // 可以添加到当前旅程的地点列表中
-            print("🏷️ 识别地点: \(place.name)")
+            // 获取国家和城市信息
+            self.locationService.getCountryAndCity(from: location) { country, city in
+                let place = IdentifiedPlace(
+                    name: address,
+                    type: .unknown,
+                    coordinate: location.coordinate,
+                    country: country ?? "未知国家",
+                    city: city,
+                    visitTime: Date(),
+                    stayDuration: 0
+                )
+                
+                // 可以添加到当前旅程的地点列表中
+                print("🏷️ 识别地点: \(place.name), 国家: \(place.country), 城市: \(place.city ?? "未知")")
+            }
         }
     }
     
@@ -251,7 +253,7 @@ class PathTrackingManager: NSObject, ObservableObject {
 // MARK: - LocationServiceDelegate
 
 extension PathTrackingManager: LocationServiceDelegate {
-    func locationService(_ service: AMapLocationService, didUpdateLocation location: CLLocation) {
+    func locationService(_ service: CoreLocationService, didUpdateLocation location: CLLocation) {
         // currentLocation已经通过Combine自动更新
         
         if isTracking && !isPaused {
@@ -265,7 +267,7 @@ extension PathTrackingManager: LocationServiceDelegate {
         }
     }
     
-    func locationService(_ service: AMapLocationService, didChangeAuthorization status: CLAuthorizationStatus) {
+    func locationService(_ service: CoreLocationService, didChangeAuthorization status: CLAuthorizationStatus) {
         // authorizationStatus已经通过Combine自动更新
         
         switch status {
@@ -282,7 +284,7 @@ extension PathTrackingManager: LocationServiceDelegate {
         }
     }
     
-    func locationService(_ service: AMapLocationService, didFailWithError error: Error) {
+    func locationService(_ service: CoreLocationService, didFailWithError error: Error) {
         print("❌ 位置服务错误: \(error.localizedDescription)")
     }
 }
