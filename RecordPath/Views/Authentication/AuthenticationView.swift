@@ -8,6 +8,7 @@ struct AuthenticationView: View {
     @State private var confirmPassword = ""
     @State private var showPassword = false
     @State private var isLoading = false
+    @State private var showAlert = false
     @EnvironmentObject var authManager: AuthenticationManager
     
     var body: some View {
@@ -28,6 +29,16 @@ struct AuthenticationView: View {
             }
         }
         .navigationBarHidden(true)
+        .alert("错误", isPresented: $showAlert) {
+            Button("确定") { }
+        } message: {
+            Text(authManager.errorMessage ?? "未知错误")
+        }
+        .onChange(of: authManager.errorMessage) { errorMessage in
+            if errorMessage != nil {
+                showAlert = true
+            }
+        }
     }
     
     private var headerSection: some View {
@@ -163,17 +174,38 @@ struct AuthenticationView: View {
                     .foregroundColor(.blue)
                 }
                 
-                // Quick Test Login
-                Button("快速测试登录") {
-                    email = "test@example.com"
-                    password = "password123"
-                    username = "TestUser"
-                    authenticate()
+                // Anonymous Login
+                Button("匿名登录") {
+                    Task {
+                        isLoading = true
+                        await authManager.signInAnonymously()
+                        isLoading = false
+                    }
                 }
                 .font(.footnote)
                 .fontWeight(.semibold)
                 .foregroundColor(.green)
                 .padding(.top, 8)
+                
+                // Quick Test Login
+                Button("快速测试登录") {
+                    email = "test@example.com"
+                    password = "password123"
+                    username = "TestUser"
+                    Task {
+                        isLoading = true
+                        if isLogin {
+                            await authManager.signIn(email: email, password: password)
+                        } else {
+                            await authManager.signUp(email: email, password: password, username: username)
+                        }
+                        isLoading = false
+                    }
+                }
+                .font(.footnote)
+                .fontWeight(.semibold)
+                .foregroundColor(.blue)
+                .padding(.top, 4)
             }
             .padding(.top, 10)
         }
@@ -193,22 +225,13 @@ struct AuthenticationView: View {
     }
     
     private func authenticate() {
-        isLoading = true
-        
-        // Simulate network delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+        Task {
+            isLoading = true
+            
             if isLogin {
-                // For now, just create a user with the email
-                let user = authManager.createUser(username: "User", email: email)
-                
-                // Navigate to main app
-                NotificationCenter.default.post(name: .userDidAuthenticate, object: user)
+                await authManager.signIn(email: email, password: password)
             } else {
-                // Create new user
-                let user = authManager.createUser(username: username, email: email)
-                
-                // Navigate to main app
-                NotificationCenter.default.post(name: .userDidAuthenticate, object: user)
+                await authManager.signUp(email: email, password: password, username: username)
             }
             
             isLoading = false

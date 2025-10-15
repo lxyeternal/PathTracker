@@ -6,11 +6,13 @@
 //
 
 import SwiftUI
+import Firebase
 
 @main
 struct RecordPathApp: App {
     
     init() {
+        configureFirebase()
         configureLocationServices()
     }
     
@@ -18,6 +20,11 @@ struct RecordPathApp: App {
         WindowGroup {
             ContentView()
         }
+    }
+    
+    private func configureFirebase() {
+        FirebaseApp.configure()
+        print("🔥 Firebase 已初始化")
     }
     
     private func configureLocationServices() {

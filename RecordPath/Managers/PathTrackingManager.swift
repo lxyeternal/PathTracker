@@ -4,11 +4,14 @@ import Combine
 
 class PathTrackingManager: NSObject, ObservableObject {
     private let locationService = CoreLocationService()
+    private let firebaseService = FirebaseService.shared
     
     @Published var isTracking = false
     @Published var isPaused = false
     @Published var currentLocation: CLLocation?
     @Published var currentJourney: Journey?
+    @Published var currentPath: PathData?
+    @Published var savedPaths: [PathData] = []
     @Published var authorizationStatus: CLAuthorizationStatus = .notDetermined
     
     // 当前路径段
@@ -167,6 +170,25 @@ class PathTrackingManager: NSObject, ObservableObject {
             )
             
             currentSegment?.trackPoints.append(trackPoint)
+            
+            // 同时添加到PathData
+            let locationCoordinate = LocationCoordinate(
+                latitude: location.coordinate.latitude,
+                longitude: location.coordinate.longitude,
+                timestamp: location.timestamp,
+                altitude: location.altitude,
+                speed: location.speed,
+                accuracy: location.horizontalAccuracy
+            )
+            
+            currentPath?.coordinates.append(locationCoordinate)
+            
+            // 更新总距离
+            if let lastLocation = lastRecordedLocation {
+                let distance = location.distance(from: lastLocation)
+                currentPath?.totalDistance += distance
+            }
+            
             lastRecordedLocation = location
             lastRecordedTime = location.timestamp
             
@@ -199,11 +221,82 @@ class PathTrackingManager: NSObject, ObservableObject {
     }
     
     private func saveJourney(_ journey: Journey) {
+        // 保存到Firebase
+        Task {
+            await saveCurrentPathToFirebase()
+        }
+        
         // 这里需要集成到AuthenticationManager或数据持久化系统中
         NotificationCenter.default.post(
             name: NSNotification.Name("JourneyCompleted"),
             object: journey
         )
+    }
+    
+    // MARK: - Firebase Integration
+    
+    func startPathTracking(name: String = "") {
+        let pathName = name.isEmpty ? "路径 \(Date().formatted(date: .abbreviated, time: .shortened))" : name
+        
+        currentPath = PathData(
+            name: pathName,
+            startTime: Date(),
+            endTime: nil,
+            coordinates: [],
+            totalDistance: 0,
+            isRecording: true
+        )
+        
+        startTracking(journeyTitle: pathName)
+    }
+    
+    func stopPathTracking() {
+        currentPath?.endTime = Date()
+        currentPath?.isRecording = false
+        
+        Task {
+            await saveCurrentPathToFirebase()
+        }
+        
+        stopTracking()
+    }
+    
+    private func saveCurrentPathToFirebase() async {
+        guard let path = currentPath else { return }
+        
+        do {
+            try await firebaseService.savePath(path)
+            print("✅ 路径已保存到Firebase: \(path.name)")
+            
+            // 重新加载路径列表
+            await loadPathsFromFirebase()
+        } catch {
+            print("❌ 保存路径失败: \(error.localizedDescription)")
+        }
+    }
+    
+    func loadPathsFromFirebase() async {
+        do {
+            let paths = try await firebaseService.fetchUserPaths()
+            await MainActor.run {
+                self.savedPaths = paths
+            }
+            print("✅ 已从Firebase加载 \(paths.count) 条路径")
+        } catch {
+            print("❌ 加载路径失败: \(error.localizedDescription)")
+        }
+    }
+    
+    func deletePath(_ path: PathData) async {
+        do {
+            try await firebaseService.deletePath(pathId: path.id)
+            await MainActor.run {
+                self.savedPaths.removeAll { $0.id == path.id }
+            }
+            print("✅ 路径已删除: \(path.name)")
+        } catch {
+            print("❌ 删除路径失败: \(error.localizedDescription)")
+        }
     }
     
     // MARK: - 地理编码
