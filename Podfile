@@ -7,6 +7,12 @@ target 'RecordPath' do
 
   # Using Apple's native CoreLocation instead of AMap SDK
   # All location services will be handled by iOS native frameworks
+  
+  # Firebase SDK
+  pod 'Firebase/Analytics'
+  pod 'Firebase/Auth'
+  pod 'Firebase/Firestore'
+  pod 'Firebase/Storage'
 
   target 'RecordPathTests' do
     inherit! :search_paths

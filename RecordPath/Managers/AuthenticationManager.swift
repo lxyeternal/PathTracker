@@ -5,12 +5,27 @@ import CoreLocation
 class AuthenticationManager: ObservableObject {
     @Published var isAuthenticated = false
     @Published var currentUser: User?
+    @Published var errorMessage: String?
     
     private var cancellables = Set<AnyCancellable>()
+    private let firebaseService = FirebaseService.shared
     
     init() {
+        setupFirebaseListener()
         setupAuthenticationListener()
         checkAuthenticationStatus()
+    }
+    
+    private func setupFirebaseListener() {
+        firebaseService.$isAuthenticated
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isAuth in
+                self?.isAuthenticated = isAuth
+                if !isAuth {
+                    self?.currentUser = nil
+                }
+            }
+            .store(in: &cancellables)
     }
     
     private func setupAuthenticationListener() {
@@ -26,10 +41,8 @@ class AuthenticationManager: ObservableObject {
     }
     
     private func checkAuthenticationStatus() {
-        // Check if user is already logged in
         if let userID = UserDefaults.standard.string(forKey: "currentUserID"),
            UUID(uuidString: userID) != nil {
-            // Create user with sample data
             let user = createUser(
                 username: UserDefaults.standard.string(forKey: "currentUsername") ?? "Traveler",
                 email: UserDefaults.standard.string(forKey: "currentEmail") ?? "user@example.com"
@@ -40,22 +53,85 @@ class AuthenticationManager: ObservableObject {
     }
     
     private func saveAuthenticationState(user: User) {
-        // Save user info to UserDefaults for persistence
         UserDefaults.standard.set(user.id.uuidString, forKey: "currentUserID")
         UserDefaults.standard.set(user.username, forKey: "currentUsername")
         UserDefaults.standard.set(user.email, forKey: "currentEmail")
     }
     
-    func logout() {
-        isAuthenticated = false
-        currentUser = nil
-        UserDefaults.standard.removeObject(forKey: "currentUserID")
-        UserDefaults.standard.removeObject(forKey: "currentUsername")
-        UserDefaults.standard.removeObject(forKey: "currentEmail")
+    // MARK: - Firebase Authentication Methods
+    
+    func signInAnonymously() async {
+        do {
+            try await firebaseService.signInAnonymously()
+            await createUserFromFirebase()
+        } catch {
+            await MainActor.run {
+                self.errorMessage = firebaseService.handleAuthError(error)
+            }
+        }
     }
     
-    func deleteAccount() {
-        logout()
+    func signUp(email: String, password: String, username: String) async {
+        do {
+            try await firebaseService.signUp(email: email, password: password)
+            await createUserFromFirebase(username: username)
+        } catch {
+            await MainActor.run {
+                self.errorMessage = firebaseService.handleAuthError(error)
+            }
+        }
+    }
+    
+    func signIn(email: String, password: String) async {
+        do {
+            try await firebaseService.signIn(email: email, password: password)
+            await createUserFromFirebase()
+        } catch {
+            await MainActor.run {
+                self.errorMessage = firebaseService.handleAuthError(error)
+            }
+        }
+    }
+    
+    func logout() {
+        do {
+            try firebaseService.signOut()
+            isAuthenticated = false
+            currentUser = nil
+            UserDefaults.standard.removeObject(forKey: "currentUserID")
+            UserDefaults.standard.removeObject(forKey: "currentUsername")
+            UserDefaults.standard.removeObject(forKey: "currentEmail")
+        } catch {
+            errorMessage = firebaseService.handleAuthError(error)
+        }
+    }
+    
+    func deleteAccount() async {
+        do {
+            try await firebaseService.deleteAccount()
+            await MainActor.run {
+                self.isAuthenticated = false
+                self.currentUser = nil
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = firebaseService.handleAuthError(error)
+            }
+        }
+    }
+    
+    private func createUserFromFirebase(username: String? = nil) async {
+        guard let firebaseUser = firebaseService.currentUser else { return }
+        
+        let user = createUser(
+            username: username ?? firebaseUser.displayName ?? "Traveler",
+            email: firebaseUser.email ?? "anonymous@example.com"
+        )
+        
+        await MainActor.run {
+            self.currentUser = user
+            self.saveAuthenticationState(user: user)
+        }
     }
     
     func createUser(username: String, email: String) -> User {
@@ -65,7 +141,6 @@ class AuthenticationManager: ObservableObject {
             createdAt: Date()
         )
         
-        // 创建示例旅程数据
         let sampleJourneys = createSampleJourneys()
         user.journeys = sampleJourneys
         
@@ -76,7 +151,6 @@ class AuthenticationManager: ObservableObject {
         let calendar = Calendar.current
         let now = Date()
         
-        // 示例旅程 1: 巴黎之旅
         let parisJourney = Journey(
             title: "巴黎浪漫之旅",
             segments: createParisSegments(),
@@ -85,7 +159,6 @@ class AuthenticationManager: ObservableObject {
             notes: "在巴黎度过了美好的一天，从埃菲尔铁塔到塞纳河，每一个角落都充满了浪漫"
         )
         
-        // 示例旅程 2: 东京探索
         let tokyoJourney = Journey(
             title: "东京都市探索",
             segments: createTokyoSegments(),
@@ -94,7 +167,6 @@ class AuthenticationManager: ObservableObject {
             notes: "体验了东京的现代化与传统文化的完美融合"
         )
         
-        // 示例旅程 3: 北京历史之旅
         let beijingJourney = Journey(
             title: "北京历史文化之旅",
             segments: createBeijingSegments(),
@@ -107,15 +179,14 @@ class AuthenticationManager: ObservableObject {
     }
     
     private func createParisSegments() -> [PathSegment] {
-        let startTime = Date().addingTimeInterval(-432000) // 5 days ago
+        let startTime = Date().addingTimeInterval(-432000)
         
-        // 巴黎路径段：从酒店到埃菲尔铁塔
         let parisPoints = [
             TrackPoint(coordinate: CLLocationCoordinate2D(latitude: 48.8566, longitude: 2.3522), timestamp: startTime, altitude: 35, speed: 0, accuracy: 5),
             TrackPoint(coordinate: CLLocationCoordinate2D(latitude: 48.8570, longitude: 2.3500), timestamp: startTime.addingTimeInterval(300), altitude: 35, speed: 1.2, accuracy: 5),
             TrackPoint(coordinate: CLLocationCoordinate2D(latitude: 48.8575, longitude: 2.3480), timestamp: startTime.addingTimeInterval(600), altitude: 35, speed: 1.3, accuracy: 5),
             TrackPoint(coordinate: CLLocationCoordinate2D(latitude: 48.8580, longitude: 2.3460), timestamp: startTime.addingTimeInterval(900), altitude: 35, speed: 1.1, accuracy: 5),
-            TrackPoint(coordinate: CLLocationCoordinate2D(latitude: 48.8584, longitude: 2.2945), timestamp: startTime.addingTimeInterval(1200), altitude: 35, speed: 0, accuracy: 5) // 埃菲尔铁塔
+            TrackPoint(coordinate: CLLocationCoordinate2D(latitude: 48.8584, longitude: 2.2945), timestamp: startTime.addingTimeInterval(1200), altitude: 35, speed: 0, accuracy: 5)
         ]
         
         let segment = PathSegment(
@@ -129,14 +200,13 @@ class AuthenticationManager: ObservableObject {
     }
     
     private func createTokyoSegments() -> [PathSegment] {
-        let startTime = Date().addingTimeInterval(-259200) // 3 days ago
+        let startTime = Date().addingTimeInterval(-259200)
         
-        // 东京路径段：从新宿到天空树
         let tokyoPoints = [
-            TrackPoint(coordinate: CLLocationCoordinate2D(latitude: 35.6895, longitude: 139.6917), timestamp: startTime, altitude: 40, speed: 0, accuracy: 5), // 新宿
+            TrackPoint(coordinate: CLLocationCoordinate2D(latitude: 35.6895, longitude: 139.6917), timestamp: startTime, altitude: 40, speed: 0, accuracy: 5),
             TrackPoint(coordinate: CLLocationCoordinate2D(latitude: 35.6950, longitude: 139.7000), timestamp: startTime.addingTimeInterval(600), altitude: 40, speed: 2.5, accuracy: 5),
             TrackPoint(coordinate: CLLocationCoordinate2D(latitude: 35.7000, longitude: 139.7050), timestamp: startTime.addingTimeInterval(1200), altitude: 45, speed: 2.3, accuracy: 5),
-            TrackPoint(coordinate: CLLocationCoordinate2D(latitude: 35.7101, longitude: 139.8107), timestamp: startTime.addingTimeInterval(1800), altitude: 45, speed: 0, accuracy: 5) // 天空树
+            TrackPoint(coordinate: CLLocationCoordinate2D(latitude: 35.7101, longitude: 139.8107), timestamp: startTime.addingTimeInterval(1800), altitude: 45, speed: 0, accuracy: 5)
         ]
         
         let segment = PathSegment(
@@ -150,14 +220,13 @@ class AuthenticationManager: ObservableObject {
     }
     
     private func createBeijingSegments() -> [PathSegment] {
-        let startTime = Date().addingTimeInterval(-86400) // 1 day ago
+        let startTime = Date().addingTimeInterval(-86400)
         
-        // 北京路径段：从故宫到天安门
         let beijingPoints = [
-            TrackPoint(coordinate: CLLocationCoordinate2D(latitude: 39.9163, longitude: 116.3972), timestamp: startTime, altitude: 50, speed: 0, accuracy: 5), // 故宫
+            TrackPoint(coordinate: CLLocationCoordinate2D(latitude: 39.9163, longitude: 116.3972), timestamp: startTime, altitude: 50, speed: 0, accuracy: 5),
             TrackPoint(coordinate: CLLocationCoordinate2D(latitude: 39.9130, longitude: 116.4000), timestamp: startTime.addingTimeInterval(300), altitude: 50, speed: 1.0, accuracy: 5),
             TrackPoint(coordinate: CLLocationCoordinate2D(latitude: 39.9100, longitude: 116.4030), timestamp: startTime.addingTimeInterval(600), altitude: 50, speed: 1.1, accuracy: 5),
-            TrackPoint(coordinate: CLLocationCoordinate2D(latitude: 39.9042, longitude: 116.4074), timestamp: startTime.addingTimeInterval(900), altitude: 50, speed: 0, accuracy: 5) // 天安门
+            TrackPoint(coordinate: CLLocationCoordinate2D(latitude: 39.9042, longitude: 116.4074), timestamp: startTime.addingTimeInterval(900), altitude: 50, speed: 0, accuracy: 5)
         ]
         
         let segment = PathSegment(
@@ -173,13 +242,11 @@ class AuthenticationManager: ObservableObject {
 
 extension User {
     var visits: [Visit] {
-        // Convert journeys to visits for legacy compatibility
         return journeys.flatMap { journey in
-            // Create a visit for each journey
             return [Visit(
                 visitDate: journey.startDate,
                 comment: journey.notes,
-                rating: min(5, max(1, Int(journey.totalDistance / 1000))), // Rating based on distance
+                rating: min(5, max(1, Int(journey.totalDistance / 1000))),
                 weather: nil,
                 createdAt: journey.startDate,
                 location: Location(
