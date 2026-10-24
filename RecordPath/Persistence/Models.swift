@@ -88,7 +88,7 @@ final class Stay {
     }
 
     var displayName: String {
-        customName ?? placeName ?? street ?? city ?? String(localized: "未知地点")
+        customName ?? placeName ?? street ?? city ?? String(localized: "未知地点", bundle: .appLanguage)
     }
 
     var subtitle: String? {
@@ -130,9 +130,9 @@ final class Trip {
         let calendar = Calendar.current
         let lastMoment = max(interval.start, interval.end.addingTimeInterval(-1))
         if calendar.isDate(interval.start, inSameDayAs: lastMoment) {
-            return interval.start.formatted(.dateTime.year().month().day())
+            return interval.start.formatted(.dateTime.year().month().day().locale(appLocale))
         }
-        return (interval.start..<lastMoment).formatted(.interval.year().month().day())
+        return (interval.start..<lastMoment).formatted(.interval.year().month().day().locale(appLocale))
     }
 }
 
@@ -159,12 +159,12 @@ enum MovementMode: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .walking: String(localized: "步行")
-        case .running: String(localized: "跑步")
-        case .cycling: String(localized: "骑行")
-        case .automotive: String(localized: "乘车")
-        case .flying: String(localized: "飞行")
-        case .unknown: String(localized: "移动")
+        case .walking: String(localized: "步行", bundle: .appLanguage)
+        case .running: String(localized: "跑步", bundle: .appLanguage)
+        case .cycling: String(localized: "骑行", bundle: .appLanguage)
+        case .automotive: String(localized: "乘车", bundle: .appLanguage)
+        case .flying: String(localized: "飞行", bundle: .appLanguage)
+        case .unknown: String(localized: "移动", bundle: .appLanguage)
         }
     }
 

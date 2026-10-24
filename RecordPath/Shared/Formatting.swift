@@ -5,15 +5,18 @@ enum Format {
         let measurement = Measurement(value: meters, unit: UnitLength.meters)
         if meters < 1000 {
             return measurement.formatted(.measurement(width: .abbreviated, usage: .asProvided,
-                                                     numberFormatStyle: .number.precision(.fractionLength(0))))
+                                                     numberFormatStyle: .number.precision(.fractionLength(0))).locale(appLocale))
         }
         return measurement.converted(to: .kilometers)
             .formatted(.measurement(width: .abbreviated, usage: .asProvided,
-                                    numberFormatStyle: .number.precision(.fractionLength(meters < 100_000 ? 1 : 0))))
+                                    numberFormatStyle: .number.precision(.fractionLength(meters < 100_000 ? 1 : 0))).locale(appLocale))
     }
 
     static func duration(_ interval: TimeInterval) -> String {
         let formatter = DateComponentsFormatter()
+        var calendar = Calendar.current
+        calendar.locale = appLocale
+        formatter.calendar = calendar
         formatter.unitsStyle = .abbreviated
         formatter.allowedUnits = interval >= 86_400 ? [.day, .hour] : interval >= 3600 ? [.hour, .minute] : [.minute]
         formatter.maximumUnitCount = 2
@@ -23,33 +26,33 @@ enum Format {
     static func speed(_ metersPerSecond: Double) -> String {
         Measurement(value: metersPerSecond * 3.6, unit: UnitSpeed.kilometersPerHour)
             .formatted(.measurement(width: .abbreviated, usage: .asProvided,
-                                    numberFormatStyle: .number.precision(.fractionLength(1))))
+                                    numberFormatStyle: .number.precision(.fractionLength(1))).locale(appLocale))
     }
 
     static func steps(_ count: Double) -> String {
-        Int(count).formatted()
+        Int(count).formatted(.number.locale(appLocale))
     }
 
     static func time(_ date: Date) -> String {
-        date.formatted(date: .omitted, time: .shortened)
+        date.formatted(Date.FormatStyle(date: .omitted, time: .shortened, locale: appLocale))
     }
 
     static func dayTitle(_ date: Date) -> String {
         let calendar = Calendar.current
-        if calendar.isDateInToday(date) { return String(localized: "今天") }
-        if calendar.isDateInYesterday(date) { return String(localized: "昨天") }
-        return date.formatted(.dateTime.month().day())
+        if calendar.isDateInToday(date) { return String(localized: "今天", bundle: .appLanguage) }
+        if calendar.isDateInYesterday(date) { return String(localized: "昨天", bundle: .appLanguage) }
+        return date.formatted(.dateTime.month().day().locale(appLocale))
     }
 
     /// Weekday, plus the year when it isn't this year, shown under the day title.
     static func daySubtitle(_ date: Date) -> String {
         let calendar = Calendar.current
         if calendar.isDate(date, equalTo: Date(), toGranularity: .year) {
-            let weekday = date.formatted(.dateTime.weekday(.wide))
+            let weekday = date.formatted(.dateTime.weekday(.wide).locale(appLocale))
             return calendar.isDateInToday(date) || calendar.isDateInYesterday(date)
-                ? "\(date.formatted(.dateTime.month().day())) \(weekday)" : weekday
+                ? "\(date.formatted(.dateTime.month().day().locale(appLocale))) \(weekday)" : weekday
         }
-        return date.formatted(.dateTime.year().weekday(.wide))
+        return date.formatted(.dateTime.year().weekday(.wide).locale(appLocale))
     }
 }
 

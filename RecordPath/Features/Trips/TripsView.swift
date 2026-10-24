@@ -211,18 +211,18 @@ struct NewTripSheet: View {
     /// A past trip is named after where it happened ("杭州 · 10月5日"); a new one after when it began.
     private func defaultName(start: Date) -> String {
         guard !startsNow else {
-            return String(localized: "\(start.formatted(.dateTime.month().day().hour().minute())) 的记录")
+            return String(localized: "\(start.formatted(.dateTime.month().day().hour().minute().locale(appLocale))) 的记录", bundle: .appLanguage)
         }
         let calendar = Calendar.current
         let firstDay = calendar.startOfDay(for: startDate)
         let lastDay = calendar.startOfDay(for: endDate)
         let end = calendar.date(byAdding: .day, value: 1, to: lastDay) ?? lastDay
         let days = calendar.isDate(firstDay, inSameDayAs: lastDay)
-            ? firstDay.formatted(.dateTime.month().day())
-            : (firstDay..<lastDay).formatted(.interval.month().day())
+            ? firstDay.formatted(.dateTime.month().day().locale(appLocale))
+            : (firstDay..<lastDay).formatted(.interval.month().day().locale(appLocale))
         let stays = (try? context.fetch(FetchDescriptor<Stay>(predicate: #Predicate { $0.arrival >= firstDay && $0.arrival < end }))) ?? []
         let city = Dictionary(grouping: stays.compactMap(\.city), by: { $0 }).max { $0.value.count < $1.value.count }?.key
-        return city.map { "\($0) · \(days)" } ?? String(localized: "\(days) 的旅程")
+        return city.map { "\($0) · \(days)" } ?? String(localized: "\(days) 的旅程", bundle: .appLanguage)
     }
 
     private func create() {

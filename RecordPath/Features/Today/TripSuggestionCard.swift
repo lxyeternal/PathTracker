@@ -57,7 +57,7 @@ struct TripSuggestionCard: View {
     private func start(city: String, from stay: Stay) {
         // Begin where today's time away started, so the morning isn't lost.
         let firstAway = home.flatMap { home in todayStays.first { Self.isAway($0, from: home) } } ?? stay
-        let trip = Trip(title: String(localized: "\(city)之旅"), startDate: firstAway.arrival)
+        let trip = Trip(title: String(localized: "\(city)之旅", bundle: .appLanguage), startDate: firstAway.arrival)
         trip.coverEmoji = "🧳"
         context.insert(trip)
         try? context.save()

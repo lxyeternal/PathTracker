@@ -179,7 +179,7 @@ struct DayContentView: View {
         .fullScreenCover(isPresented: $showingFullMap) {
             DayMapScreen(title: Format.dayTitle(day), chunks: chunks, stays: stays,
                          livePoints: isToday ? engine.pendingPoints : [],
-                         subtitle: day.formatted(.dateTime.year().month().day().weekday(.wide)))
+                         subtitle: day.formatted(.dateTime.year().month().day().weekday(.wide).locale(appLocale)))
                 .navigationTransition(.zoom(sourceID: "map", in: mapNamespace))
         }
     }

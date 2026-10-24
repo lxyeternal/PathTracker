@@ -60,7 +60,7 @@ struct WorldView: View {
 
     private var summaryGrid: some View {
         MetricGrid {
-            MetricTile(title: "国家和地区", value: "\(insights.countries.count)", symbol: "flag.fill", tint: .red)
+            MetricTile(title: "国家与地区", value: "\(insights.countries.count)", symbol: "flag.fill", tint: .red)
             MetricTile(title: "城市", value: "\(insights.cityCount)", symbol: "building.2.fill", tint: .indigo)
             MetricTile(title: "景点", value: "\(insights.landmarks.count)", symbol: "star.fill", tint: .yellow)
             MetricTile(title: "记录天数", value: "\(insights.trackedDays)", symbol: "calendar", tint: .teal)
@@ -188,7 +188,7 @@ struct PlaceRow: View {
             PlaceIcon(category: stay.category, isLandmark: stay.isLandmark)
             VStack(alignment: .leading, spacing: 2) {
                 Text(stay.displayName).font(.body.weight(.semibold)).lineLimit(1)
-                Text([stay.city, timeOnly ? timeRange : stay.arrival.formatted(date: .abbreviated, time: .omitted)].compactMap { $0 }.joined(separator: " · "))
+                Text([stay.city, timeOnly ? timeRange : stay.arrival.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: appLocale))].compactMap { $0 }.joined(separator: " · "))
                     .font(.subheadline).foregroundStyle(.secondary)
             }
             Spacer()
@@ -200,7 +200,7 @@ struct PlaceRow: View {
     }
 
     private var timeRange: String {
-        let end = stay.departure.map(Format.time) ?? String(localized: "现在")
+        let end = stay.departure.map(Format.time) ?? String(localized: "现在", bundle: .appLanguage)
         return "\(Format.time(stay.arrival)) – \(end)"
     }
 }

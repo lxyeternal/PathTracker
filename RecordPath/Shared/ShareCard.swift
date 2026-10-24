@@ -127,7 +127,7 @@ private struct ShareCardView: View {
                 }
                 HStack(spacing: 5) {
                     Image(systemName: "point.topright.filled.arrow.triangle.backward.to.point.bottomleft.scurvepath")
-                    Text("PathTracker")
+                    Text(AppInfo.name)
                 }
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.tertiary)
@@ -204,7 +204,7 @@ private struct ShareCardPreview: View {
                         Button("关闭", systemImage: "xmark") { dismiss() }
                     }
                     ToolbarItem(placement: .primaryAction) {
-                        ShareLink(item: Image(uiImage: image), preview: SharePreview("PathTracker", image: Image(uiImage: image)))
+                        ShareLink(item: Image(uiImage: image), preview: SharePreview(AppInfo.name, image: Image(uiImage: image)))
                     }
                 }
                 .safeAreaInset(edge: .bottom) {

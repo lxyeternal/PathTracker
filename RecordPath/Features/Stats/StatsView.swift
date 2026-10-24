@@ -128,7 +128,7 @@ struct StatsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 header(title: "步数", symbol: "shoeprints.fill", tint: .orange,
                        value: selectedValue(\.steps).map(Format.steps) ?? Format.steps(averageSteps),
-                       caption: selectedDay.map { $0.formatted(.dateTime.month().day()) } ?? String(localized: "日均"))
+                       caption: selectedDay.map { $0.formatted(.dateTime.month().day().locale(appLocale)) } ?? String(localized: "日均", bundle: .appLanguage))
                 Chart {
                     ForEach(bucketed(\.steps), id: \.date) { item in
                         BarMark(x: .value("日期", item.date, unit: bucketUnit), y: .value("步数", item.value))
@@ -166,7 +166,7 @@ struct StatsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 header(title: "移动距离", symbol: "point.topright.arrow.triangle.backward.to.point.bottomleft.scurvepath",
                        tint: .blue, value: Format.distance(totalMovement),
-                       caption: String(localized: "合计 · 不含飞行"))
+                       caption: String(localized: "合计 · 不含飞行", bundle: .appLanguage))
                 Chart {
                     ForEach(Array(groundMovement.keys), id: \.self) { day in
                         ForEach(MovementMode.allCases, id: \.self) { mode in
@@ -183,7 +183,7 @@ struct StatsView: View {
                 .chartYAxis {
                     AxisMarks { value in
                         AxisGridLine()
-                        AxisValueLabel { if let km = value.as(Double.self) { Text(Measurement(value: km, unit: UnitLength.kilometers).formatted(.measurement(width: .abbreviated, usage: .asProvided, numberFormatStyle: .number.precision(.fractionLength(0))))) } }
+                        AxisValueLabel { if let km = value.as(Double.self) { Text(Measurement(value: km, unit: UnitLength.kilometers).formatted(.measurement(width: .abbreviated, usage: .asProvided, numberFormatStyle: .number.precision(.fractionLength(0))).locale(appLocale))) } }
                     }
                 }
                 .chartXScale(domain: rangeStart...rangeEnd)
@@ -226,13 +226,13 @@ struct StatsView: View {
         return VStack(alignment: .leading, spacing: 10) {
             SectionHeader(title: "一直以来")
             MetricGrid {
-                MetricTile(title: "国家和地区", value: "\(insights.countries.count)", symbol: "flag.fill", tint: .red)
+                MetricTile(title: "国家与地区", value: "\(insights.countries.count)", symbol: "flag.fill", tint: .red)
                 MetricTile(title: "城市", value: "\(insights.cityCount)", symbol: "building.2.fill", tint: .indigo)
                 MetricTile(title: "记录天数", value: "\(insights.trackedDays)", symbol: "calendar", tint: .teal)
                 MetricTile(title: "到访地点", value: "\(stays.count)", symbol: "mappin.and.ellipse", tint: .pink)
             }
             if let first = insights.firstDay {
-                Text("从 \(first.formatted(date: .long, time: .omitted)) 开始记录")
+                Text("从 \(first.formatted(Date.FormatStyle(date: .long, time: .omitted, locale: appLocale))) 开始记录")
                     .font(.footnote).foregroundStyle(.secondary).padding(.horizontal, 4)
             }
         }

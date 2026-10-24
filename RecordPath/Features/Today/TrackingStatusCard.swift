@@ -37,7 +37,7 @@ struct TrackingStatusCard: View {
                 EmptyView()
             } else if engine.authorization == .denied || engine.authorization == .restricted {
                 problem(symbol: "location.slash.fill", tint: .red,
-                        title: "无法访问位置", detail: "请在“设置”中允许 PathTracker 使用位置。",
+                        title: "无法访问位置", detail: "请在“设置”中允许漫迹使用位置。",
                         action: "去设置") { openSettings() }
             } else if engine.authorization == .notDetermined {
                 problem(symbol: "location.fill", tint: .blue,
@@ -116,8 +116,8 @@ struct TrackingStatusCard: View {
 
     private func pauseText(_ date: Date) -> String {
         Calendar.current.isDateInToday(date)
-            ? String(localized: "\(Format.time(date)) ")
-            : String(localized: "明天 \(Format.time(date)) ")
+            ? String(localized: "\(Format.time(date)) ", bundle: .appLanguage)
+            : String(localized: "明天 \(Format.time(date)) ", bundle: .appLanguage)
     }
 
     private var statusText: LocalizedStringKey {
@@ -210,8 +210,8 @@ private struct TripRecordingRow: View {
     }
 
     private func detail(now: Date) -> String {
-        var parts = [String(localized: "旅程记录中"), Format.duration(now.timeIntervalSince(trip.startDate)), Format.distance(distance)]
-        if let stayName { parts.append(String(localized: "在 \(stayName)")) }
+        var parts = [String(localized: "旅程记录中", bundle: .appLanguage), Format.duration(now.timeIntervalSince(trip.startDate)), Format.distance(distance)]
+        if let stayName { parts.append(String(localized: "在 \(stayName)", bundle: .appLanguage)) }
         return parts.joined(separator: " · ")
     }
 }

@@ -34,7 +34,7 @@ struct GPXDocument: Transferable {
         let iso = ISO8601DateFormatter()
         var out = """
         <?xml version="1.0" encoding="UTF-8"?>
-        <gpx version="1.1" creator="PathTracker" xmlns="http://www.topografix.com/GPX/1/1">
+        <gpx version="1.1" creator="Waytrace" xmlns="http://www.topografix.com/GPX/1/1">
           <metadata><name>\(escape(name))</name><time>\(iso.string(from: Date()))</time></metadata>
 
         """
@@ -76,9 +76,9 @@ struct AllTracksExport: Transferable {
                 let context = ModelContext(export.container)
                 let chunks = (try? context.fetch(FetchDescriptor<TrackChunk>(sortBy: [SortDescriptor(\.startDate)]))) ?? []
                 let stays = (try? context.fetch(FetchDescriptor<Stay>(sortBy: [SortDescriptor(\.arrival)]))) ?? []
-                return GPXDocument(name: "PathTracker", chunks: chunks, stays: stays)
+                return GPXDocument(name: AppInfo.name, chunks: chunks, stays: stays)
             }
-            let url = URL.temporaryDirectory.appending(path: "PathTracker.gpx")
+            let url = URL.temporaryDirectory.appending(path: AppInfo.exportFileName)
             try document.xml().write(to: url, atomically: true, encoding: .utf8)
             return SentTransferredFile(url)
         }

@@ -64,9 +64,9 @@ struct TripDetailView: View {
                         ShareCardContent(title: "\(trip.coverEmoji) \(trip.title)",
                                          subtitle: trip.dateRangeText,
                                          chunks: chunks, stays: stays,
-                                         stats: [(String(localized: "距离"), Format.distance(chunks.reduce(0) { $0 + $1.distance })),
-                                                 (String(localized: "天数"), "\(Calendar.current.days(in: trip.interval).count)"),
-                                                 (String(localized: "地点"), "\(stays.count)")])
+                                         stats: [(String(localized: "距离", bundle: .appLanguage), Format.distance(chunks.reduce(0) { $0 + $1.distance })),
+                                                 (String(localized: "天数", bundle: .appLanguage), "\(Calendar.current.days(in: trip.interval).count)"),
+                                                 (String(localized: "地点", bundle: .appLanguage), "\(stays.count)")])
                     })
                     ShareLink(item: GPXDocument(name: trip.title, chunks: chunks, stays: stays),
                               preview: SharePreview("\(trip.title).gpx")) {
@@ -123,7 +123,7 @@ struct TripDetailView: View {
                     } label: {
                         HStack {
                             Text("第 \(index + 1) 天").font(.headline)
-                            Text(entry.day.formatted(.dateTime.month().day().weekday(.abbreviated)))
+                            Text(entry.day.formatted(.dateTime.month().day().weekday(.abbreviated).locale(appLocale)))
                                 .foregroundStyle(.secondary)
                             Spacer()
                             Label("当天轨迹", systemImage: "calendar").font(.subheadline).foregroundStyle(.tint)
@@ -309,7 +309,7 @@ private struct PhotoViewer: View {
                     .background(.background.secondary, in: .rect(cornerRadius: 16, style: .continuous))
             }
             .padding()
-            .navigationTitle(photo.takenAt.formatted(date: .abbreviated, time: .shortened))
+            .navigationTitle(photo.takenAt.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: appLocale)))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

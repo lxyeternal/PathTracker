@@ -35,8 +35,8 @@ struct DayMapScreen: View {
                     ToolbarItem(placement: .primaryAction) {
                         ShareCardButton(makeContent: {
                             ShareCardContent(title: title, subtitle: subtitle, chunks: chunks, stays: stays,
-                                             stats: [(String(localized: "距离"), Format.distance(chunks.reduce(0) { $0 + $1.distance })),
-                                                     (String(localized: "地点"), "\(stays.count)")])
+                                             stats: [(String(localized: "距离", bundle: .appLanguage), Format.distance(chunks.reduce(0) { $0 + $1.distance })),
+                                                     (String(localized: "地点", bundle: .appLanguage), "\(stays.count)")])
                         })
                     }
                     ToolbarItem(placement: .primaryAction) {

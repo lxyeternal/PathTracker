@@ -37,11 +37,11 @@ enum SyncStatus: Equatable {
 
     var title: String {
         switch self {
-        case .checking: String(localized: "正在检查…")
-        case .available: String(localized: "已开启")
-        case .noAccount: String(localized: "未登录 iCloud")
-        case .restricted: String(localized: "受限制")
-        case .unavailable: String(localized: "暂不可用")
+        case .checking: String(localized: "正在检查…", bundle: .appLanguage)
+        case .available: String(localized: "已开启", bundle: .appLanguage)
+        case .noAccount: String(localized: "未登录 iCloud", bundle: .appLanguage)
+        case .restricted: String(localized: "受限制", bundle: .appLanguage)
+        case .unavailable: String(localized: "暂不可用", bundle: .appLanguage)
         }
     }
 

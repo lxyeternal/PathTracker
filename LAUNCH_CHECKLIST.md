@@ -4,16 +4,16 @@
 
 ## 1. 账号与标识（需要你来做）
 
-- [ ] 加入 Apple Developer Program（个人账号每年 99 美元），记下 **Team ID**。
-- [ ] 确定正式的 **Bundle ID**。工程里目前用的是占位值 `com.pathtracker.app`，需要换成你自己的，例如 `com.<你的名字>.pathtracker`。修改位置：Xcode › RecordPath target › Signing & Capabilities。
-- [ ] 确定 App 名称（目前显示为 PathTracker）。
-- [ ] 在 App Store Connect 中新建 App。
+- [ ] 加入 Apple Developer Program（个人，已付款，审核中），通过后记下 **Team ID**。
+- [x] **Bundle ID**：`com.honywen.waytrace`（已写入工程；上架后不能再改）。在开发者网站 Identifiers 里注册同名 App ID。
+- [x] **App 名称**：中文“漫迹”，英文“Waytrace”（主屏幕名称随语言切换）。
+- [ ] 在 App Store Connect 中新建 App：主要语言简体中文，名称“漫迹”；再添加英文本地化，名称“Waytrace”。
 
 ## 2. Xcode 签名与能力（我可以帮你改，需要先有 Team ID）
 
 在 Signing & Capabilities 里选择你的 Team 之后，确认以下能力都已开启（`RecordPath.entitlements` 已经写好）：
 
-- [ ] iCloud › CloudKit，容器为 `iCloud.<你的 Bundle ID>`
+- [ ] iCloud › CloudKit，容器为 `iCloud.com.honywen.waytrace`
 - [ ] Sign in with Apple
 - [ ] HealthKit
 - [ ] Background Modes › Location updates、Remote notifications
@@ -36,7 +36,8 @@
 ## 5. 审核材料
 
 - [ ] **隐私政策网址**：把 `PRIVACY.md` 发布到一个公开网址（GitHub Pages、Notion 公开页都可以），填进 App Store Connect。
-- [ ] **客服邮箱**：替换 `SettingsView.swift` 里的 `AppInfo.supportEmail`（目前是占位值）。
+- [x] **客服邮箱**：honywendev@gmail.com（已写入 `AppInfo.supportEmail`，App Store Connect 的“技术支持网址”也可以填这个邮箱所在页面）。
+- [ ] 准备中英文两套商店描述、关键词和截图（App 已支持中英文）。
 - [ ] **App 隐私标签**：位置（精确位置）、健康与健身、照片；全部选择“不用于追踪、不与身份关联”，并勾选数据不会被开发者收集。
 - [ ] **后台定位说明**：审核会询问为什么需要“始终允许”定位。可以这样回答：用于全天自动记录用户的出行轨迹，这是 App 的核心功能；数据只存在用户自己的 iCloud 中。最好附上一段演示视频。
 - [ ] 截图：6.9 英寸和 6.5 英寸 iPhone 截图。可以在调试版里用“生成演示数据”后截图。
