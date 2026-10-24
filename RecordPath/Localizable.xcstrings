@@ -1924,6 +1924,16 @@
         }
       }
     },
+    "徒步": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiking"
+          }
+        }
+      }
+    },
     "徒步、出游或出差，记录会更精细。": {
       "localizations": {
         "en": {

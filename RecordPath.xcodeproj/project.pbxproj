@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		32C0000000000000000000AA /* WaytraceWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 32C0000000000000000000A2 /* WaytraceWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		32D0000000000000000000B9 /* WaytraceWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 32D0000000000000000000B2 /* WaytraceWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		324BE95A2E25240300B8D401 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -21,12 +26,53 @@
 			remoteGlobalIDString = 324BE94B2E25240100B8D401;
 			remoteInfo = RecordPath;
 		};
+		32C0000000000000000000AB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 324BE9442E25240100B8D401 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 32C0000000000000000000A1;
+			remoteInfo = WaytraceWatch;
+		};
+		32D0000000000000000000BA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 324BE9442E25240100B8D401 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 32D0000000000000000000B1;
+			remoteInfo = WaytraceWidgets;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		32C0000000000000000000A9 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				32C0000000000000000000AA /* WaytraceWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		32D0000000000000000000B8 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				32D0000000000000000000B9 /* WaytraceWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		324BE94C2E25240100B8D401 /* RecordPath.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RecordPath.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		324BE9592E25240300B8D401 /* RecordPathTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RecordPathTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		324BE9632E25240300B8D401 /* RecordPathUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RecordPathUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		32C0000000000000000000A2 /* WaytraceWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WaytraceWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		32D0000000000000000000B2 /* WaytraceWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WaytraceWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -37,6 +83,22 @@
 				RecordPath.entitlements,
 			);
 			target = 324BE94B2E25240100B8D401 /* RecordPath */;
+		};
+		32C0000000000000000000A5 /* Exceptions for "WaytraceWatch" folder in "WaytraceWatch" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+				WaytraceWatch.entitlements,
+			);
+			target = 32C0000000000000000000A1 /* WaytraceWatch */;
+		};
+		32D0000000000000000000B4 /* Exceptions for "WaytraceWidgets" folder in "WaytraceWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+				WaytraceWidgets.entitlements,
+			);
+			target = 32D0000000000000000000B1 /* WaytraceWidgets */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -63,6 +125,27 @@
 			path = RecordPathUITests;
 			sourceTree = "<group>";
 		};
+		32C0000000000000000000A4 /* Common */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Common;
+			sourceTree = "<group>";
+		};
+		32C0000000000000000000A3 /* WaytraceWatch */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				32C0000000000000000000A5 /* Exceptions for "WaytraceWatch" folder in "WaytraceWatch" target */,
+			);
+			path = WaytraceWatch;
+			sourceTree = "<group>";
+		};
+		32D0000000000000000000B3 /* WaytraceWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				32D0000000000000000000B4 /* Exceptions for "WaytraceWidgets" folder in "WaytraceWidgets" target */,
+			);
+			path = WaytraceWidgets;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -87,6 +170,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		32C0000000000000000000A7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		32D0000000000000000000B6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -94,6 +191,9 @@
 			isa = PBXGroup;
 			children = (
 				324BE94E2E25240100B8D401 /* RecordPath */,
+				32C0000000000000000000A4 /* Common */,
+				32C0000000000000000000A3 /* WaytraceWatch */,
+				32D0000000000000000000B3 /* WaytraceWidgets */,
 				324BE95C2E25240300B8D401 /* RecordPathTests */,
 				324BE9662E25240300B8D401 /* RecordPathUITests */,
 				324BE94D2E25240100B8D401 /* Products */,
@@ -106,6 +206,8 @@
 				324BE94C2E25240100B8D401 /* RecordPath.app */,
 				324BE9592E25240300B8D401 /* RecordPathTests.xctest */,
 				324BE9632E25240300B8D401 /* RecordPathUITests.xctest */,
+				32C0000000000000000000A2 /* WaytraceWatch.app */,
+				32D0000000000000000000B2 /* WaytraceWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -120,13 +222,16 @@
 				324BE9482E25240100B8D401 /* Sources */,
 				324BE9492E25240100B8D401 /* Frameworks */,
 				324BE94A2E25240100B8D401 /* Resources */,
+				32C0000000000000000000A9 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				32C0000000000000000000AC /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				324BE94E2E25240100B8D401 /* RecordPath */,
+				32C0000000000000000000A4 /* Common */,
 			);
 			name = RecordPath;
 			productName = RecordPath;
@@ -175,6 +280,50 @@
 			productReference = 324BE9632E25240300B8D401 /* RecordPathUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		32C0000000000000000000A1 /* WaytraceWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 32C0000000000000000000AD /* Build configuration list for PBXNativeTarget "WaytraceWatch" */;
+			buildPhases = (
+				32C0000000000000000000A6 /* Sources */,
+				32C0000000000000000000A7 /* Frameworks */,
+				32C0000000000000000000A8 /* Resources */,
+				32D0000000000000000000B8 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				32D0000000000000000000BB /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				32C0000000000000000000A3 /* WaytraceWatch */,
+				32C0000000000000000000A4 /* Common */,
+			);
+			name = WaytraceWatch;
+			productName = WaytraceWatch;
+			productReference = 32C0000000000000000000A2 /* WaytraceWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
+		32D0000000000000000000B1 /* WaytraceWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 32D0000000000000000000BC /* Build configuration list for PBXNativeTarget "WaytraceWidgets" */;
+			buildPhases = (
+				32D0000000000000000000B5 /* Sources */,
+				32D0000000000000000000B6 /* Frameworks */,
+				32D0000000000000000000B7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				32D0000000000000000000B3 /* WaytraceWidgets */,
+				32C0000000000000000000A4 /* Common */,
+			);
+			name = WaytraceWidgets;
+			productName = WaytraceWidgets;
+			productReference = 32D0000000000000000000B2 /* WaytraceWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -187,6 +336,12 @@
 				TargetAttributes = {
 					324BE94B2E25240100B8D401 = {
 						CreatedOnToolsVersion = 16.4;
+					};
+					32D0000000000000000000B1 = {
+						CreatedOnToolsVersion = 26.0;
+					};
+					32C0000000000000000000A1 = {
+						CreatedOnToolsVersion = 26.0;
 					};
 					324BE9582E25240300B8D401 = {
 						CreatedOnToolsVersion = 16.4;
@@ -216,6 +371,8 @@
 				324BE94B2E25240100B8D401 /* RecordPath */,
 				324BE9582E25240300B8D401 /* RecordPathTests */,
 				324BE9622E25240300B8D401 /* RecordPathUITests */,
+				32C0000000000000000000A1 /* WaytraceWatch */,
+				32D0000000000000000000B1 /* WaytraceWidgets */,
 			);
 		};
 /* End PBXProject section */
@@ -236,6 +393,20 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		324BE9612E25240300B8D401 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		32C0000000000000000000A8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		32D0000000000000000000B7 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -266,6 +437,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		32C0000000000000000000A6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		32D0000000000000000000B5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -278,6 +463,16 @@
 			isa = PBXTargetDependency;
 			target = 324BE94B2E25240100B8D401 /* RecordPath */;
 			targetProxy = 324BE9642E25240300B8D401 /* PBXContainerItemProxy */;
+		};
+		32C0000000000000000000AC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 32C0000000000000000000A1 /* WaytraceWatch */;
+			targetProxy = 32C0000000000000000000AB /* PBXContainerItemProxy */;
+		};
+		32D0000000000000000000BB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 32D0000000000000000000B1 /* WaytraceWidgets */;
+			targetProxy = 32D0000000000000000000BA /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -541,6 +736,126 @@
 			};
 			name = Release;
 		};
+		32C0000000000000000000AE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = WaytraceWatch/WaytraceWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = WaytraceWatch/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "漫迹";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "读取心率和距离，在记录时显示。";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "把你在手表上记录的徒步、步行、跑步和骑行保存为体能训练，同时保存路线。";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "在地图上显示你的位置，并在你开始记录时画出路线。";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.honywen.waytrace;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.honywen.waytrace.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		32C0000000000000000000AF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = WaytraceWatch/WaytraceWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = WaytraceWatch/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "漫迹";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "读取心率和距离，在记录时显示。";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "把你在手表上记录的徒步、步行、跑步和骑行保存为体能训练，同时保存路线。";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "在地图上显示你的位置，并在你开始记录时画出路线。";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.honywen.waytrace;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.honywen.waytrace.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
+		32D0000000000000000000BD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = WaytraceWidgets/WaytraceWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = WaytraceWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "漫迹";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.honywen.waytrace.watchkitapp.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		32D0000000000000000000BE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = WaytraceWidgets/WaytraceWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = WaytraceWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "漫迹";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.honywen.waytrace.watchkitapp.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -576,6 +891,24 @@
 			buildConfigurations = (
 				324BE9742E25240300B8D401 /* Debug */,
 				324BE9752E25240300B8D401 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		32C0000000000000000000AD /* Build configuration list for PBXNativeTarget "WaytraceWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				32C0000000000000000000AE /* Debug */,
+				32C0000000000000000000AF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		32D0000000000000000000BC /* Build configuration list for PBXNativeTarget "WaytraceWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				32D0000000000000000000BD /* Debug */,
+				32D0000000000000000000BE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

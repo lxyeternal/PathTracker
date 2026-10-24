@@ -186,7 +186,7 @@ struct TripDetailView: View {
                        symbol: "point.topright.arrow.triangle.backward.to.point.bottomleft.scurvepath", tint: .blue)
             MetricTile(title: "用时", value: Format.duration(trip.interval.duration), symbol: "clock.fill", tint: .orange)
             MetricTile(title: "地点", value: "\(stays.count)", symbol: "mappin.and.ellipse", tint: .pink)
-            MetricTile(title: "国家和地区", value: countries.isEmpty ? "—" : countries.map { String.flag(for: $0) }.joined(),
+            MetricTile(title: "国家与地区", value: countries.isEmpty ? "—" : countries.map { String.flag(for: $0) }.joined(),
                        symbol: "flag.fill", tint: .red)
         }
     }

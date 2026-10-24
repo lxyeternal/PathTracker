@@ -19,6 +19,11 @@
 - [ ] Background Modes › Location updates、Remote notifications
 - [ ] Push Notifications（CloudKit 同步需要）
 
+Apple Watch（自动签名会一起创建，确认一下即可）：
+
+- [ ] 手表 App `com.honywen.waytrace.watchkitapp`：HealthKit、App Groups（`group.com.honywen.waytrace`）、Background Modes › Workout processing
+- [ ] 复杂功能 `com.honywen.waytrace.watchkitapp.widgets`：App Groups（同一个组）
+
 ## 3. CloudKit
 
 - [ ] 在真机上运行一次，让 SwiftData 在开发环境自动创建 CloudKit 架构。
@@ -31,6 +36,9 @@
 - [ ] 观察全天耗电（设置 › 电池）。
 - [ ] 在中国大陆检查地图上的轨迹是否与道路对齐。Apple 地图在中国大陆使用 GCJ-02 坐标，如果有约 500 米的偏移，需要加入坐标转换。
 - [ ] 两台设备登录同一个 Apple ID，检查 iCloud 同步。
+- [ ] Apple Watch：不带手机出门用手表记录一段徒步，回来后检查是否出现在 iPhone 的“旅程”和“健身”App 里。模拟器里文件传输不可用，这条只能在真机上验证。
+- [ ] Apple Watch：放下手腕 30 分钟，记录是否持续、耗电多少。
+- [ ] Apple Watch：表盘复杂功能是否随 iPhone 更新。
 - [ ] 测试通过 Apple 登录、退出登录，以及在 iOS 设置里停止使用 Apple ID 登录后 App 的表现。
 
 ## 5. 审核材料
@@ -40,12 +48,11 @@
 - [ ] 准备中英文两套商店描述、关键词和截图（App 已支持中英文）。
 - [ ] **App 隐私标签**：位置（精确位置）、健康与健身、照片；全部选择“不用于追踪、不与身份关联”，并勾选数据不会被开发者收集。
 - [ ] **后台定位说明**：审核会询问为什么需要“始终允许”定位。可以这样回答：用于全天自动记录用户的出行轨迹，这是 App 的核心功能；数据只存在用户自己的 iCloud 中。最好附上一段演示视频。
-- [ ] 截图：6.9 英寸和 6.5 英寸 iPhone 截图。可以在调试版里用“生成演示数据”后截图。
+- [ ] 截图：6.9 英寸和 6.5 英寸 iPhone 截图，另需 Apple Watch 截图（任一尺寸）。可以在调试版里用“生成演示数据”后截图。
 - [ ] 如果要在中国大陆上架：完成 **ICP 备案**并在 App Store Connect 中填写备案号。
 
 ## 6. 已知的后续工作（不影响第一版）
 
-- 加入英文本地化（目前只有简体中文）。
 - 灵动岛与锁屏的实时活动（Live Activity），用于显示旅程记录状态。
 - 桌面小组件：今日步数和距离。
 - 使用 Apple 登录时撤销令牌需要一个服务器端接口，目前 App 内的“删除所有数据”会清除本地和 iCloud 数据并退出登录。
