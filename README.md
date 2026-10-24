@@ -1,251 +1,63 @@
-# PathTracker 🗺️
+# PathTracker
 
-[![iOS](https://img.shields.io/badge/iOS-14.0+-blue.svg)](https://developer.apple.com/ios/)
-[![Swift](https://img.shields.io/badge/Swift-5.0+-orange.svg)](https://swift.org/)
-[![SwiftUI](https://img.shields.io/badge/SwiftUI-2.0+-green.svg)](https://developer.apple.com/xcode/swiftui/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+全天自动记录足迹的 iOS App：在后台记录你走过的每一条路，自动识别停留的地点、城市、国家和知名景点，并统计每天的步数和移动距离。数据只保存在用户自己的设备和 iCloud 中。
 
-> A modern GPS journey tracking app built with SwiftUI for recording and visualizing your travel paths
+## 功能
 
-[中文文档](README_cn.md) | [English](README.md)
+- **今天**：当天轨迹地图（按步行、骑行、乘车、飞行着色，可全屏放大、切换卫星图、生成分享图片），步数、步行距离、移动距离，以及“停留 → 路上 → 停留”的时间线。左右滑动或用带记录标记的日历切换日期。
+  - 点一段“路上”：起终点、用时、速度，改正出行方式，删除 GPS 乱线，并列出同一条路线的所有历史记录（平均用时、最快一次）。
+  - 点一个地点：改名（家、学校、公司，自动应用到附近所有到访）、备注、设为隐私区域、跳到那一天。
+  - 记录状态：暂停 1 小时 / 3 小时 / 到明天早上；在外地时提示“要把这次出行记成一段旅程吗？”。
+  - 右上角一键手动开始记录，和全天自动记录互不影响。
+- **足迹**：去过的国家和地区（停留天数、城市、景点）、城市数、景点、常去的地方、全部足迹地图；全局搜索地点、城市、国家；每个地点都有完整的到访历史。
+- **旅程**：开始一段旅程（高精度），或为过去的日期补建；按天分组、照片（读取 EXIF 时间和位置）、备注、分享图片、导出 GPX。
+- **统计**：周、月、年的步数和移动距离（点柱子看某一天），出行方式占比，累计国家、城市、记录天数。
+- **设置**：Apple 登录（可选）、全天记录开关、记录精度（省电 / 均衡 / 精细）、权限与 iCloud 状态、隐私区域、导入和导出 GPX、删除所有数据、隐私政策。
 
-## 📱 Overview
+迭代过程和每一轮的实测记录见 [PRODUCT_REVIEW.md](PRODUCT_REVIEW.md)。
 
-PathTracker is an elegant iOS application designed to help travelers record, visualize, and manage their journeys. Built with SwiftUI and leveraging Apple's native CoreLocation framework, it provides a seamless experience for tracking your adventures around the world.
+## 技术架构
 
-## ✨ Key Features
+| 层 | 实现 |
+|---|---|
+| 存储与同步 | SwiftData + CloudKit 私有数据库（无需服务器） |
+| 后台定位 | `CLLocationUpdate.liveUpdates` + `CLBackgroundActivitySession`，并用显著位置变化在被系统终止后重新唤醒 |
+| 停留识别 | 自研停留检测：在 120 米范围内停留超过 5 分钟（或系统判定静止），即记为一次停留 |
+| 地点标注 | `MKReverseGeocodingRequest`（国家、城市）+ `MKLocalPointsOfInterestRequest`（地点名称、景点） |
+| 出行方式 | CoreMotion 运动识别，无法获取时按速度推断 |
+| 步数 | HealthKit 每日统计，“健康”不可用时退回 CMPedometer |
+| 登录 | Sign in with Apple，资料存放在 iCloud 键值存储 |
+| UI | SwiftUI、MapKit、Swift Charts，iOS 26 Liquid Glass |
 
-### 🏠 Dashboard & Home
-- **Beautiful Overview**: Elegant gradient-based interface with travel statistics
-- **Quick Stats**: Real-time display of visited locations, countries, and cities
-- **Recent Journeys**: Quick access to your latest travel experiences
-- **World Map Preview**: Visual representation of your global adventures
-- **Countries Collection**: Organized view of all countries you've visited
+轨迹点按段压缩成 `TrackChunk`（每段最多约 400 个点，用 LZFSE 压缩），一天只有几十条 CloudKit 记录，同步快，也节省用户的 iCloud 空间。
 
-### 🗺️ Interactive Map
-- **Real-time Tracking**: Live GPS tracking with Apple's CoreLocation
-- **Visual Journey Paths**: See your travel routes displayed on the map
-- **Location Pins**: Color-coded pins representing different countries
-- **Map Controls**: Switch between standard, satellite, and hybrid views
-- **Journey Filtering**: Filter journeys by time periods
-- **Location Details**: Tap pins to view detailed visit information
-
-### 📍 Journey Recording
-- **Smart Tracking**: Intelligent path recording with configurable parameters
-- **Journey Management**: Start, pause, resume, and stop tracking
-- **Photo Integration**: Capture and attach photos to your journeys
-- **Location Naming**: Automatic location detection with manual override
-- **Real-time Status**: Live tracking status with current location display
-
-### 📅 Timeline View
-- **Chronological Display**: View all your journeys in chronological order
-- **Time Filtering**: Filter by this month, last month, or custom date ranges
-- **Search Functionality**: Search through your journey history
-- **Statistics Summary**: Quick stats for the selected time period
-- **Journey Details**: Detailed view of each journey with photos and notes
-
-### 👤 Profile & Settings
-- **User Management**: Profile editing with photo upload
-- **Travel Statistics**: Comprehensive travel analytics
-- **Privacy Controls**: Granular privacy settings for location sharing
-- **Data Export**: Export your travel data in multiple formats (JSON, CSV, GPX)
-- **Notification Settings**: Customize app notifications
-- **Help & Support**: Built-in help system and support options
-
-### 🔐 Authentication & Security
-- **Secure Login**: Email-based authentication system
-- **User Registration**: Simple signup process with validation
-- **Data Persistence**: Secure local data storage
-- **Privacy First**: Location data stays on your device
-
-## 🏗️ Technical Architecture
-
-### Core Technologies
-- **SwiftUI**: Modern declarative UI framework
-- **CoreLocation**: Apple's native location services
-- **Combine**: Reactive programming for data flow
-- **PhotosUI**: Native photo selection and management
-- **MapKit**: Advanced mapping capabilities
-
-### Project Structure
 ```
 RecordPath/
-├── RecordPathApp.swift          # App entry point
-├── ContentView.swift            # Main app coordinator
-├── Managers/
-│   ├── AuthenticationManager.swift    # User authentication
-│   └── PathTrackingManager.swift     # GPS tracking logic
-├── Models/
-│   ├── PathTrackingModels.swift      # Core data models
-│   └── SimpleModels.swift            # Legacy compatibility models
-├── Services/
-│   └── CoreLocationService.swift     # Location service wrapper
-└── Views/
-    ├── Authentication/           # Login/signup screens
-    ├── Dashboard/               # Home dashboard
-    ├── Map/                     # Map interface
-    ├── Recording/               # Journey recording
-    ├── Timeline/                # Journey history
-    ├── Profile/                 # User profile & settings
-    ├── Country/                 # Country-specific views
-    └── Journey/                 # Journey detail views
+├── App/            入口、Tab 结构
+├── Persistence/    SwiftData 模型、轨迹编码、容器
+├── Location/       后台定位引擎、出行方式识别
+├── Places/         地点标注、常去地点
+├── Health/         步数
+├── Account/        Apple 登录
+├── Features/       今天 / 足迹 / 旅程 / 统计 / 设置 / 引导
+└── Shared/         通用组件、地图、统计计算、GPX 导出、演示数据
 ```
 
-### Key Components
+## 开发
 
-#### PathTrackingManager
-- Manages GPS tracking lifecycle
-- Handles location permissions
-- Processes and filters location data
-- Creates journey segments and paths
+- Xcode 26 或更高版本，iOS 26 及以上，仅支持 iPhone。
+- 直接打开 `RecordPath.xcodeproj` 运行，不依赖任何第三方库。
+- 调试版的“设置 › 开发者”里可以生成演示数据（两周的上下班通勤，加一次东京、京都旅行）。
+- 单元测试：`⌘U`，或者在命令行运行
 
-#### AuthenticationManager
-- User session management
-- Sample data generation for demo
-- Secure data persistence
-- User profile management
-
-#### CoreLocationService
-- Native iOS location services
-- Permission handling
-- Real-time location updates
-- Battery-optimized tracking
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Xcode 14.0 or later
-- iOS 14.0 or later
-- Apple Developer account (for device testing)
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/PathTracker.git
-   cd PathTracker
-   ```
-
-2. **Open in Xcode**
-   ```bash
-   open RecordPath.xcodeproj
-   ```
-
-3. **Configure signing**
-   - Select your development team in project settings
-   - Update bundle identifier if needed
-
-4. **Build and run**
-   - Select your target device or simulator
-   - Press `Cmd + R` to build and run
-
-### Configuration
-
-#### Location Permissions
-The app requires location permissions to function. These are configured in `Info.plist`:
-- `NSLocationWhenInUseUsageDescription`
-- `NSLocationAlwaysAndWhenInUseUsageDescription`
-
-#### Privacy Settings
-- Location data is processed locally
-- No external APIs required for basic functionality
-- Optional: Configure AMap SDK for enhanced China support
-
-## 📊 Features Deep Dive
-
-### Journey Tracking
-- **Minimum Distance**: 5 meters between recorded points
-- **Time Interval**: 10 seconds minimum between recordings
-- **Battery Optimization**: Intelligent location sampling
-- **Segment Management**: Automatic path segmentation
-
-### Data Models
-- **Journey**: Complete travel experience with multiple segments
-- **PathSegment**: Individual tracking sessions within a journey
-- **LocationPoint**: GPS coordinates with timestamp and metadata
-- **Visit**: Significant locations with user annotations
-
-### Export Capabilities
-- **JSON Format**: Complete data with metadata
-- **CSV Format**: Spreadsheet-compatible format
-- **GPX Format**: GPS exchange format for third-party apps
-- **Photo Inclusion**: Optional photo export with data
-
-## 🛠️ Development
-
-### Building from Source
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/PathTracker.git
-
-# Navigate to project directory
-cd PathTracker
-
-# Open in Xcode
-open RecordPath.xcodeproj
+xcodebuild test -project RecordPath.xcodeproj -scheme RecordPath -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:RecordPathTests
 ```
 
-### Testing
-- Unit tests available in `RecordPathTests/`
-- UI tests in `RecordPathUITests/`
-- Run tests with `Cmd + U`
+- 在模拟器里测试后台记录：
 
-### Contributing
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📱 Screenshots
-
-| Dashboard | Map View | Recording | Timeline |
-|-----------|----------|-----------|----------|
-| ![Dashboard](screenshots/dashboard.png) | ![Map](screenshots/map.png) | ![Recording](screenshots/recording.png) | ![Timeline](screenshots/timeline.png) |
-
-## 🔧 Customization
-
-### Tracking Parameters
-Modify tracking sensitivity in `PathTrackingManager.swift`:
-```swift
-private let minimumDistance: Double = 5.0 // meters
-private let minimumTimeInterval: TimeInterval = 10.0 // seconds
+```bash
+xcrun simctl location booted start --speed=12 31.2245,121.4466 31.2310,121.4650 31.2400,121.4900
 ```
 
-### UI Themes
-Customize colors and styling in individual view files or create a theme system.
-
-### Location Services
-Switch between Apple CoreLocation and AMap SDK by modifying service implementations.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🤝 Support
-
-- **Issues**: [GitHub Issues](https://github.com/yourusername/PathTracker/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/PathTracker/discussions)
-- **Email**: support@pathtracker.app
-
-## 🗺️ Roadmap
-
-- [ ] Cloud sync capabilities
-- [ ] Social sharing features
-- [ ] Advanced analytics
-- [ ] Apple Watch companion app
-- [ ] Offline map support
-- [ ] Journey sharing with friends
-- [ ] AI-powered travel insights
-
-## 🙏 Acknowledgments
-
-- Apple for CoreLocation and MapKit frameworks
-- SwiftUI community for inspiration and best practices
-- Open source contributors and testers
-
----
-
-**Made with ❤️ for travelers around the world**
-
-*Start tracking your adventures today!* 🌍✈️
+上线前需要完成的事项见 [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md)。
