@@ -9,6 +9,8 @@ import os
 @MainActor
 @Observable
 final class WorkoutRecorder: NSObject {
+    static let shared = WorkoutRecorder()
+
     enum State: Equatable { case idle, starting, running, paused, saving, finished }
 
     struct Summary: Equatable {
@@ -25,6 +27,10 @@ final class WorkoutRecorder: NSObject {
     private(set) var summary: Summary?
     private(set) var errorMessage: String?
     private(set) var locationAuthorization: CLAuthorizationStatus
+    /// Recording along with a manual recording on the iPhone (started from there).
+    private(set) var isLinkedToPhone = false
+    /// That iPhone recording, once the iPhone has said which one it is.
+    private(set) var linkedTripID: UUID?
 
     /// The activity chosen last time, offered first.
     var lastActivity: WatchActivity {
@@ -42,7 +48,7 @@ final class WorkoutRecorder: NSObject {
     private var routeDistance: Double = 0
     private let log = Logger(subsystem: "PathTracker", category: "WorkoutRecorder")
 
-    override init() {
+    private override init() {
         locationAuthorization = manager.authorizationStatus
         super.init()
         manager.delegate = self
@@ -62,9 +68,11 @@ final class WorkoutRecorder: NSObject {
 
     // MARK: Control
 
-    func start(_ activity: WatchActivity) async {
+    func start(_ activity: WatchActivity, linkedToPhone: Bool = false) async {
         guard state == .idle || state == .finished else { return }
         self.activity = activity
+        isLinkedToPhone = linkedToPhone
+        linkedTripID = linkedToPhone ? PhoneLink.shared.snapshot?.activeRecording?.tripID : nil
         UserDefaults.standard.set(activity.rawValue, forKey: "watch.lastActivity")
         state = .starting
         errorMessage = nil
@@ -103,11 +111,20 @@ final class WorkoutRecorder: NSObject {
         }
     }
 
+    /// The iPhone said which recording this goes with.
+    func link(to tripID: UUID) {
+        guard isLinkedToPhone, linkedTripID == nil else { return }
+        linkedTripID = tripID
+    }
+
     func pause() { session?.pause() }
     func resume() { session?.resume() }
 
-    func end() async {
+    /// Ends the recording. Ended on the Watch, a linked iPhone recording ends too; ended because
+    /// the iPhone recording ended, there's nothing to tell it.
+    func end(becauseIPhoneEnded: Bool = false) async {
         guard let session, let builder, let startDate, isActive else { return }
+        if isLinkedToPhone, !becauseIPhoneEnded, let linkedTripID { PhoneLink.shared.endIPhoneRecording(linkedTripID) }
         state = .saving
         manager.stopUpdatingLocation()
         let end = Date()
@@ -123,7 +140,8 @@ final class WorkoutRecorder: NSObject {
             log.error("Couldn't save workout: \(error.localizedDescription)")
         }
 
-        let info = WatchRecordingInfo(id: UUID(), activity: activity, start: startDate, end: end, distance: distance)
+        let info = WatchRecordingInfo(id: UUID(), activity: activity, start: startDate, end: end, distance: distance,
+                                      tripID: linkedTripID)
         if points.count > 1 { PhoneLink.shared.deliver(points: points, info: info) }
         summary = Summary(activity: activity, distance: distance, duration: duration)
         reset()
@@ -139,6 +157,8 @@ final class WorkoutRecorder: NSObject {
     }
 
     private func reset() {
+        isLinkedToPhone = false
+        linkedTripID = nil
         session = nil
         builder = nil
         routeBuilder = nil
@@ -182,17 +202,6 @@ final class WorkoutRecorder: NSObject {
         HKQuantityType(.heartRate), HKQuantityType(.distanceWalkingRunning),
         HKQuantityType(.distanceCycling), HKQuantityType(.activeEnergyBurned),
     ]
-}
-
-extension WatchActivity {
-    var workoutType: HKWorkoutActivityType {
-        switch self {
-        case .hiking: .hiking
-        case .walking: .walking
-        case .running: .running
-        case .cycling: .cycling
-        }
-    }
 }
 
 extension WorkoutRecorder: HKWorkoutSessionDelegate {

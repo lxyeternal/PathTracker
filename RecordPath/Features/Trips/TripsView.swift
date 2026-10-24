@@ -1,4 +1,5 @@
 import SwiftUI
+import WatchConnectivity
 import SwiftData
 
 struct TripsView: View {
@@ -164,7 +165,15 @@ struct NewTripSheet: View {
     @State private var startsNow = true
     @State private var startDate = Calendar.current.date(byAdding: .day, value: -3, to: Date()) ?? Date()
     @State private var endDate = Date()
+    @State private var recordOnWatch = true
+    @State private var chosenWatchSetting = false
     @FocusState private var titleFocused: Bool
+
+    /// Offered only when there's a Watch with the app on it.
+    private var hasWatch: Bool {
+        WCSession.isSupported() && WCSession.default.activationState == .activated
+            && WCSession.default.isPaired && WCSession.default.isWatchAppInstalled
+    }
 
     var body: some View {
         NavigationStack {
@@ -191,6 +200,20 @@ struct NewTripSheet: View {
                     Text(startsNow ? "手动记录使用更高的定位精度，和全天自动记录互不影响，结束后会保存在“旅程”里。"
                                    : "这几天里记录的轨迹和地点会自动归入这段旅程。")
                 }
+
+                if startsNow && hasWatch {
+                    Section {
+                        Toggle(isOn: Binding(get: { recordOnWatch }, set: { recordOnWatch = $0; chosenWatchSetting = true })) {
+                            Label("在 Apple Watch 上同时记录", systemImage: "applewatch")
+                        }
+                    } footer: {
+                        Text("手表上的漫迹会自动打开，记录心率并存为体能训练；在任一设备上结束，两边一起结束。适合徒步、跑步这类几个小时内的活动。")
+                    }
+                }
+            }
+            .onChange(of: emoji) { _, newValue in
+                // Driving or flying isn't a workout; follow the icon until the user decides.
+                if !chosenWatchSetting { recordOnWatch = WatchActivity.forTripEmoji(newValue) != nil }
             }
             .navigationTitle("新旅程")
             .navigationBarTitleDisplayMode(.inline)
@@ -242,6 +265,9 @@ struct NewTripSheet: View {
             // Only one trip records at a time.
             let others = (try? context.fetch(FetchDescriptor<Trip>())) ?? []
             for other in others where other.id != trip.id && other.isActive { other.endDate = Date() }
+            if hasWatch && recordOnWatch {
+                LiveRecording.setWatchActivity(WatchActivity.forTripEmoji(emoji) ?? .walking, for: trip.id)
+            }
             engine.beginTrip(trip)
         }
         dismiss()

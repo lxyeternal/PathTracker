@@ -61,6 +61,7 @@ struct HomeView: View {
     /// The place you're at, or what the iPhone is doing when that's more useful to know.
     private var title: String {
         guard let snapshot = link.snapshot else { return String(localized: "漫迹", bundle: .appLanguage) }
+        if let recording = snapshot.activeRecording { return "\(recording.emoji) \(recording.title)" }
         if snapshot.pausedUntil != nil { return String(localized: "记录已暂停", bundle: .appLanguage) }
         return snapshot.currentPlace?.name ?? String(localized: "今天", bundle: .appLanguage)
     }

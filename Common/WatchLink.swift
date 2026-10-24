@@ -1,5 +1,6 @@
 import Foundation
 import CoreLocation
+import HealthKit
 
 // Shared by the iPhone and Watch apps. The iPhone does the all-day recording; the Watch shows
 // where you are and today's route, and records on its own when you start a recording there.
@@ -35,6 +36,8 @@ struct WatchSnapshot: Codable, Equatable {
     var isEnabled = true
     /// Watch recordings the iPhone has filed away; the Watch keeps each one until it's listed here.
     var receivedRecordings: [UUID] = []
+    /// A manual recording running on the iPhone right now.
+    var activeRecording: ActiveRecording?
 
     /// The place the user is at right now, if the iPhone thinks they are staying somewhere.
     var currentPlace: Place? { places.last { $0.departure == nil } }
@@ -57,6 +60,7 @@ struct WatchSnapshot: Codable, Equatable {
         pausedUntil = try c.decodeIfPresent(Date.self, forKey: .pausedUntil)
         isEnabled = try c.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? true
         receivedRecordings = try c.decodeIfPresent([UUID].self, forKey: .receivedRecordings) ?? []
+        activeRecording = try c.decodeIfPresent(ActiveRecording.self, forKey: .activeRecording)
     }
 
     func encoded() -> Data? { try? JSONEncoder().encode(self) }
@@ -65,12 +69,23 @@ struct WatchSnapshot: Codable, Equatable {
     }
 }
 
+/// A manual recording started on the iPhone, as the Watch sees it.
+struct ActiveRecording: Codable, Equatable {
+    var tripID: UUID
+    var title: String
+    var emoji: String
+    var start: Date
+    /// Set when the user asked for the Watch to record along (heart rate, a workout in Fitness).
+    var watchActivity: WatchActivity?
+}
+
 /// Requests the Watch sends to the iPhone.
 enum WatchCommand: String {
-    case pause, resume, refresh
+    case pause, resume, refresh, endRecording
 
     static let key = "command"
     static let untilKey = "until"
+    static let tripKey = "trip"
 }
 
 /// Kinds of recording the Watch can start, matching the workout types in the Fitness app.
@@ -105,6 +120,37 @@ enum WatchActivity: String, CaseIterable, Identifiable, Codable {
         case .cycling: "🚴"
         }
     }
+
+    /// What the Watch records for a trip with this icon, or nil for trips that aren't a workout
+    /// (driving, flying, taking the train).
+    static func forTripEmoji(_ emoji: String) -> WatchActivity? {
+        switch emoji {
+        case "✈️", "🚗", "🚆": nil
+        case "🚲": .cycling
+        case "🥾", "🏔️", "🗻", "🏕️", "🎒": .hiking
+        default: .walking
+        }
+    }
+}
+
+extension WatchActivity {
+    var workoutType: HKWorkoutActivityType {
+        switch self {
+        case .hiking: .hiking
+        case .walking: .walking
+        case .running: .running
+        case .cycling: .cycling
+        }
+    }
+
+    init(workoutType: HKWorkoutActivityType) {
+        switch workoutType {
+        case .hiking: self = .hiking
+        case .running: self = .running
+        case .cycling: self = .cycling
+        default: self = .walking
+        }
+    }
 }
 
 /// Metadata sent along with a track file recorded on the Watch.
@@ -114,6 +160,8 @@ struct WatchRecordingInfo: Codable, Equatable {
     var start: Date
     var end: Date
     var distance: Double
+    /// The iPhone trip this was recorded alongside, if it was started from the iPhone.
+    var tripID: UUID?
 
     static let key = "recording"
     static let trackKey = "track"
@@ -126,12 +174,13 @@ struct WatchRecordingInfo: Codable, Equatable {
         return [Self.key: data]
     }
 
-    init(id: UUID, activity: WatchActivity, start: Date, end: Date, distance: Double) {
+    init(id: UUID, activity: WatchActivity, start: Date, end: Date, distance: Double, tripID: UUID? = nil) {
         self.id = id
         self.activity = activity
         self.start = start
         self.end = end
         self.distance = distance
+        self.tripID = tripID
     }
 
     init?(metadata: [String: Any]?) {

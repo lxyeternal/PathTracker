@@ -10,16 +10,24 @@ enum WatchRecordingImporter {
         // The Watch resends until it hears back, so the same recording can arrive twice.
         let id = info.id
         defer { markReceived(id) }
+        if receivedIDs.contains(id) { return nil }
         if let existing = try? context.fetch(FetchDescriptor<Trip>(predicate: #Predicate { $0.id == id })).first {
             return existing
         }
         guard info.end > info.start else { return nil }
 
-        let trip = Trip(title: defaultTitle(for: info), startDate: info.start)
-        trip.id = info.id
-        trip.endDate = info.end
-        trip.coverEmoji = info.activity.emoji
-        context.insert(trip)
+        // Recorded alongside an iPhone recording: it belongs to that trip, not a new one.
+        let trip: Trip
+        if let linked = info.tripID,
+           let existing = try? context.fetch(FetchDescriptor<Trip>(predicate: #Predicate { $0.id == linked })).first {
+            trip = existing
+        } else {
+            trip = Trip(title: defaultTitle(for: info), startDate: info.start)
+            trip.id = info.id
+            trip.endDate = info.end
+            trip.coverEmoji = info.activity.emoji
+            context.insert(trip)
+        }
 
         // If the iPhone was along, it recorded the same route; a trip's track is every chunk in
         // its time range, so only add the Watch's points where the iPhone has none.
