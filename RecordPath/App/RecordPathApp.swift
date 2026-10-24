@@ -26,6 +26,7 @@ struct RecordPathApp: App {
                 services.tagger.enqueue()
                 Task {
                     await services.activity.refreshToday()
+                    services.watch.scheduleUpdate(immediately: true)
                     await services.account.verifyCredential()
                 }
             default:
@@ -44,6 +45,7 @@ final class AppServices {
     let engine: LocationEngine
     let activity: ActivityProvider
     let account: AccountManager
+    let watch: WatchBridge
 
     private init() {
         // Before anything builds a string, so even background launches use the chosen language.
@@ -54,6 +56,8 @@ final class AppServices {
         engine = LocationEngine(context: container.mainContext, tagger: tagger)
         activity = ActivityProvider()
         account = AccountManager()
+        watch = WatchBridge(context: container.mainContext, engine: engine, activity: activity)
+        watch.activate()
     }
 }
 

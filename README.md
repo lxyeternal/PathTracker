@@ -14,6 +14,11 @@
 - **统计**：周、月、年的步数和移动距离（点柱子看某一天），出行方式占比，累计国家、城市、记录天数。
 - **个人资料**：设置和更换头像（从相册选取，自动裁成方形）、名字、邮箱、一句话简介；Apple 登录可选，退出登录不会丢失资料。
 - **语言**：App 内可在“跟随系统 / 简体中文 / English”之间切换，立即生效；系统权限弹窗在下次打开时切换。
+- **Apple Watch**：像地图和徒步 App 一样，打开就是地图：你现在的位置、今天走过的路线和所在地点名。
+  - 一键开始记录（徒步 / 步行 / 跑步 / 骑行），不带手机也能记录。实时显示路线、用时、距离、配速和心率，可暂停、结束；结束后存为“健身”App 里的体能训练，并自动同步到 iPhone 的“旅程”。
+  - “今天”里可以看步数、距离、地点，并在手表上暂停或恢复 iPhone 的全天记录。
+  - 表盘复杂功能：今天的距离、现在所在的地点，轻点直接打开 App。
+  - 跟随 iPhone App 里选的语言。
 - **设置**：全天记录开关、记录精度（省电 / 均衡 / 精细）、权限与 iCloud 状态、隐私区域、导入和导出 GPX、删除所有数据、隐私政策。
 
 迭代过程和每一轮的实测记录见 [PRODUCT_REVIEW.md](PRODUCT_REVIEW.md)。
@@ -31,6 +36,7 @@
 | 登录与资料 | Sign in with Apple（可选）；名字、简介和头像（≤400px JPEG）存放在 iCloud 键值存储 |
 | 多语言 | String Catalog（`Localizable.xcstrings`、`InfoPlist.xcstrings`），源语言简体中文，另有英文；App 内切换通过 `AppLanguage.swift` |
 | UI | SwiftUI、MapKit、Swift Charts，iOS 26 Liquid Glass |
+| Apple Watch | watchOS 26 SwiftUI App + WidgetKit 复杂功能；`HKWorkoutSession` 让记录在抬腕之外也持续进行；WatchConnectivity 同步 |
 
 轨迹点按段压缩成 `TrackChunk`（每段最多约 400 个点，用 LZFSE 压缩），一天只有几十条 CloudKit 记录，同步快，也节省用户的 iCloud 空间。
 
@@ -43,12 +49,24 @@ RecordPath/
 ├── Health/         步数
 ├── Account/        Apple 登录
 ├── Features/       今天 / 足迹 / 旅程 / 统计 / 设置 / 引导
+├── Watch/          和手表的同步（WatchBridge）、导入手表记录
 └── Shared/         通用组件、地图、统计计算、GPX 导出、演示数据
+Common/             iPhone、手表、复杂功能共用：轨迹编码、格式化、语言、同步消息
+WaytraceWatch/      Apple Watch App：地图首页、记录（体能训练 + GPS）、今天
+WaytraceWidgets/    表盘复杂功能
 ```
+
+### iPhone 和手表怎么配合
+
+- iPhone 负责全天记录。手表不做全天 GPS（太耗电），只在你开始记录时用自己的 GPS。
+- iPhone → 手表：今天的路线（抽稀到 600 个点以内）、地点、距离、步数、暂停状态和语言，变化时通过 application context 推送，最多 30 秒一次。
+- 手表 → iPhone：暂停 / 恢复用消息发送（不在附近时排队）；记录用文件传输，iPhone 在附近且记录较小时同时直接发送。
+- 手表上的记录要等 iPhone 确认收到（出现在 `receivedRecordings` 里）才删除，否则会自动重发；iPhone 按记录 ID 去重，重复收到也不会多出一条。
+- 如果 iPhone 同时也在记录，同一段路不会重复：旅程的轨迹取时间范围内已有的记录，只有 iPhone 没录到时才用手表的轨迹。
 
 ## 开发
 
-- Xcode 26 或更高版本，iOS 26 及以上，仅支持 iPhone。
+- Xcode 26 或更高版本，iOS 26 及以上（仅 iPhone），watchOS 26 及以上。
 - 直接打开 `RecordPath.xcodeproj` 运行，不依赖任何第三方库。
 - 调试版的“设置 › 开发者”里可以生成演示数据（两周的上下班通勤，加一次东京、京都旅行）。
 - 单元测试：`⌘U`，或者在命令行运行

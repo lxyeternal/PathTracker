@@ -459,3 +459,84 @@ struct AppLanguageTests {
         #expect(AppLanguage.english.nativeName == "English")
     }
 }
+
+struct WatchLinkTests {
+    @Test func snapshotFromAnOlderAppVersionStillDecodes() throws {
+        // An iPhone on an older version doesn't send fields added later.
+        let old = #"{"generatedAt": 0, "language": "en", "distance": 1200}"#
+        let snapshot = try #require(WatchSnapshot.decode(Data(old.utf8)))
+        #expect(snapshot.language == "en")
+        #expect(snapshot.distance == 1200)
+        #expect(snapshot.isEnabled)
+        #expect(snapshot.receivedRecordings.isEmpty)
+    }
+
+    @Test func recordingInfoSurvivesTheTrip() throws {
+        let info = WatchRecordingInfo(id: UUID(), activity: .hiking, start: Date(timeIntervalSince1970: 1_800_000_000),
+                                      end: Date(timeIntervalSince1970: 1_800_003_600), distance: 5400)
+        #expect(WatchRecordingInfo(metadata: info.metadata) == info)
+        #expect(WatchRecordingInfo(metadata: ["other": 1]) == nil)
+    }
+
+    @Test func routeIsSplitAtGapsAndKeptWithinBudget() {
+        let morning = (0..<3000).map { point(31.2 + Double($0) * 0.00001, 121.4 + sin(Double($0) / 40) * 0.001, Double($0) * 2) }
+        let evening = (0..<500).map { point(31.3, 121.5 + Double($0) * 0.0001, 20_000 + Double($0) * 2) }
+        let segments = WatchBridge.segments(from: [
+            (morning[0].timestamp, morning[2999].timestamp, morning),
+            (evening[0].timestamp, evening[499].timestamp, evening),
+        ])
+        #expect(segments.count == 2)
+        #expect(segments.reduce(0) { $0 + $1.count } <= 600)
+        #expect(segments[0].first?.lat == morning[0].latitude)
+        #expect(segments[1].last?.lon == evening[499].longitude)
+    }
+
+    @Test func nearbyChunksJoinIntoOneLine() {
+        let a = (0..<20).map { point(31.2, 121.4 + Double($0) * 0.0002, Double($0) * 10) }
+        let b = (0..<20).map { point(31.2, 121.404 + Double($0) * 0.0002, 300 + Double($0) * 10) }
+        let segments = WatchBridge.segments(from: [(a[0].timestamp, a[19].timestamp, a), (b[0].timestamp, b[19].timestamp, b)])
+        #expect(segments.count == 1)
+    }
+}
+
+@MainActor
+struct WatchRecordingImportTests {
+    private func recording(start: TimeInterval = 0, minutes: Int = 30) -> ([TrackPoint], WatchRecordingInfo) {
+        let points = (0...(minutes * 6)).map { point(31.2 + Double($0) * 0.0001, 121.4, start + Double($0) * 10) }
+        let info = WatchRecordingInfo(id: UUID(), activity: .hiking, start: points[0].timestamp,
+                                      end: points[points.count - 1].timestamp, distance: TrackPoint.distance(of: points))
+        return (points, info)
+    }
+
+    @Test func becomesATripWithItsRoute() throws {
+        let context = ModelContext(PersistenceController.makeContainer(inMemory: true))
+        let (points, info) = recording()
+        let trip = try #require(WatchRecordingImporter.importRecording(points: points, info: info, into: context))
+        #expect(trip.id == info.id)
+        #expect(trip.endDate == info.end)
+        #expect(trip.coverEmoji == "🥾")
+        let chunks = try context.fetch(FetchDescriptor<TrackChunk>())
+        #expect(chunks.reduce(0) { $0 + $1.pointCount } >= points.count)
+        #expect(chunks.allSatisfy { $0.tripID == info.id && $0.mode == .walking })
+        #expect(WatchRecordingImporter.receivedIDs.first == info.id)
+    }
+
+    @Test func arrivingTwiceDoesNothingNew() throws {
+        let context = ModelContext(PersistenceController.makeContainer(inMemory: true))
+        let (points, info) = recording()
+        WatchRecordingImporter.importRecording(points: points, info: info, into: context)
+        WatchRecordingImporter.importRecording(points: points, info: info, into: context)
+        #expect(try context.fetchCount(FetchDescriptor<Trip>()) == 1)
+        #expect(try context.fetchCount(FetchDescriptor<TrackChunk>()) == 1)
+    }
+
+    @Test func routeTheIPhoneAlreadyRecordedIsntDoubled() throws {
+        let context = ModelContext(PersistenceController.makeContainer(inMemory: true))
+        let (points, info) = recording()
+        // The iPhone was along and recorded the same half hour.
+        context.insert(TrackChunk(points: points, mode: .walking, tripID: nil))
+        let trip = try #require(WatchRecordingImporter.importRecording(points: points, info: info, into: context))
+        #expect(try context.fetchCount(FetchDescriptor<TrackChunk>()) == 1)
+        #expect(trip.interval.duration > 0)
+    }
+}
