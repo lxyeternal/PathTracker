@@ -1,0 +1,286 @@
+import SwiftUI
+import SwiftData
+import Charts
+
+struct StatsView: View {
+    @Binding var showingSettings: Bool
+    @Environment(ActivityProvider.self) private var activityProvider
+    @Query(sort: \Stay.arrival) private var stays: [Stay]
+
+    enum Period: String, CaseIterable, Identifiable {
+        case week, month, year
+        var id: String { rawValue }
+        var title: LocalizedStringKey {
+            switch self {
+            case .week: "周"
+            case .month: "月"
+            case .year: "年"
+            }
+        }
+        var days: Int {
+            switch self {
+            case .week: 7
+            case .month: 30
+            case .year: 365
+            }
+        }
+    }
+
+    @State private var period: Period = .week
+    @State private var daily: [DailyActivity] = []
+    @State private var movement: [Date: [MovementMode: Double]] = [:]
+    @State private var selectedDay: Date?
+    @State private var isLoading = true
+    @State private var lifetime = WorldInsights()
+    @Environment(\.modelContext) private var context
+
+    private var rangeStart: Date {
+        let today = Calendar.current.startOfDay(for: Date())
+        return Calendar.current.date(byAdding: .day, value: -(period.days - 1), to: today) ?? today
+    }
+
+    private var rangeEnd: Date {
+        let today = Calendar.current.startOfDay(for: Date())
+        return Calendar.current.date(byAdding: period == .year ? .month : .day, value: 1,
+                                     to: period == .year ? (Calendar.current.dateInterval(of: .month, for: today)?.start ?? today) : today) ?? Date()
+    }
+
+    private var usedModes: [MovementMode] {
+        MovementMode.allCases.filter { mode in groundMovement.values.contains { ($0[mode] ?? 0) > 0 } }
+    }
+
+    /// Year view groups into months so the bars stay readable.
+    private var bucketUnit: Calendar.Component { period == .year ? .month : .day }
+
+    private var averageSteps: Double {
+        let counted = daily.filter { $0.steps > 0 }
+        return counted.isEmpty ? 0 : counted.reduce(0) { $0 + $1.steps } / Double(counted.count)
+    }
+
+    /// Ground travel only: one flight would otherwise dwarf every other day.
+    private var groundMovement: [Date: [MovementMode: Double]] {
+        movement.mapValues { $0.filter { $0.key != .flying } }
+    }
+
+    private var totalMovement: Double { groundMovement.values.flatMap(\.values).reduce(0, +) }
+
+    private var modeTotals: [(mode: MovementMode, distance: Double)] {
+        var totals: [MovementMode: Double] = [:]
+        for day in movement.values { for (mode, value) in day { totals[mode, default: 0] += value } }
+        return totals.map { ($0.key, $0.value) }.filter { $0.distance > 0 }.sorted { $0.distance > $1.distance }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Picker("时间范围", selection: $period.animation(.smooth)) {
+                        ForEach(Period.allCases) { Text($0.title).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+
+                    stepsCard
+                    distanceCard
+                    if !modeTotals.isEmpty { modesCard }
+                    lifetimeCard
+                }
+                .padding(.horizontal)
+                .padding(.bottom, 24)
+            }
+            .navigationTitle("统计")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    ProfileToolbarButton(showingSettings: $showingSettings)
+                }
+            }
+            .task(id: period) {
+                selectedDay = nil
+                await load()
+            }
+            .task(id: stays.count) { lifetime = WorldInsights(stays: stays) }
+            .refreshable { await load() }
+        }
+    }
+
+    private func load() async {
+        isLoading = true
+        let start = rangeStart
+        let activity = await activityProvider.activity(from: start, days: period.days)
+        let descriptor = FetchDescriptor<TrackChunk>(predicate: #Predicate { $0.endDate >= start })
+        var byDay: [Date: [MovementMode: Double]] = [:]
+        for chunk in (try? context.fetch(descriptor)) ?? [] {
+            let calendar = Calendar.current
+            var day = calendar.startOfDay(for: max(chunk.startDate, start))
+            if period == .year { day = calendar.dateInterval(of: .month, for: day)?.start ?? day }
+            byDay[day, default: [:]][chunk.mode, default: 0] += chunk.distance
+        }
+        withAnimation(.smooth) {
+            daily = activity
+            movement = byDay
+            isLoading = false
+        }
+    }
+
+    // MARK: Cards
+
+    private var stepsCard: some View {
+        Card {
+            VStack(alignment: .leading, spacing: 12) {
+                header(title: "步数", symbol: "shoeprints.fill", tint: .orange,
+                       value: selectedValue(\.steps).map(Format.steps) ?? Format.steps(averageSteps),
+                       caption: selectedDay.map { $0.formatted(.dateTime.month().day()) } ?? String(localized: "日均"))
+                Chart {
+                    ForEach(bucketed(\.steps), id: \.date) { item in
+                        BarMark(x: .value("日期", item.date, unit: bucketUnit), y: .value("步数", item.value))
+                            .foregroundStyle(Color.orange.gradient)
+                            .cornerRadius(4)
+                            .opacity(selectedDay == nil || Calendar.current.isDate(item.date, equalTo: selectedDay!, toGranularity: bucketUnit) ? 1 : 0.35)
+                    }
+                    if averageSteps > 0 && period != .year {
+                        RuleMark(y: .value("日均", averageSteps))
+                            .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .chartGesture { proxy in
+                    SpatialTapGesture().onEnded { value in
+                        guard let date: Date = proxy.value(atX: value.location.x) else { return }
+                        withAnimation(.snappy) {
+                            let isSame = selectedDay.map { Calendar.current.isDate($0, equalTo: date, toGranularity: bucketUnit) } ?? false
+                            selectedDay = isSame ? nil : date
+                        }
+                    }
+                }
+                .sensoryFeedback(.selection, trigger: selectedDay)
+                .chartXAxis { xAxis }
+                .frame(height: 180)
+                .overlay { if daily.allSatisfy({ $0.steps == 0 }) && !isLoading { activityProvider.isAuthorizationRequested
+                    ? noData("还没有步数记录", detail: "步数来自“健康”App，带着 iPhone 或 Apple Watch 走动后就会出现。")
+                    : noData("没有步数数据", detail: "在“设置”中允许读取“健康”数据。") } }
+            }
+        }
+    }
+
+    private var distanceCard: some View {
+        Card {
+            VStack(alignment: .leading, spacing: 12) {
+                header(title: "移动距离", symbol: "point.topright.arrow.triangle.backward.to.point.bottomleft.scurvepath",
+                       tint: .blue, value: Format.distance(totalMovement),
+                       caption: String(localized: "合计 · 不含飞行"))
+                Chart {
+                    ForEach(Array(groundMovement.keys), id: \.self) { day in
+                        ForEach(MovementMode.allCases, id: \.self) { mode in
+                            if let value = groundMovement[day]?[mode], value > 0 {
+                                BarMark(x: .value("日期", day, unit: bucketUnit), y: .value("距离", value / 1000))
+                                    .foregroundStyle(by: .value("方式", mode.title))
+                                    .cornerRadius(3)
+                            }
+                        }
+                    }
+                }
+                .chartForegroundStyleScale(domain: usedModes.map(\.title), range: usedModes.map(\.color))
+                .chartLegend(position: .bottom, spacing: 8)
+                .chartYAxis {
+                    AxisMarks { value in
+                        AxisGridLine()
+                        AxisValueLabel { if let km = value.as(Double.self) { Text(Measurement(value: km, unit: UnitLength.kilometers).formatted(.measurement(width: .abbreviated, usage: .asProvided, numberFormatStyle: .number.precision(.fractionLength(0))))) } }
+                    }
+                }
+                .chartXScale(domain: rangeStart...rangeEnd)
+                .chartXAxis { xAxis }
+                .frame(height: 200)
+                .overlay { if movement.isEmpty && !isLoading { noData("还没有轨迹", detail: "开启自动记录后，这里会显示每天的移动距离。") } }
+            }
+        }
+    }
+
+    private var modesCard: some View {
+        Card {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("出行方式").font(.headline)
+                HStack(spacing: 20) {
+                    Chart(modeTotals, id: \.mode) { item in
+                        SectorMark(angle: .value("距离", item.distance), innerRadius: .ratio(0.62), angularInset: 2)
+                            .foregroundStyle(item.mode.color.gradient)
+                            .cornerRadius(4)
+                    }
+                    .frame(width: 120, height: 120)
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(modeTotals, id: \.mode) { item in
+                            HStack {
+                                Image(systemName: item.mode.symbol).foregroundStyle(item.mode.color).frame(width: 22)
+                                Text(item.mode.title)
+                                Spacer()
+                                Text(Format.distance(item.distance)).foregroundStyle(.secondary).monospacedDigit()
+                            }
+                            .font(.subheadline)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var lifetimeCard: some View {
+        let insights = lifetime
+        return VStack(alignment: .leading, spacing: 10) {
+            SectionHeader(title: "一直以来")
+            MetricGrid {
+                MetricTile(title: "国家和地区", value: "\(insights.countries.count)", symbol: "flag.fill", tint: .red)
+                MetricTile(title: "城市", value: "\(insights.cityCount)", symbol: "building.2.fill", tint: .indigo)
+                MetricTile(title: "记录天数", value: "\(insights.trackedDays)", symbol: "calendar", tint: .teal)
+                MetricTile(title: "到访地点", value: "\(stays.count)", symbol: "mappin.and.ellipse", tint: .pink)
+            }
+            if let first = insights.firstDay {
+                Text("从 \(first.formatted(date: .long, time: .omitted)) 开始记录")
+                    .font(.footnote).foregroundStyle(.secondary).padding(.horizontal, 4)
+            }
+        }
+    }
+
+    // MARK: Helpers
+
+    private var xAxis: some AxisContent {
+        AxisMarks(values: .automatic(desiredCount: period == .week ? 7 : 5)) { value in
+            AxisGridLine()
+            AxisValueLabel(format: period == .year ? .dateTime.month(.abbreviated) : period == .week ? .dateTime.weekday(.narrow) : .dateTime.day(),
+                           centered: period != .month, collisionResolution: .greedy)
+        }
+    }
+
+    private func header(title: LocalizedStringKey, symbol: String, tint: Color, value: String, caption: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Label(title, systemImage: symbol).font(.subheadline.weight(.semibold)).foregroundStyle(tint)
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(value).font(.system(.largeTitle, design: .rounded, weight: .bold)).contentTransition(.numericText())
+                Text(caption).font(.subheadline).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func noData(_ title: LocalizedStringKey, detail: LocalizedStringKey) -> some View {
+        VStack(spacing: 4) {
+            Text(title).font(.subheadline.weight(.semibold))
+            Text(detail).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
+        }
+        .padding()
+        .background(.background.secondary.opacity(0.9), in: .rect(cornerRadius: 14))
+    }
+
+    private func bucketed(_ keyPath: KeyPath<DailyActivity, Double>) -> [(date: Date, value: Double)] {
+        guard period == .year else { return daily.map { ($0.day, $0[keyPath: keyPath]) } }
+        let calendar = Calendar.current
+        let grouped = Dictionary(grouping: daily) { calendar.dateInterval(of: .month, for: $0.day)?.start ?? $0.day }
+        // Monthly bars show the daily average for that month.
+        return grouped.map { month, days in
+            let counted = days.filter { $0[keyPath: keyPath] > 0 }
+            return (month, counted.isEmpty ? 0 : counted.reduce(0) { $0 + $1[keyPath: keyPath] } / Double(counted.count))
+        }
+        .sorted { $0.date < $1.date }
+    }
+
+    private func selectedValue(_ keyPath: KeyPath<DailyActivity, Double>) -> Double? {
+        guard let selectedDay else { return nil }
+        return bucketed(keyPath).first { Calendar.current.isDate($0.date, equalTo: selectedDay, toGranularity: bucketUnit) }?.value
+    }
+}

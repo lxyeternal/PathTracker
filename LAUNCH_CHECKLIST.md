@@ -1,0 +1,50 @@
+# 上线清单
+
+代码已经可以在模拟器里完整运行。以下事项需要开发者账号或你本人来完成，完成后才能上真机测试和提交 App Store。
+
+## 1. 账号与标识（需要你来做）
+
+- [ ] 加入 Apple Developer Program（个人账号每年 99 美元），记下 **Team ID**。
+- [ ] 确定正式的 **Bundle ID**。工程里目前用的是占位值 `com.pathtracker.app`，需要换成你自己的，例如 `com.<你的名字>.pathtracker`。修改位置：Xcode › RecordPath target › Signing & Capabilities。
+- [ ] 确定 App 名称（目前显示为 PathTracker）。
+- [ ] 在 App Store Connect 中新建 App。
+
+## 2. Xcode 签名与能力（我可以帮你改，需要先有 Team ID）
+
+在 Signing & Capabilities 里选择你的 Team 之后，确认以下能力都已开启（`RecordPath.entitlements` 已经写好）：
+
+- [ ] iCloud › CloudKit，容器为 `iCloud.<你的 Bundle ID>`
+- [ ] Sign in with Apple
+- [ ] HealthKit
+- [ ] Background Modes › Location updates、Remote notifications
+- [ ] Push Notifications（CloudKit 同步需要）
+
+## 3. CloudKit
+
+- [ ] 在真机上运行一次，让 SwiftData 在开发环境自动创建 CloudKit 架构。
+- [ ] 打开 CloudKit Console，把架构 **Deploy Schema Changes 到 Production**。不做这一步，App Store 版本将无法同步。
+
+## 4. 真机测试（需要一台 iPhone）
+
+- [ ] 授予“始终允许”定位后，锁屏带手机出门 1 小时，回来检查轨迹是否完整。
+- [ ] 在设置里把 App 从后台划掉，然后出门，检查是否会被系统重新唤醒并继续记录。
+- [ ] 观察全天耗电（设置 › 电池）。
+- [ ] 在中国大陆检查地图上的轨迹是否与道路对齐。Apple 地图在中国大陆使用 GCJ-02 坐标，如果有约 500 米的偏移，需要加入坐标转换。
+- [ ] 两台设备登录同一个 Apple ID，检查 iCloud 同步。
+- [ ] 测试通过 Apple 登录、退出登录，以及在 iOS 设置里停止使用 Apple ID 登录后 App 的表现。
+
+## 5. 审核材料
+
+- [ ] **隐私政策网址**：把 `PRIVACY.md` 发布到一个公开网址（GitHub Pages、Notion 公开页都可以），填进 App Store Connect。
+- [ ] **客服邮箱**：替换 `SettingsView.swift` 里的 `AppInfo.supportEmail`（目前是占位值）。
+- [ ] **App 隐私标签**：位置（精确位置）、健康与健身、照片；全部选择“不用于追踪、不与身份关联”，并勾选数据不会被开发者收集。
+- [ ] **后台定位说明**：审核会询问为什么需要“始终允许”定位。可以这样回答：用于全天自动记录用户的出行轨迹，这是 App 的核心功能；数据只存在用户自己的 iCloud 中。最好附上一段演示视频。
+- [ ] 截图：6.9 英寸和 6.5 英寸 iPhone 截图。可以在调试版里用“生成演示数据”后截图。
+- [ ] 如果要在中国大陆上架：完成 **ICP 备案**并在 App Store Connect 中填写备案号。
+
+## 6. 已知的后续工作（不影响第一版）
+
+- 加入英文本地化（目前只有简体中文）。
+- 灵动岛与锁屏的实时活动（Live Activity），用于显示旅程记录状态。
+- 桌面小组件：今日步数和距离。
+- 使用 Apple 登录时撤销令牌需要一个服务器端接口，目前 App 内的“删除所有数据”会清除本地和 iCloud 数据并退出登录。
