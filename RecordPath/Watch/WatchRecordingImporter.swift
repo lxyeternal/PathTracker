@@ -26,6 +26,7 @@ enum WatchRecordingImporter {
             trip.id = info.id
             trip.endDate = info.end
             trip.coverEmoji = info.activity.emoji
+            trip.activityRaw = info.activity.rawValue
             context.insert(trip)
         }
 
@@ -57,7 +58,7 @@ enum WatchRecordingImporter {
         UserDefaults.standard.set(ids.map(\.uuidString), forKey: receivedKey)
     }
 
-    static func mode(for activity: WatchActivity) -> MovementMode {
+    static func mode(for activity: ActivityType) -> MovementMode {
         switch activity {
         case .hiking, .walking: .walking
         case .running: .running

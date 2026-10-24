@@ -79,13 +79,13 @@ struct RouteMap: View {
         Map(position: $position, interactionModes: isFollowing ? [.zoom] : .all) {
             if let snapshot {
                 ForEach(Array(snapshot.segments.enumerated()), id: \.offset) { _, segment in
-                    MapPolyline(coordinates: segment.map(\.clCoordinate))
+                    MapPolyline(coordinates: segment.map(\.clCoordinate.onMap))
                         .stroke(.white.opacity(0.9), style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
-                    MapPolyline(coordinates: segment.map(\.clCoordinate))
+                    MapPolyline(coordinates: segment.map(\.clCoordinate.onMap))
                         .stroke(Color.blue.gradient, style: StrokeStyle(lineWidth: 3.5, lineCap: .round, lineJoin: .round))
                 }
                 ForEach(Array(snapshot.places.enumerated()), id: \.offset) { _, place in
-                    Annotation(place.name, coordinate: place.coordinate.clCoordinate, anchor: .center) {
+                    Annotation(place.name, coordinate: place.coordinate.clCoordinate.onMap, anchor: .center) {
                         Circle()
                             .fill(place.departure == nil ? Color.orange : Color.indigo)
                             .frame(width: 10, height: 10)
@@ -95,9 +95,9 @@ struct RouteMap: View {
                 }
             }
             if livePoints.count > 1 {
-                MapPolyline(coordinates: livePoints.map(\.coordinate))
+                MapPolyline(coordinates: livePoints.map(\.coordinate.onMap))
                     .stroke(.white.opacity(0.9), style: StrokeStyle(lineWidth: 7, lineCap: .round, lineJoin: .round))
-                MapPolyline(coordinates: livePoints.map(\.coordinate))
+                MapPolyline(coordinates: livePoints.map(\.coordinate.onMap))
                     .stroke(Color.orange.gradient, style: StrokeStyle(lineWidth: 4.5, lineCap: .round, lineJoin: .round))
             }
             UserAnnotation()

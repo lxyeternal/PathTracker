@@ -1,4 +1,5 @@
 import SwiftUI
+import Photos
 import SwiftData
 import CoreLocation
 
@@ -49,7 +50,7 @@ struct TodayView: View {
                     }
                 }
                 .sheet(isPresented: $showingNewRecording) {
-                    NewTripSheet()
+                    NewRecordingSheet()
                 }
                 .sheet(isPresented: $showingCalendar) {
                     DayPickerSheet(day: $navigator.day)
@@ -105,6 +106,8 @@ private struct DayPickerSheet: View {
 
 /// Everything recorded on one calendar day.
 struct DayContentView: View {
+    @State private var photoAccess = DayPhotos.status
+    @AppStorage("timeline.photosOffered") private var photosOffered = false
     let day: Date
     @Environment(LocationEngine.self) private var engine
     @Environment(ActivityProvider.self) private var activityProvider
@@ -159,6 +162,8 @@ struct DayContentView: View {
                     SectionHeader(title: "时间线", trailing: "\(stays.count) 个地点")
                     TimelineList(entries: entries, day: day, onSelect: { selectedStay = $0 },
                                  onSelectMove: { selectedMove = $0 })
+                        .id(photoAccess)
+                    if photoAccess == .notDetermined && !photosOffered { photosCard }
                 }
             }
             .padding(.horizontal)
@@ -234,6 +239,36 @@ struct DayContentView: View {
             MetricTile(title: "去过的地点", value: "\(stays.count)", symbol: "mappin.and.ellipse", tint: .pink)
         }
         .animation(.smooth, value: activity)
+    }
+
+    /// Asked once, where it matters: photos make the timeline a diary.
+    private var photosCard: some View {
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: "photo.on.rectangle.angled")
+                .font(.title2)
+                .foregroundStyle(.blue)
+            VStack(alignment: .leading, spacing: 6) {
+                Text("在时间线上显示拍的照片").font(.subheadline.weight(.semibold))
+                Text("每个地点下面会出现你在那里拍的照片。照片只在手机上读取，不会上传。")
+                    .font(.footnote).foregroundStyle(.secondary)
+                HStack(spacing: 10) {
+                    Button("显示照片") {
+                        Task {
+                            photoAccess = await DayPhotos.requestAccess()
+                            photosOffered = true
+                        }
+                    }
+                    .buttonStyle(.glassProminent)
+                    .controlSize(.small)
+                    Button("不用了") { withAnimation { photosOffered = true } }
+                        .controlSize(.small)
+                }
+                .padding(.top, 2)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .background(.background.secondary, in: .rect(cornerRadius: 20, style: .continuous))
     }
 
     private var emptyTimeline: some View {

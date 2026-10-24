@@ -46,7 +46,7 @@ struct ShareCardContent {
     }
 
     private func snapshot(size: CGSize, colorScheme: ColorScheme) async -> UIImage? {
-        let coordinates = segments.flatMap { $0.map(\.coordinate) } + stays
+        let coordinates = (segments.flatMap { $0.map(\.coordinate) } + stays).map(\.onMap)
         guard !coordinates.isEmpty else { return nil }
         var rect = MKMapRect.null
         for c in coordinates { rect = rect.union(MKMapRect(origin: MKMapPoint(c), size: MKMapSize(width: 1, height: 1))) }
@@ -73,7 +73,7 @@ struct ShareCardContent {
             for (segment, color) in zip(segments, colors) {
                 let path = UIBezierPath()
                 for (i, p) in segment.enumerated() {
-                    let point = snapshot.point(for: p.coordinate)
+                    let point = snapshot.point(for: p.coordinate.onMap)
                     i == 0 ? path.move(to: point) : path.addLine(to: point)
                 }
                 UIColor.white.withAlphaComponent(0.9).setStroke()
@@ -84,7 +84,7 @@ struct ShareCardContent {
                 path.stroke()
             }
             for coordinate in stays {
-                let point = snapshot.point(for: coordinate)
+                let point = snapshot.point(for: coordinate.onMap)
                 let dot = UIBezierPath(ovalIn: CGRect(x: point.x - 5, y: point.y - 5, width: 10, height: 10))
                 UIColor.white.setFill()
                 dot.fill()

@@ -32,6 +32,9 @@ struct StatsView: View {
     @State private var selectedDay: Date?
     @State private var isLoading = true
     @State private var lifetime = WorldInsights()
+    @State private var showingYearReport = false
+    @State private var milestones = MilestoneProgress()
+    @Environment(Notifier.self) private var notifier
     @Environment(\.modelContext) private var context
 
     private var rangeStart: Date {
@@ -79,10 +82,12 @@ struct StatsView: View {
                     }
                     .pickerStyle(.segmented)
 
+                    yearReportCard
                     stepsCard
                     distanceCard
                     if !modeTotals.isEmpty { modesCard }
                     lifetimeCard
+                    milestonesCard
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 24)
@@ -97,7 +102,11 @@ struct StatsView: View {
                 selectedDay = nil
                 await load()
             }
-            .task(id: stays.count) { lifetime = WorldInsights(stays: stays) }
+            .task(id: stays.count) {
+                lifetime = WorldInsights(stays: stays)
+                milestones = notifier.currentMilestones()
+            }
+            .fullScreenCover(isPresented: $showingYearReport) { YearReportView() }
             .refreshable { await load() }
         }
     }
@@ -219,6 +228,84 @@ struct StatsView: View {
                 }
             }
         }
+    }
+
+    private var milestonesCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionHeader(title: "里程碑", trailing: milestones.reached.isEmpty ? nil : "\(milestones.reached.count)")
+            if !milestones.reached.isEmpty {
+                ScrollView(.horizontal) {
+                    HStack(spacing: 10) {
+                        ForEach(milestones.reached) { item in
+                            VStack(alignment: .leading, spacing: 8) {
+                                Image(systemName: item.milestone.kind.symbol)
+                                    .font(.title3.weight(.semibold))
+                                    .foregroundStyle(.white)
+                                    .frame(width: 40, height: 40)
+                                    .background(Circle().fill(item.milestone.kind.tint.gradient))
+                                Text(item.milestone.title).font(.subheadline.weight(.semibold)).lineLimit(2)
+                                Text(item.date.formatted(.dateTime.year().month().day().locale(appLocale)))
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                            .frame(width: 128, alignment: .leading)
+                            .padding(12)
+                            .background(.background.secondary, in: .rect(cornerRadius: 20, style: .continuous))
+                        }
+                    }
+                }
+                .scrollIndicators(.hidden)
+            }
+            VStack(spacing: 14) {
+                ForEach(milestones.next) { item in
+                    HStack(spacing: 12) {
+                        Image(systemName: item.milestone.kind.symbol)
+                            .foregroundStyle(item.milestone.kind.tint)
+                            .frame(width: 24)
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text(item.milestone.title).font(.subheadline)
+                                Spacer()
+                                Text(progressText(item)).font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                            }
+                            ProgressView(value: item.fraction).tint(item.milestone.kind.tint)
+                        }
+                    }
+                }
+            }
+            .padding(16)
+            .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
+            if notifier.authorization == .notDetermined {
+                Button("达成时通知我", systemImage: "bell.badge") { Task { await notifier.requestAuthorization() } }
+                    .font(.subheadline)
+                    .padding(.horizontal, 4)
+            }
+        }
+    }
+
+    private func progressText(_ item: MilestoneProgress.Next) -> String {
+        let current = item.milestone.kind == .distance ? Int(item.current.rounded(.down)) : Int(item.current)
+        return "\(current.formatted(.number.locale(appLocale))) / \(item.milestone.threshold.formatted(.number.locale(appLocale)))"
+    }
+
+    private var yearReportCard: some View {
+        Button { showingYearReport = true } label: {
+            HStack(spacing: 14) {
+                Text(verbatim: String(Calendar.current.component(.year, from: Date())))
+                    .font(.system(.title2, design: .rounded, weight: .heavy))
+                    .foregroundStyle(.white)
+                    .frame(width: 76, height: 56)
+                    .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.orange.gradient))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("年度足迹").font(.headline)
+                    Text("这一年走了多远、去了哪里，可以分享").font(.subheadline).foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+            }
+            .padding(14)
+            .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
+        }
+        .buttonStyle(PressableStyle())
     }
 
     private var lifetimeCard: some View {

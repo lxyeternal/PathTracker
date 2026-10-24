@@ -49,7 +49,7 @@ struct TripDetailView: View {
                 metrics
                 photosSection
                 notesSection
-                if !stays.isEmpty { daysSection }
+                if !trip.isRecording && !stays.isEmpty { daysSection }
             }
             .padding(.horizontal)
             .padding(.bottom, 24)
@@ -59,21 +59,19 @@ struct TripDetailView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu("更多", systemImage: "ellipsis") {
-                    Button("编辑旅程", systemImage: "pencil") { showingEdit = true }
+                    Button("编辑", systemImage: "pencil") { showingEdit = true }
                     ShareCardButton(makeContent: {
                         ShareCardContent(title: "\(trip.coverEmoji) \(trip.title)",
                                          subtitle: trip.dateRangeText,
                                          chunks: chunks, stays: stays,
-                                         stats: [(String(localized: "距离", bundle: .appLanguage), Format.distance(chunks.reduce(0) { $0 + $1.distance })),
-                                                 (String(localized: "天数", bundle: .appLanguage), "\(Calendar.current.days(in: trip.interval).count)"),
-                                                 (String(localized: "地点", bundle: .appLanguage), "\(stays.count)")])
+                                         stats: shareStats)
                     })
                     ShareLink(item: GPXDocument(name: trip.title, chunks: chunks, stays: stays),
                               preview: SharePreview("\(trip.title).gpx")) {
                         Label("导出 GPX", systemImage: "square.and.arrow.up")
                     }
                     Divider()
-                    Button("删除旅程", systemImage: "trash", role: .destructive) { confirmingDelete = true }
+                    Button(trip.isRecording ? "删除记录" : "删除旅程", systemImage: "trash", role: .destructive) { confirmingDelete = true }
                 }
             }
         }
@@ -85,13 +83,13 @@ struct TripDetailView: View {
                          livePoints: trip.isActive ? engine.pendingPoints : [])
                 .navigationTransition(.zoom(sourceID: "trip-map", in: namespace))
         }
-        .confirmationDialog("结束这段旅程？", isPresented: $confirmingEnd, titleVisibility: .visible) {
-            Button("结束旅程") { withAnimation { engine.endTrip(trip) } }
+        .confirmationDialog(trip.isRecording ? "结束这次记录？" : "结束这段旅程？", isPresented: $confirmingEnd, titleVisibility: .visible) {
+            Button(trip.isRecording ? "结束记录" : "结束旅程") { withAnimation { engine.endTrip(trip) } }
         } message: {
             Text("之后仍会继续自动记录日常轨迹。")
         }
         .confirmationDialog("删除“\(trip.title)”？", isPresented: $confirmingDelete, titleVisibility: .visible) {
-            Button("删除旅程", role: .destructive) {
+            Button(trip.isRecording ? "删除记录" : "删除旅程", role: .destructive) {
                 if trip.isActive { engine.endTrip(trip) }
                 context.delete(trip)
                 try? context.save()
@@ -170,7 +168,7 @@ struct TripDetailView: View {
 
     private var endButton: some View {
         Button { confirmingEnd = true } label: {
-            Label("结束旅程", systemImage: "flag.checkered")
+            Label(trip.isRecording ? "结束记录" : "结束旅程", systemImage: "flag.checkered")
                 .font(.headline)
                 .frame(maxWidth: .infinity)
                 .frame(height: 50)
@@ -179,10 +177,52 @@ struct TripDetailView: View {
         .tint(.orange)
     }
 
+    private var distance: Double {
+        chunks.reduce(0) { $0 + $1.distance } + (trip.isActive ? TrackPoint.distance(of: engine.pendingPoints) : 0)
+    }
+
+    private var elevationGain: Double {
+        chunks.reduce(0) { $0 + TrackPoint.elevationGain(of: $1.points) }
+    }
+
+    /// Minutes per kilometre on foot, average speed on a bike, as fitness apps show them.
+    private var paceText: String {
+        let seconds = trip.interval.duration
+        guard distance > 50, seconds > 0 else { return "—" }
+        if trip.activity == .cycling { return Format.speed(distance / seconds) }
+        return Format.pace(secondsPerKilometre: seconds / (distance / 1000))
+    }
+
+    private var shareStats: [(String, String)] {
+        let distanceStat = (String(localized: "距离", bundle: .appLanguage), Format.distance(distance))
+        if trip.isRecording {
+            return [distanceStat,
+                    (String(localized: "用时", bundle: .appLanguage), Format.duration(trip.interval.duration)),
+                    (String(localized: "爬升", bundle: .appLanguage), Format.elevation(elevationGain))]
+        }
+        return [distanceStat,
+                (String(localized: "天数", bundle: .appLanguage), "\(Calendar.current.days(in: trip.interval).count)"),
+                (String(localized: "地点", bundle: .appLanguage), "\(stays.count)")]
+    }
+
+    @ViewBuilder
     private var metrics: some View {
+        if trip.isRecording {
+            MetricGrid {
+                MetricTile(title: "距离", value: Format.distance(distance),
+                           symbol: "point.topright.arrow.triangle.backward.to.point.bottomleft.scurvepath", tint: .blue)
+                MetricTile(title: "用时", value: Format.duration(trip.interval.duration), symbol: "clock.fill", tint: .orange)
+                MetricTile(title: trip.activity == .cycling ? "均速" : "配速", value: paceText, symbol: "speedometer", tint: .green)
+                MetricTile(title: "爬升", value: Format.elevation(elevationGain), symbol: "mountain.2.fill", tint: .brown)
+            }
+        } else {
+            tripMetrics
+        }
+    }
+
+    private var tripMetrics: some View {
         MetricGrid {
-            MetricTile(title: "距离", value: Format.distance(chunks.reduce(0) { $0 + $1.distance }
-                                                             + (trip.isActive ? TrackPoint.distance(of: engine.pendingPoints) : 0)),
+            MetricTile(title: "距离", value: Format.distance(distance),
                        symbol: "point.topright.arrow.triangle.backward.to.point.bottomleft.scurvepath", tint: .blue)
             MetricTile(title: "用时", value: Format.duration(trip.interval.duration), symbol: "clock.fill", tint: .orange)
             MetricTile(title: "地点", value: "\(stays.count)", symbol: "mappin.and.ellipse", tint: .pink)
@@ -205,7 +245,7 @@ struct TripDetailView: View {
                 PhotosPicker(selection: $pickerItems, maxSelectionCount: 30, matching: .images) {
                     VStack(spacing: 8) {
                         Image(systemName: "photo.on.rectangle.angled").font(.largeTitle)
-                        Text("为这段旅程添加照片").font(.subheadline)
+                        Text(trip.isRecording ? "为这次记录添加照片" : "为这段旅程添加照片").font(.subheadline)
                     }
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
@@ -230,7 +270,7 @@ struct TripDetailView: View {
     private var notesSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             SectionHeader(title: "备注")
-            TextField("记下这段旅程的故事…", text: $trip.notes, axis: .vertical)
+            TextField(trip.isRecording ? "记下这次的感受…" : "记下这段旅程的故事…", text: $trip.notes, axis: .vertical)
                 .lineLimit(3...12)
                 .padding(16)
                 .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))

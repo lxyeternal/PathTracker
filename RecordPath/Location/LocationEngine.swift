@@ -272,6 +272,11 @@ final class LocationEngine {
 
     func endTrip(_ trip: Trip) {
         trip.endDate = Date()
+        // A trip gathers all-day tracks and doesn't drive recording; only a recording does.
+        guard activeTripID == trip.id else {
+            try? context.save()
+            return
+        }
         activeTripID = nil
         UserDefaults.standard.removeObject(forKey: Keys.tripID)
         // Back to all-day recording if it is on; otherwise a manual recording simply stops.

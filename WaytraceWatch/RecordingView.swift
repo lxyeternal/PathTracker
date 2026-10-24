@@ -128,9 +128,7 @@ private struct MetricsPage: View {
         let seconds = recorder.elapsed(at: Date())
         guard recorder.distance > 50, seconds > 0 else { return "—" }
         if recorder.activity == .cycling { return Format.speed(recorder.distance / seconds) }
-        let perKilometre = seconds / (recorder.distance / 1000)
-        let minutes = Int(perKilometre) / 60, rest = Int(perKilometre) % 60
-        return String(format: "%d'%02d\"", minutes, rest) + " /km"
+        return Format.pace(secondsPerKilometre: seconds / (recorder.distance / 1000))
     }
 }
 

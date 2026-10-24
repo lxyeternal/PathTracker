@@ -704,7 +704,7 @@
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "在后台持续记录你走过的路线，自动标出去过的地点、城市和国家。轨迹只保存在你自己的 iCloud 中。";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "记录你走过的路线，并在地图上显示你的位置。";
 				INFOPLIST_KEY_NSMotionUsageDescription = "识别你在步行、骑行还是乘车，让轨迹更准确也更省电。";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "为旅程添加照片。";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "在时间线上显示你在每个地方拍的照片，也可以为旅程添加照片。照片只在手机上读取，不会上传。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -741,7 +741,7 @@
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "在后台持续记录你走过的路线，自动标出去过的地点、城市和国家。轨迹只保存在你自己的 iCloud 中。";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "记录你走过的路线，并在地图上显示你的位置。";
 				INFOPLIST_KEY_NSMotionUsageDescription = "识别你在步行、骑行还是乘车，让轨迹更准确也更省电。";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "为旅程添加照片。";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "在时间线上显示你在每个地方拍的照片，也可以为旅程添加照片。照片只在手机上读取，不会上传。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

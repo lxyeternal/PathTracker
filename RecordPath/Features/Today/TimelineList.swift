@@ -1,4 +1,5 @@
 import SwiftUI
+import Photos
 
 /// The day as a vertical story: places you stayed, joined by how you got between them.
 struct TimelineList: View {
@@ -43,8 +44,37 @@ private struct StayRow: View {
     let stay: Stay
     let day: Date
     @Environment(\.dynamicTypeSize) private var typeSize
+    @State private var photos: [PHAsset] = []
 
     var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            mainRow
+            if !photos.isEmpty { photoStrip }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .contentShape(.rect)
+        .task(id: "\(stay.arrival.timeIntervalSince1970)-\(stay.departure?.timeIntervalSince1970 ?? 0)") {
+            photos = DayPhotos.assets(in: DayPhotos.interval(of: stay))
+        }
+    }
+
+    /// The first few photos taken here, lined up under the place's name.
+    private var photoStrip: some View {
+        HStack(spacing: 6) {
+            ForEach(photos.prefix(4), id: \.localIdentifier) { AssetThumbnail(asset: $0, side: 48) }
+            if photos.count > 4 {
+                Text("+\(photos.count - 4)")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 48, height: 48)
+                    .background(.background.tertiary, in: .rect(cornerRadius: 9, style: .continuous))
+            }
+        }
+        .padding(.leading, 52)
+    }
+
+    private var mainRow: some View {
         HStack(spacing: 14) {
             PlaceIcon(category: stay.category, isLandmark: stay.isLandmark)
             VStack(alignment: .leading, spacing: 3) {
@@ -80,9 +110,6 @@ private struct StayRow: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.tertiary)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .contentShape(.rect)
     }
 
     /// Times on the day being viewed show just the time; anything on another day gets its date.

@@ -1,36 +1,49 @@
 import SwiftUI
-import WatchConnectivity
 import SwiftData
 
 struct TripsView: View {
     @Binding var showingSettings: Bool
     @Environment(LocationEngine.self) private var engine
-    @Query(sort: \Trip.startDate, order: .reverse) private var trips: [Trip]
+    @Query(sort: \Trip.startDate, order: .reverse) private var all: [Trip]
     @State private var showingNewTrip = false
+    @State private var showingNewRecording = false
+    @AppStorage("trips.list") private var list = ListKind.trips
 
-    private var activeTrip: Trip? { trips.first { $0.isActive && $0.id == engine.activeTripID } ?? trips.first(where: \.isActive) }
-    private var pastTrips: [Trip] { trips.filter { $0.id != activeTrip?.id } }
+    enum ListKind: String { case trips, recordings }
+
+    private var openRecording: Trip? { all.first { $0.isActive && $0.isRecording } }
+    private var openTrip: Trip? { all.first { $0.isActive && !$0.isRecording } }
+    private var trips: [Trip] { all.filter { !$0.isActive && !$0.isRecording } }
+    private var recordings: [Trip] { all.filter { !$0.isActive && $0.isRecording } }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    if let activeTrip {
-                        NavigationLink(value: activeTrip) { ActiveTripCard(trip: activeTrip) }
+                    if let openRecording {
+                        NavigationLink(value: openRecording) { ActiveTripCard(trip: openRecording) }
+                            .buttonStyle(PressableStyle())
+                    }
+                    if let openTrip {
+                        NavigationLink(value: openTrip) { ActiveTripCard(trip: openTrip) }
                             .buttonStyle(PressableStyle())
                     } else {
                         startCard
                     }
 
-                    if pastTrips.isEmpty {
-                        if activeTrip == nil {
-                            Text("旅程把一段时间的轨迹、地点和照片收在一起。你也可以为已经过去的日子补建旅程，轨迹会自动归入。")
-                                .font(.footnote).foregroundStyle(.secondary).padding(.horizontal, 4)
-                        }
+                    Picker("列表", selection: $list.animation(.snappy)) {
+                        Text("旅程 \(trips.count)").tag(ListKind.trips)
+                        Text("记录 \(recordings.count)").tag(ListKind.recordings)
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.top, 4)
+
+                    let items = list == .trips ? trips : recordings
+                    if items.isEmpty {
+                        emptyState
                     } else {
-                        SectionHeader(title: "过去的旅程", trailing: "\(pastTrips.count)")
                         LazyVStack(spacing: 12) {
-                            ForEach(pastTrips) { trip in
+                            ForEach(items) { trip in
                                 NavigationLink(value: trip) { TripRow(trip: trip) }
                                     .buttonStyle(PressableStyle())
                             }
@@ -43,7 +56,11 @@ struct TripsView: View {
             .navigationTitle("旅程")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("新旅程", systemImage: "plus") { showingNewTrip = true }
+                    Menu("新建", systemImage: "plus") {
+                        Button("新旅程", systemImage: "suitcase") { showingNewTrip = true }
+                        Button("开始记录", systemImage: "record.circle") { showingNewRecording = true }
+                            .disabled(engine.activeTripID != nil)
+                    }
                 }
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
                 ToolbarItem(placement: .topBarTrailing) {
@@ -52,23 +69,48 @@ struct TripsView: View {
             }
             .navigationDestination(for: Trip.self) { TripDetailView(trip: $0) }
             .sheet(isPresented: $showingNewTrip) { NewTripSheet() }
+            .sheet(isPresented: $showingNewRecording) { NewRecordingSheet() }
         }
+    }
+
+    @ViewBuilder
+    private var emptyState: some View {
+        VStack(spacing: 10) {
+            Image(systemName: list == .trips ? "suitcase" : "figure.hiking")
+                .font(.largeTitle)
+                .foregroundStyle(.tertiary)
+            Text(list == .trips
+                 ? "旅程把几天的轨迹、地点和照片收在一起。也可以为已经过去的日子补建旅程，轨迹会自动归入。"
+                 : "一次徒步、跑步或骑行的记录会出现在这里。在“今天”页右上角开始记录，或者在 Apple Watch 上记录。")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            if list == .recordings, engine.activeTripID == nil {
+                Button("开始记录", systemImage: "record.circle") { showingNewRecording = true }
+                    .buttonStyle(.bordered)
+                    .tint(.orange)
+                    .padding(.top, 4)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 28)
+        .padding(.horizontal, 20)
     }
 
     private var startCard: some View {
         Button { showingNewTrip = true } label: {
             HStack(spacing: 16) {
-                Image(systemName: "figure.hiking")
-                    .font(.system(size: 30, weight: .semibold))
+                Image(systemName: "suitcase.fill")
+                    .font(.system(size: 28, weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(width: 64, height: 64)
-                    .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Color.orange.gradient))
+                    .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Color.blue.gradient))
                 VStack(alignment: .leading, spacing: 4) {
                     Text("开始一段旅程").font(.title3.bold())
-                    Text("徒步、出游或出差，记录会更精细。").font(.subheadline).foregroundStyle(.secondary)
+                    Text("出游或出差的几天，轨迹和地点会自动收进来。").font(.subheadline).foregroundStyle(.secondary)
                 }
                 Spacer()
-                Image(systemName: "plus.circle.fill").font(.title).foregroundStyle(.orange)
+                Image(systemName: "plus.circle.fill").font(.title).foregroundStyle(.blue)
             }
             .padding(16)
             .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
@@ -92,7 +134,9 @@ private struct ActiveTripCard: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 8) {
                 PulsingDot(color: .orange)
-                Text("旅程进行中").font(.subheadline.weight(.semibold)).foregroundStyle(.orange)
+                Text(trip.activity.map { String(localized: "\($0.title)记录中", bundle: .appLanguage) }
+                     ?? String(localized: "旅程进行中", bundle: .appLanguage))
+                    .font(.subheadline.weight(.semibold)).foregroundStyle(.orange)
                 Spacer()
                 Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
             }
@@ -158,22 +202,13 @@ struct TripRow: View {
 struct NewTripSheet: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
-    @Environment(LocationEngine.self) private var engine
 
     @State private var title = ""
     @State private var emoji = "🧭"
     @State private var startsNow = true
     @State private var startDate = Calendar.current.date(byAdding: .day, value: -3, to: Date()) ?? Date()
     @State private var endDate = Date()
-    @State private var recordOnWatch = true
-    @State private var chosenWatchSetting = false
     @FocusState private var titleFocused: Bool
-
-    /// Offered only when there's a Watch with the app on it.
-    private var hasWatch: Bool {
-        WCSession.isSupported() && WCSession.default.activationState == .activated
-            && WCSession.default.isPaired && WCSession.default.isWatchAppInstalled
-    }
 
     var body: some View {
         NavigationStack {
@@ -197,23 +232,9 @@ struct NewTripSheet: View {
                         DatePicker("最后一天", selection: $endDate, in: startDate...Date(), displayedComponents: .date)
                     }
                 } footer: {
-                    Text(startsNow ? "手动记录使用更高的定位精度，和全天自动记录互不影响，结束后会保存在“旅程”里。"
+                    Text(startsNow ? "从现在起全天记录的轨迹和地点会自动收进这段旅程，回来后在旅程里点“结束旅程”。"
                                    : "这几天里记录的轨迹和地点会自动归入这段旅程。")
                 }
-
-                if startsNow && hasWatch {
-                    Section {
-                        Toggle(isOn: Binding(get: { recordOnWatch }, set: { recordOnWatch = $0; chosenWatchSetting = true })) {
-                            Label("在 Apple Watch 上同时记录", systemImage: "applewatch")
-                        }
-                    } footer: {
-                        Text("手表上的漫迹会自动打开，记录心率并存为体能训练；在任一设备上结束，两边一起结束。适合徒步、跑步这类几个小时内的活动。")
-                    }
-                }
-            }
-            .onChange(of: emoji) { _, newValue in
-                // Driving or flying isn't a workout; follow the icon until the user decides.
-                if !chosenWatchSetting { recordOnWatch = WatchActivity.forTripEmoji(newValue) != nil }
             }
             .navigationTitle("新旅程")
             .navigationBarTitleDisplayMode(.inline)
@@ -262,13 +283,10 @@ struct NewTripSheet: View {
         context.insert(trip)
         try? context.save()
         if startsNow {
-            // Only one trip records at a time.
+            // One trip in progress at a time; a recording during it carries on.
             let others = (try? context.fetch(FetchDescriptor<Trip>())) ?? []
-            for other in others where other.id != trip.id && other.isActive { other.endDate = Date() }
-            if hasWatch && recordOnWatch {
-                LiveRecording.setWatchActivity(WatchActivity.forTripEmoji(emoji) ?? .walking, for: trip.id)
-            }
-            engine.beginTrip(trip)
+            for other in others where other.id != trip.id && other.isActive && !other.isRecording { other.endDate = Date() }
+            try? context.save()
         }
         dismiss()
     }

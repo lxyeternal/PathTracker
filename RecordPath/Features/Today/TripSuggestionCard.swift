@@ -25,13 +25,13 @@ struct TripSuggestionCard: View {
 
     var body: some View {
         Group {
-            if let awayStay, let city = awayStay.city, openTrips.isEmpty, engine.activeTripID == nil, dismissedKey != dismissKey {
+            if let awayStay, let city = awayStay.city, !openTrips.contains(where: { !$0.isRecording }), dismissedKey != dismissKey {
                 HStack(alignment: .top, spacing: 14) {
                     Text(String.flag(for: awayStay.countryCode))
                         .font(.system(size: 30))
                     VStack(alignment: .leading, spacing: 6) {
                         Text("你好像在\(city)").font(.subheadline.weight(.semibold))
-                        Text("要把这次出行记成一段旅程吗？旅程会用更高的精度记录路线。")
+                        Text("要把这次出行收进一段旅程吗？这几天的路线、地点和照片会自动归入。")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                         HStack(spacing: 10) {
@@ -59,9 +59,8 @@ struct TripSuggestionCard: View {
         let firstAway = home.flatMap { home in todayStays.first { Self.isAway($0, from: home) } } ?? stay
         let trip = Trip(title: String(localized: "\(city)之旅", bundle: .appLanguage), startDate: firstAway.arrival)
         trip.coverEmoji = "🧳"
-        context.insert(trip)
+        withAnimation { context.insert(trip) }
         try? context.save()
-        withAnimation { engine.beginTrip(trip) }
     }
 
     /// The city with the most days recorded over the last two months.

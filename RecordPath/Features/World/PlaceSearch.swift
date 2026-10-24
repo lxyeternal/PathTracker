@@ -139,8 +139,8 @@ struct PlaceVisitsView: View {
     var body: some View {
         List {
             Section {
-                Map(initialPosition: .camera(MapCamera(centerCoordinate: place.latest.coordinate, distance: 1500))) {
-                    Annotation(place.name, coordinate: place.latest.coordinate) {
+                Map(initialPosition: .camera(MapCamera(centerCoordinate: place.latest.coordinate.onMap, distance: 1500))) {
+                    Annotation(place.name, coordinate: place.latest.coordinate.onMap) {
                         PlaceIcon(category: place.latest.category, isLandmark: place.latest.isLandmark, size: 34)
                             .overlay(Circle().stroke(.white, lineWidth: 2))
                     }

@@ -29,11 +29,11 @@ struct TrackMap: View {
                     .stroke(line.color.gradient, style: StrokeStyle(lineWidth: 4.5, lineCap: .round, lineJoin: .round))
             }
             if livePoints.count > 1 {
-                MapPolyline(coordinates: livePoints.map(\.coordinate))
+                MapPolyline(coordinates: livePoints.map(\.coordinate.onMap))
                     .stroke(.green, style: StrokeStyle(lineWidth: 4.5, lineCap: .round, lineJoin: .round, dash: [1, 7]))
             }
             ForEach(stays) { stay in
-                Annotation(stay.displayName, coordinate: stay.coordinate, anchor: .center) {
+                Annotation(stay.displayName, coordinate: stay.coordinate.onMap, anchor: .center) {
                     Button {
                         onSelectStay?(stay)
                     } label: {
@@ -70,7 +70,7 @@ struct TrackMap: View {
     /// Frames everything with some breathing room, never zooming in closer than a few
     /// streets; with nothing to show it follows the user.
     private var framing: MapCameraPosition {
-        let coordinates = lines.flatMap(\.coordinates) + stays.map(\.coordinate) + livePoints.map(\.coordinate)
+        let coordinates = lines.flatMap(\.coordinates) + stays.map(\.coordinate.onMap) + livePoints.map(\.coordinate.onMap)
         guard !coordinates.isEmpty else { return .userLocation(fallback: .automatic) }
         var rect = MKMapRect.null
         for coordinate in coordinates {
@@ -93,7 +93,7 @@ struct TrackMap: View {
         return chunks.enumerated().compactMap { index, chunk in
             let points = chunk.points.simplified(tolerance: tolerance)
             guard points.count > 1 else { return nil }
-            return Line(id: index, coordinates: points.map(\.coordinate), color: chunk.mode.color)
+            return Line(id: index, coordinates: points.map(\.coordinate.onMap), color: chunk.mode.color)
         }
     }
 }

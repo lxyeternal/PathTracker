@@ -6,6 +6,7 @@ struct WorldView: View {
     @Binding var showingSettings: Bool
     @Query(sort: \Stay.arrival, order: .reverse) private var stays: [Stay]
     @State private var insights = WorldInsights()
+    @State private var lightUp = LightUpInsights()
     @State private var selectedStay: Stay?
     @State private var showingMap = false
     @State private var search = ""
@@ -24,6 +25,7 @@ struct WorldView: View {
                         PlaceSearchResults(query: search, stays: stays, countries: insights.countries)
                     } else {
                         summaryGrid
+                        lightUpCard
                         mapCard
                         if !insights.countries.isEmpty { countries }
                         if !insights.frequentPlaces.isEmpty { frequentPlaces }
@@ -47,13 +49,19 @@ struct WorldView: View {
             .navigationDestination(for: PlacesList.self) { list in
                 PlacesListView(list: list)
             }
+            .navigationDestination(for: LightUpRoute.self) { _ in
+                LightUpView(stays: stays)
+            }
             .sheet(item: $selectedStay) { StayDetailView(stay: $0) }
             .fullScreenCover(isPresented: $showingMap) {
                 WorldMapScreen(stays: stays)
                     .navigationTransition(.zoom(sourceID: "world", in: namespace))
             }
             .task(id: stays.map(\.tagStateRaw).reduce(stays.count, +)) {
-                withAnimation(.smooth) { insights = WorldInsights(stays: stays) }
+                withAnimation(.smooth) {
+                    insights = WorldInsights(stays: stays)
+                    lightUp = LightUpInsights(stays: stays)
+                }
             }
         }
     }
@@ -65,6 +73,27 @@ struct WorldView: View {
             MetricTile(title: "景点", value: "\(insights.landmarks.count)", symbol: "star.fill", tint: .yellow)
             MetricTile(title: "记录天数", value: "\(insights.trackedDays)", symbol: "calendar", tint: .teal)
         }
+    }
+
+    /// A peek at the light-up map: the province tiles, small, with the counts.
+    private var lightUpCard: some View {
+        NavigationLink(value: LightUpRoute()) {
+            HStack(spacing: 16) {
+                ProvinceTileMap(insights: lightUp, showsLabels: false)
+                    .allowsHitTesting(false)
+                    .frame(width: 104)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("点亮地图").font(.headline)
+                    Text("\(lightUp.provinces.count) 个省级行政区 · \(lightUp.countries.count) 个国家和地区")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+            }
+            .padding(14)
+            .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
+        }
+        .buttonStyle(PressableStyle())
     }
 
     private var mapCard: some View {
@@ -224,7 +253,7 @@ struct WorldMap: View {
     var body: some View {
         Map(position: $position, interactionModes: interactive ? .all : []) {
             ForEach(places) { stay in
-                Annotation(stay.displayName, coordinate: stay.coordinate, anchor: .center) {
+                Annotation(stay.displayName, coordinate: stay.coordinate.onMap, anchor: .center) {
                     Button { onSelect?(stay) } label: {
                         Circle()
                             .fill((stay.isLandmark ? Color.yellow : Color.accentColor).gradient)

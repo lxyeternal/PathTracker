@@ -103,6 +103,7 @@ struct WorldInsights {
         var cities = Set<String>()
         var days = Set<Date>()
         var landmarkNames = Set<String>()
+        let cityNames = CityNames.canonical(for: stays)
 
         for stay in stays {
             let interval = DateInterval(start: stay.arrival, end: max(stay.departure ?? Date(), stay.arrival))
@@ -113,7 +114,7 @@ struct WorldInsights {
             summary.days.formUnion(stayDays)
             summary.firstVisit = min(summary.firstVisit, stay.arrival)
             summary.lastVisit = max(summary.lastVisit, stay.departure ?? Date())
-            if let city = stay.city {
+            if let key = CityNames.key(stay), let city = cityNames[key] {
                 summary.cities[city, default: 0] += 1
                 cities.insert("\(code)|\(city)")
             }
@@ -156,5 +157,55 @@ struct WorldInsights {
             .sorted { $0.totalTime > $1.totalTime }
             .prefix(12)
             .map { $0 }
+    }
+}
+
+// MARK: - City names
+
+/// The same city can be stored under two names ("上海" and "Shanghai") when places were named
+/// while the device used different languages. Names in one country whose places lie within
+/// 25 km are one city, shown under the name that fits the app's language.
+enum CityNames {
+    static func key(_ stay: Stay) -> String? {
+        stay.city.map { "\(stay.countryCode ?? "")|\($0)" }
+    }
+
+    /// Maps each `key(_:)` to the city name to show.
+    static func canonical(for stays: [Stay]) -> [String: String] {
+        struct Name { var name: String; var country: String; var lat = 0.0; var lon = 0.0; var count = 0 }
+        var names: [String: Name] = [:]
+        for stay in stays {
+            guard let key = key(stay), let city = stay.city else { continue }
+            var entry = names[key] ?? Name(name: city, country: stay.countryCode ?? "")
+            entry.lat += stay.latitude
+            entry.lon += stay.longitude
+            entry.count += 1
+            names[key] = entry
+        }
+        let keys = Array(names.keys)
+        func center(_ n: Name) -> CLLocation { CLLocation(latitude: n.lat / Double(n.count), longitude: n.lon / Double(n.count)) }
+
+        // Union names that are the same city.
+        var parent = Dictionary(uniqueKeysWithValues: keys.map { ($0, $0) })
+        func root(_ k: String) -> String { var k = k; while let p = parent[k], p != k { k = p }; return k }
+        for (i, a) in keys.enumerated() {
+            for b in keys[(i + 1)...] where names[a]!.country == names[b]!.country {
+                if center(names[a]!).distance(from: center(names[b]!)) < 25_000 { parent[root(b)] = root(a) }
+            }
+        }
+
+        let prefersChinese = appLocale.language.languageCode == .chinese
+        var result: [String: String] = [:]
+        for group in Dictionary(grouping: keys, by: root).values {
+            let members = group.compactMap { names[$0] }
+            let fitting = members.filter { hasHan($0.name) == prefersChinese }
+            let best = (fitting.isEmpty ? members : fitting).max { $0.count < $1.count }?.name ?? members[0].name
+            for key in group { result[key] = best }
+        }
+        return result
+    }
+
+    private static func hasHan(_ text: String) -> Bool {
+        text.unicodeScalars.contains { (0x4E00...0x9FFF).contains($0.value) || (0x3400...0x4DBF).contains($0.value) }
     }
 }

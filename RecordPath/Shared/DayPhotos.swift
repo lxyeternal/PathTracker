@@ -1,0 +1,109 @@
+import SwiftUI
+import Photos
+
+/// Photos taken at a place, shown on the timeline. Read on the device only, never copied.
+enum DayPhotos {
+    static var status: PHAuthorizationStatus { PHPhotoLibrary.authorizationStatus(for: .readWrite) }
+    static var canRead: Bool { status == .authorized || status == .limited }
+
+    static func requestAccess() async -> PHAuthorizationStatus {
+        await PHPhotoLibrary.requestAuthorization(for: .readWrite)
+    }
+
+    /// Photos (not screenshots) taken during the interval, oldest first.
+    static func assets(in interval: DateInterval) -> [PHAsset] {
+        guard canRead else { return [] }
+        let options = PHFetchOptions()
+        options.predicate = NSPredicate(format: "mediaType == %d AND creationDate >= %@ AND creationDate <= %@ AND NOT ((mediaSubtype & %d) != 0)",
+                                        PHAssetMediaType.image.rawValue, interval.start as NSDate, interval.end as NSDate,
+                                        PHAssetMediaSubtype.photoScreenshot.rawValue)
+        options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: true)]
+        let result = PHAsset.fetchAssets(with: options)
+        return (0..<result.count).map { result.object(at: $0) }
+    }
+
+    static func interval(of stay: Stay) -> DateInterval {
+        DateInterval(start: stay.arrival, end: max(stay.departure ?? Date(), stay.arrival))
+    }
+}
+
+struct AssetThumbnail: View {
+    let asset: PHAsset
+    let side: CGFloat
+    @State private var image: UIImage?
+    @Environment(\.displayScale) private var scale
+
+    var body: some View {
+        Color.secondary.opacity(0.15)
+            .frame(width: side, height: side)
+            .overlay {
+                if let image {
+                    Image(uiImage: image).resizable().scaledToFill()
+                }
+            }
+            .clipShape(.rect(cornerRadius: side * 0.18, style: .continuous))
+            .task(id: asset.localIdentifier) {
+                image = await AssetLoader.image(for: asset, size: CGSize(width: side * scale, height: side * scale), exact: false)
+            }
+            .accessibilityLabel("照片")
+    }
+}
+
+/// A photo full screen, pinch to zoom.
+struct AssetViewer: View {
+    let asset: PHAsset
+    @Environment(\.dismiss) private var dismiss
+    @State private var image: UIImage?
+    @State private var zoom: CGFloat = 1
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                if let image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .scaleEffect(zoom)
+                        .gesture(MagnifyGesture().onChanged { zoom = max(1, $0.magnification) }.onEnded { _ in
+                            withAnimation(.smooth) { zoom = 1 }
+                        })
+                } else {
+                    ProgressView().tint(.white)
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("关闭", systemImage: "xmark") { dismiss() }
+                }
+                if let date = asset.creationDate {
+                    ToolbarItem(placement: .principal) {
+                        Text(date.formatted(.dateTime.month().day().hour().minute().locale(appLocale)))
+                            .font(.subheadline.weight(.semibold)).foregroundStyle(.white)
+                    }
+                }
+            }
+            .toolbarBackground(.hidden, for: .navigationBar)
+        }
+        .task { image = await AssetLoader.image(for: asset, size: PHImageManagerMaximumSize, exact: true) }
+    }
+}
+
+private enum AssetLoader {
+    static func image(for asset: PHAsset, size: CGSize, exact: Bool) async -> UIImage? {
+        let options = PHImageRequestOptions()
+        options.isNetworkAccessAllowed = true
+        options.deliveryMode = exact ? .highQualityFormat : .opportunistic
+        options.resizeMode = exact ? .none : .fast
+        return await withCheckedContinuation { continuation in
+            var resumed = false
+            PHImageManager.default().requestImage(for: asset, targetSize: size, contentMode: .aspectFill, options: options) { image, info in
+                // Opportunistic delivery can call back twice; the degraded preview comes first.
+                let degraded = (info?[PHImageResultIsDegradedKey] as? Bool) ?? false
+                guard !resumed, !degraded || image == nil else { return }
+                resumed = true
+                continuation.resume(returning: image)
+            }
+        }
+    }
+}

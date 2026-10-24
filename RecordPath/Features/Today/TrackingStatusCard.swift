@@ -64,7 +64,7 @@ struct TrackingStatusCard: View {
             .confirmationDialog("结束“\(trip.title)”？", isPresented: $confirmingEnd, titleVisibility: .visible) {
                 Button("结束记录") { withAnimation { engine.endTrip(trip) } }
             } message: {
-                Text(engine.isEnabled ? "之后仍会继续全天自动记录。" : "结束后不再记录位置。记录会保存在“旅程”里。")
+                Text(engine.isEnabled ? "之后仍会继续全天自动记录。" : "结束后不再记录位置。记录会保存在“旅程”页的“记录”里。")
             }
     }
 
@@ -210,7 +210,7 @@ private struct TripRecordingRow: View {
     }
 
     private func detail(now: Date) -> String {
-        var parts = [String(localized: "旅程记录中", bundle: .appLanguage), Format.duration(now.timeIntervalSince(trip.startDate)), Format.distance(distance)]
+        var parts = [trip.activity?.title ?? String(localized: "记录中", bundle: .appLanguage), Format.duration(now.timeIntervalSince(trip.startDate)), Format.distance(distance)]
         if let stayName { parts.append(String(localized: "在 \(stayName)", bundle: .appLanguage)) }
         return parts.joined(separator: " · ")
     }

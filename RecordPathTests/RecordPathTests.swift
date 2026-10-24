@@ -387,9 +387,16 @@ struct CityNameTests {
         ("New York", "New York, NY", "US", "New York"),
         ("Hangzhou", "Hangzhou, Zhejiang", "CN", "Hangzhou"),
         ("Shanghai", "Shanghai", "CN", "Shanghai"),
+        ("上海", "中国上海市上海", "CN", "上海"),
+        ("杭州", "中国浙江杭州", "CN", "杭州"),
     ])
     func normalizesCities(city: String, context: String, code: String, expected: String) {
         #expect(CityName.normalized(cityName: city, shortContext: context, countryCode: code) == expected)
+    }
+
+    @Test func hongKongAndMacauAreOneCityEach() {
+        #expect(CityName.normalized(cityName: "中环", shortContext: "中国香港特别行政区中环", countryCode: "HK", regionName: "中国香港特别行政区") == "香港")
+        #expect(CityName.normalized(cityName: "Central", shortContext: "Central, Central", countryCode: "HK", regionName: "Hong Kong SAR, China") == "Hong Kong")
     }
 
     @Test func fallsBackToCityNameWithoutContext() {
@@ -542,18 +549,23 @@ struct WatchRecordingImportTests {
 }
 
 struct LinkedRecordingTests {
-    @Test func tripIconDecidesWhetherTheWatchRecordsAlong() {
-        #expect(WatchActivity.forTripEmoji("🥾") == .hiking)
-        #expect(WatchActivity.forTripEmoji("🏔️") == .hiking)
-        #expect(WatchActivity.forTripEmoji("🚲") == .cycling)
-        #expect(WatchActivity.forTripEmoji("🧭") == .walking)
-        #expect(WatchActivity.forTripEmoji("✈️") == nil)
-        #expect(WatchActivity.forTripEmoji("🚗") == nil)
+    @Test func elevationGainIgnoresGPSJitter() {
+        // Wobbling ±3 m around 100 m, then a 40 m climb in steps and a small wobble at the top.
+        let altitudes = [100.0, 103, 98, 101, 97, 100, 110, 120, 130, 140, 138, 141]
+        let points = altitudes.enumerated().map { i, altitude in
+            TrackPoint(latitude: 31.2, longitude: 121.4, altitude: altitude, speed: 1, accuracy: 5,
+                       timestamp: Date(timeIntervalSince1970: Double(i) * 10))
+        }
+        #expect(TrackPoint.elevationGain(of: points) == 40)
+    }
+
+    @Test func paceReadsLikeAFitnessApp() {
+        #expect(Format.pace(secondsPerKilometre: 365) == "6'05\" /km")
     }
 
     @Test func workoutTypeRoundTrips() {
-        for activity in WatchActivity.allCases {
-            #expect(WatchActivity(workoutType: activity.workoutType) == activity)
+        for activity in ActivityType.allCases {
+            #expect(ActivityType(workoutType: activity.workoutType) == activity)
         }
     }
 
@@ -576,5 +588,194 @@ struct LinkedRecordingTests {
         snapshot.activeRecording = ActiveRecording(tripID: UUID(), title: "徒步", emoji: "🥾", start: Date(), watchActivity: .hiking)
         let decoded = try #require(WatchSnapshot.decode(snapshot.encoded()))
         #expect(decoded.activeRecording == snapshot.activeRecording)
+    }
+}
+
+struct ChinaCoordinatesTests {
+    @Test(arguments: [
+        // WGS-84 → GCJ-02 reference values from the published transform.
+        (31.1774276, 121.5272106, 31.17530398364597, 121.531541859215),
+        (39.911954, 116.377817, 39.91334545536069, 116.38404722455657),
+        (22.543847, 113.912316, 22.540796131694766, 113.9171764808363),
+    ])
+    func matchesTheReferenceTransform(lat: Double, lon: Double, gcjLat: Double, gcjLon: Double) {
+        let shifted = CLLocationCoordinate2D(latitude: lat, longitude: lon).onMap
+        #expect(abs(shifted.latitude - gcjLat) < 1e-6)
+        #expect(abs(shifted.longitude - gcjLon) < 1e-6)
+    }
+
+    @Test(arguments: [
+        ("北京", 39.9042, 116.4074), ("上海", 31.2304, 121.4737), ("深圳蛇口", 22.4855, 113.9150),
+        ("深圳福田口岸", 22.5200, 114.0700), ("珠海拱北", 22.2220, 113.5520), ("横琴", 22.1200, 113.5300),
+        ("厦门", 24.4798, 118.0894), ("平潭", 25.5000, 119.7800), ("三亚", 18.2528, 109.5119), ("海口", 20.0440, 110.1999),
+        ("北海", 21.4810, 109.1200), ("拉萨", 29.6520, 91.1720), ("日喀则", 29.2670, 88.8800), ("乌鲁木齐", 43.8256, 87.6168),
+        ("喀什", 39.4704, 75.9898), ("塔城", 46.7460, 82.9800), ("阿勒泰", 47.8440, 88.1400), ("哈尔滨", 45.8038, 126.5349),
+        ("黑河", 50.2450, 127.4900), ("丹东", 40.1240, 124.3900), ("延吉", 42.9000, 129.5000), ("满洲里", 49.5970, 117.4300),
+        ("海拉尔", 49.2120, 119.7400), ("二连浩特", 43.6500, 111.9800), ("瑞丽", 24.0100, 97.8500), ("腾冲", 25.0200, 98.5000),
+        ("景洪", 22.0100, 100.8000), ("河口", 22.5200, 103.9500), ("东兴", 21.5480, 107.9700), ("凭祥", 22.1100, 106.7500),
+    ])
+    func mainlandCitiesShift(name: String, lat: Double, lon: Double) {
+        #expect(ChinaCoordinates.isInMainland(CLLocationCoordinate2D(latitude: lat, longitude: lon)), "\(name)")
+    }
+
+    @Test(arguments: [
+        ("香港中环", 22.2819, 114.1580), ("香港罗湖", 22.5280, 114.1130), ("大屿山", 22.2600, 113.9500), ("澳门", 22.1987, 113.5439),
+        ("氹仔", 22.1560, 113.5560), ("台北", 25.0330, 121.5654), ("高雄", 22.6273, 120.3014), ("金门", 24.4500, 118.3500),
+        ("马祖", 26.1600, 119.9400), ("首尔", 37.5665, 126.9780), ("平壤", 39.0392, 125.7625), ("东京", 35.6762, 139.6503),
+        ("乌兰巴托", 47.8864, 106.9057), ("乔巴山", 48.0700, 114.5000), ("符拉迪沃斯托克", 43.1155, 131.8855),
+        ("哈巴罗夫斯克", 48.4800, 135.0700), ("河内", 21.0278, 105.8342), ("万象", 17.9757, 102.6331), ("曼谷", 13.7563, 100.5018),
+        ("仰光", 16.8409, 96.1735), ("密支那", 25.3800, 97.4000), ("腊戍", 22.9400, 97.7500), ("加德满都", 27.7172, 85.3240),
+        ("新德里", 28.6139, 77.2090), ("阿拉木图", 43.2220, 76.8512), ("比什凯克", 42.8746, 74.5698), ("新加坡", 1.3521, 103.8198),
+    ])
+    func placesOutsideTheMainlandStayPut(name: String, lat: Double, lon: Double) {
+        let c = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+        #expect(!ChinaCoordinates.isInMainland(c), "\(name)")
+        #expect(c.onMap.latitude == lat && c.onMap.longitude == lon)
+    }
+}
+
+struct ProvinceTests {
+    // What Apple's geocoder actually returns (checked against the live service), as
+    // (country code, cityWithContext, city) → expected province.
+    @Test(arguments: [
+        ("CN", "中国浙江杭州", "杭州", "zhejiang"), ("CN", "中国山西太原", "太原", "shanxi"), ("CN", "中国陕西西安", "西安", "shaanxi"),
+        ("CN", "中国西藏自治区拉萨", "拉萨", "xizang"), ("CN", "", "内蒙古自治区", "neimenggu"), ("CN", "", "广西壮族自治区", "guangxi"),
+        ("CN", "中国重庆市重庆", "重庆", "chongqing"), ("CN", "", "上海", "shanghai"),
+        ("CN", "Hangzhou, Zhejiang, China", "Hangzhou", "zhejiang"), ("CN", "Taiyuan, Shanxi, China", "Taiyuan", "shanxi"),
+        ("CN", "Xi'an, Shaanxi, China", "Xi'an", "shaanxi"), ("CN", "Lhasa, Tibet, China", "Lhasa", "xizang"),
+        ("CN", "", "Inner Mongolia", "neimenggu"), ("CN", "", "Xinjiang", "xinjiang"), ("CN", "Shanghai, China", "Shanghai", "shanghai"),
+        ("HK", "Central, Central, Hong Kong SAR, China", "Central", "hongkong"), ("MO", "", "Macao", "macau"), ("TW", "", "Xinyi District", "taiwan"),
+    ])
+    func findsTheProvince(code: String, region: String, city: String, expected: String) {
+        #expect(Province.containing(countryCode: code, region: region.isEmpty ? nil : region, city: city)?.id == expected)
+    }
+
+    @Test func placesAbroadHaveNoProvince() {
+        #expect(Province.containing(countryCode: "JP", region: "Kyoto, Japan", city: "京都") == nil)
+    }
+
+    @Test func tileMapHas34DivisionsWithoutOverlap() {
+        #expect(Province.all.count == 34)
+        #expect(Set(Province.all.map { "\($0.row),\($0.column)" }).count == 34)
+        #expect(Province.all.allSatisfy { $0.row < Province.rows && $0.column < Province.columns })
+    }
+
+    @Test func everyCountryBelongsToAContinent() {
+        let codes = Continent.all.flatMap(\.regions)
+        #expect(codes.count > 200)
+        #expect(Set(codes).isSuperset(of: ["CN", "JP", "SG", "US", "FR", "BR", "AU", "ZA"]))
+    }
+}
+
+@MainActor
+struct YearReportTests {
+    private func stay(_ name: String?, city: String, code: String, lat: Double, lon: Double,
+                      _ y: Int, _ m: Int, _ d: Int, hours: Double = 2) -> Stay {
+        let start = Calendar.current.date(from: DateComponents(year: y, month: m, day: d, hour: 9))!
+        let stay = Stay(arrival: start, coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon))
+        stay.departure = start.addingTimeInterval(hours * 3600)
+        stay.city = city
+        stay.countryCode = code
+        stay.customName = name
+        return stay
+    }
+
+    @Test func sameCityUnderTwoNamesCountsOnce() {
+        let stays = [stay(nil, city: "上海", code: "CN", lat: 31.23, lon: 121.47, 2026, 3, 1),
+                     stay(nil, city: "Shanghai", code: "CN", lat: 31.20, lon: 121.44, 2026, 3, 2),
+                     stay(nil, city: "苏州", code: "CN", lat: 31.30, lon: 120.58, 2026, 3, 3)]
+        let names = CityNames.canonical(for: stays)
+        #expect(Set(names.values).count == 2)
+        #expect(names["CN|Shanghai"] == names["CN|上海"])
+        #expect(WorldInsights(stays: stays).cityCount == 2)
+    }
+
+    @Test func reportFindsTheStandoutsAndWhatWasNew() {
+        let home = (31.23, 121.47)
+        var stays = [stay("家", city: "上海", code: "CN", lat: home.0, lon: home.1, 2025, 12, 20, hours: 200)]
+        for day in 1...10 { stays.append(stay("家", city: "上海", code: "CN", lat: home.0, lon: home.1, 2026, 1, day, hours: 14)) }
+        for day in 1...4 { stays.append(stay("健身房", city: "上海", code: "CN", lat: 31.20, lon: 121.50, 2026, 2, day)) }
+        stays.append(stay(nil, city: "京都", code: "JP", lat: 35.01, lon: 135.77, 2026, 5, 1, hours: 30))
+        let day = Calendar.current.date(from: DateComponents(year: 2026, month: 5, day: 1, hour: 8))!
+        let movements = [YearReport.Movement(start: day, distance: 12_000, mode: .walking),
+                         YearReport.Movement(start: day, distance: 1_500_000, mode: .flying),
+                         YearReport.Movement(start: day.addingTimeInterval(-86_400 * 30), distance: 30_000, mode: .automotive)]
+
+        let report = YearReport.make(year: 2026, stays: stays, movements: movements, steps: [], trips: [])
+        #expect(report.distance == 1_542_000)
+        #expect(report.flightDistance == 1_500_000)
+        #expect(report.longestDay?.distance == 30_000)
+        #expect(report.favoritePlace?.name == "健身房")
+        #expect(report.favoritePlace?.visits == 4)
+        #expect(report.farthestPlace?.name == "京都")
+        #expect(report.newCountries == ["JP"])
+        #expect(report.countries.first == "CN")
+    }
+
+    @Test func firstYearHasNothingToCallNew() {
+        let stays = [stay(nil, city: "上海", code: "CN", lat: 31.23, lon: 121.47, 2026, 3, 1)]
+        let report = YearReport.make(year: 2026, stays: stays, movements: [], steps: [], trips: [])
+        #expect(report.countries == ["CN"])
+        #expect(report.newCountries.isEmpty)
+        #expect(report.newCities.isEmpty)
+    }
+}
+
+@MainActor
+struct ArrivalNotificationTests {
+    private func stay(city: String, region: String? = nil, code: String, lat: Double, lon: Double) -> Stay {
+        let stay = Stay(arrival: Date(), coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon))
+        stay.city = city
+        stay.region = region
+        stay.countryCode = code
+        stay.tagState = .tagged
+        return stay
+    }
+
+    private var history: [Stay] {
+        [stay(city: "上海", code: "CN", lat: 31.23, lon: 121.47), stay(city: "杭州", region: "中国浙江杭州", code: "CN", lat: 30.27, lon: 120.15)]
+    }
+
+    @Test func newCountryWins() {
+        let arrival = Notifier.firstArrival(stay(city: "东京", code: "JP", lat: 35.68, lon: 139.69), after: history)
+        #expect(arrival?.id == "arrival.JP")
+    }
+
+    @Test func newProvinceWhenTheCountryIsKnown() {
+        let arrival = Notifier.firstArrival(stay(city: "苏州", region: "中国江苏苏州", code: "CN", lat: 31.30, lon: 120.58), after: history)
+        #expect(arrival?.id == "arrival.jiangsu")
+    }
+
+    @Test func newCityInAKnownProvince() {
+        let arrival = Notifier.firstArrival(stay(city: "宁波", region: "中国浙江宁波", code: "CN", lat: 29.87, lon: 121.55), after: history)
+        #expect(arrival?.id == "arrival.city.CN|宁波")
+    }
+
+    @Test func familiarPlacesAndTheVeryFirstPlaceStayQuiet() {
+        #expect(Notifier.firstArrival(stay(city: "Shanghai", code: "CN", lat: 31.22, lon: 121.45), after: history) == nil)
+        #expect(Notifier.firstArrival(stay(city: "上海", code: "CN", lat: 31.23, lon: 121.47), after: []) == nil)
+    }
+}
+
+struct MilestoneTests {
+    @Test @MainActor func reachedOnTheDayItHappened() {
+        let days = (0..<12).map { Date(timeIntervalSince1970: 1_800_000_000 + Double($0) * 86_400) }
+        let codes = ["CN", "JP", "KR", "TH", "SG", "FR"]
+        let stays = codes.enumerated().map { i, code -> Stay in
+            let stay = Stay(arrival: days[i * 2], coordinate: CLLocationCoordinate2D(latitude: Double(i * 5), longitude: Double(i * 7)))
+            stay.departure = days[i * 2].addingTimeInterval(3600)
+            stay.countryCode = code
+            stay.city = "City\(i)"
+            return stay
+        }
+        let movements = days.map { ($0, 60_000.0) }
+        let progress = MilestoneProgress(stays: stays, movements: movements)
+        let reached = Dictionary(uniqueKeysWithValues: progress.reached.map { ($0.id, $0.date) })
+        #expect(reached["countries.3"] == days[4])
+        #expect(reached["countries.5"] == days[8])
+        #expect(reached["distance.500"] == days[8])
+        #expect(reached["countries.10"] == nil)
+        #expect(progress.next.contains { $0.id == "countries.10" && $0.current == 6 })
+        #expect(progress.next.contains { $0.id == "distance.1000" })
     }
 }
