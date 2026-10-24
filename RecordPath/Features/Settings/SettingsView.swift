@@ -10,6 +10,10 @@ struct SettingsView: View {
     @Environment(LocationEngine.self) private var engine
     @Environment(ActivityProvider.self) private var activity
     @Environment(AccountManager.self) private var account
+    @Environment(Notifier.self) private var notifier
+    @AppStorage(Notifier.Setting.arrivals.rawValue) private var notifyArrivals = true
+    @AppStorage(Notifier.Setting.milestones.rawValue) private var notifyMilestones = true
+    @AppStorage(Notifier.Setting.weekly.rawValue) private var notifyWeekly = true
 
     @State private var syncStatus: SyncStatus = .checking
     @State private var confirmingDeleteAll = false
@@ -25,6 +29,7 @@ struct SettingsView: View {
                 accountSection
                 languageSection
                 trackingSection
+                notificationsSection
                 permissionsSection
                 privacySection
                 dataSection
@@ -151,6 +156,26 @@ struct SettingsView: View {
         }
     }
 
+    @ViewBuilder
+    private var notificationsSection: some View {
+        Section {
+            switch notifier.authorization {
+            case .authorized, .provisional, .ephemeral:
+                Toggle(isOn: $notifyArrivals) { Label("第一次到达新地方", systemImage: "mappin.and.ellipse") }
+                Toggle(isOn: $notifyMilestones) { Label("达成里程碑", systemImage: "flag.checkered") }
+                Toggle(isOn: $notifyWeekly) { Label("每周一回顾上周", systemImage: "calendar") }
+            case .denied:
+                Button("在“设置”中打开通知", systemImage: "bell.slash") { openSettings() }
+            default:
+                Button("打开通知", systemImage: "bell.badge") { Task { await notifier.requestAuthorization() } }
+            }
+        } header: {
+            Text("通知")
+        } footer: {
+            Text("第一次到达新的国家、省份或城市，达成里程碑，以及每周一早上回顾上周。通知在手机上生成，不经过任何服务器。")
+        }
+    }
+
     private var permissionsSection: some View {
         Section("权限") {
             permissionRow(title: "位置", symbol: "location.circle.fill", tint: .blue,
@@ -171,6 +196,14 @@ struct SettingsView: View {
                     Task { await activity.requestAuthorization() }
                 }
             }
+            permissionRow(title: "照片（时间线）", symbol: "photo.circle.fill", tint: .orange,
+                          value: photosText, needsAction: false) {
+                if DayPhotos.status == .notDetermined {
+                    Task { _ = await DayPhotos.requestAccess() }
+                } else {
+                    openSettings()
+                }
+            }
             LabeledContent {
                 Text(syncStatus.title).foregroundStyle(syncStatus == .available ? .green : .secondary)
             } label: {
@@ -179,11 +212,20 @@ struct SettingsView: View {
         }
     }
 
+    private var photosText: String {
+        switch DayPhotos.status {
+        case .authorized: String(localized: "全部照片", bundle: .appLanguage)
+        case .limited: String(localized: "部分照片", bundle: .appLanguage)
+        case .denied, .restricted: String(localized: "未允许", bundle: .appLanguage)
+        default: String(localized: "未开启", bundle: .appLanguage)
+        }
+    }
+
     private var dataSection: some View {
         Section {
             LabeledContent("轨迹片段", value: "\(stats.chunks)")
             LabeledContent("到访记录", value: "\(stats.stays)")
-            LabeledContent("旅程", value: "\(stats.trips)")
+            LabeledContent("旅程与记录", value: "\(stats.trips)")
             ShareLink(item: AllTracksExport(container: context.container), preview: SharePreview(AppInfo.exportFileName)) {
                 Label("导出全部轨迹（GPX）", systemImage: "square.and.arrow.up")
             }

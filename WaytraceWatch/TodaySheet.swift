@@ -80,7 +80,7 @@ struct TodaySheet: View {
 /// Picks what kind of recording to start; the last one used comes first.
 struct ActivityPicker: View {
     @Environment(WorkoutRecorder.self) private var recorder
-    let onStart: (WatchActivity) -> Void
+    let onStart: (ActivityType) -> Void
 
     var body: some View {
         NavigationStack {
@@ -102,8 +102,8 @@ struct ActivityPicker: View {
         }
     }
 
-    private var ordered: [WatchActivity] {
+    private var ordered: [ActivityType] {
         let last = recorder.lastActivity
-        return [last] + WatchActivity.allCases.filter { $0 != last }
+        return [last] + ActivityType.allCases.filter { $0 != last }
     }
 }

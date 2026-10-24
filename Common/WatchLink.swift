@@ -76,7 +76,7 @@ struct ActiveRecording: Codable, Equatable {
     var emoji: String
     var start: Date
     /// Set when the user asked for the Watch to record along (heart rate, a workout in Fitness).
-    var watchActivity: WatchActivity?
+    var watchActivity: ActivityType?
 }
 
 /// Requests the Watch sends to the iPhone.
@@ -89,7 +89,7 @@ enum WatchCommand: String {
 }
 
 /// Kinds of recording the Watch can start, matching the workout types in the Fitness app.
-enum WatchActivity: String, CaseIterable, Identifiable, Codable {
+enum ActivityType: String, CaseIterable, Identifiable, Codable {
     case hiking, walking, running, cycling
 
     var id: String { rawValue }
@@ -120,20 +120,9 @@ enum WatchActivity: String, CaseIterable, Identifiable, Codable {
         case .cycling: "🚴"
         }
     }
-
-    /// What the Watch records for a trip with this icon, or nil for trips that aren't a workout
-    /// (driving, flying, taking the train).
-    static func forTripEmoji(_ emoji: String) -> WatchActivity? {
-        switch emoji {
-        case "✈️", "🚗", "🚆": nil
-        case "🚲": .cycling
-        case "🥾", "🏔️", "🗻", "🏕️", "🎒": .hiking
-        default: .walking
-        }
-    }
 }
 
-extension WatchActivity {
+extension ActivityType {
     var workoutType: HKWorkoutActivityType {
         switch self {
         case .hiking: .hiking
@@ -156,7 +145,7 @@ extension WatchActivity {
 /// Metadata sent along with a track file recorded on the Watch.
 struct WatchRecordingInfo: Codable, Equatable {
     var id: UUID
-    var activity: WatchActivity
+    var activity: ActivityType
     var start: Date
     var end: Date
     var distance: Double
@@ -174,7 +163,7 @@ struct WatchRecordingInfo: Codable, Equatable {
         return [Self.key: data]
     }
 
-    init(id: UUID, activity: WatchActivity, start: Date, end: Date, distance: Double, tripID: UUID? = nil) {
+    init(id: UUID, activity: ActivityType, start: Date, end: Date, distance: Double, tripID: UUID? = nil) {
         self.id = id
         self.activity = activity
         self.start = start

@@ -44,19 +44,24 @@ final class LiveRecording {
 
     // MARK: Watch
 
-    /// Whether the Watch should record along with this trip, chosen when it was started.
-    static func watchActivity(for tripID: UUID) -> WatchActivity? {
-        UserDefaults.standard.string(forKey: watchKey(tripID)).flatMap(WatchActivity.init(rawValue:))
+    /// Whether the Watch records along with this recording, chosen when it was started.
+    static func recordsOnWatch(_ tripID: UUID) -> Bool {
+        UserDefaults.standard.bool(forKey: watchKey(tripID))
     }
 
-    static func setWatchActivity(_ activity: WatchActivity?, for tripID: UUID) {
-        UserDefaults.standard.set(activity?.rawValue, forKey: watchKey(tripID))
+    static func setRecordsOnWatch(_ value: Bool, for tripID: UUID) {
+        UserDefaults.standard.set(value, forKey: watchKey(tripID))
+    }
+
+    /// What the Watch records for this recording, if it records along at all.
+    static func watchActivity(for trip: Trip) -> ActivityType? {
+        recordsOnWatch(trip.id) ? trip.activity ?? .walking : nil
     }
 
     private static func watchKey(_ id: UUID) -> String { "recording.watch.\(id.uuidString)" }
 
     /// Opens the Watch app straight into a recording, the way workout apps do.
-    private func startWatchApp(_ activity: WatchActivity) {
+    private func startWatchApp(_ activity: ActivityType) {
         let configuration = HKWorkoutConfiguration()
         configuration.activityType = activity.workoutType
         configuration.locationType = .outdoor
@@ -80,7 +85,7 @@ final class LiveRecording {
         }
         guard activity == nil else { return scheduleUpdate() }
 
-        let watch = Self.watchActivity(for: trip.id)
+        let watch = Self.watchActivity(for: trip)
         // Only a just-started recording opens the Watch app; reopening the iPhone app later shouldn't.
         if let watch, Date().timeIntervalSince(trip.startDate) < 60 { startWatchApp(watch) }
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
@@ -110,7 +115,7 @@ final class LiveRecording {
         let distance = distance(of: trip)
         guard abs(distance - lastSentDistance) >= 10 else { return }
         lastSentDistance = distance
-        let state = RecordingAttributes.ContentState(distance: distance, watchRecording: Self.watchActivity(for: trip.id) != nil)
+        let state = RecordingAttributes.ContentState(distance: distance, watchRecording: Self.recordsOnWatch(trip.id))
         await activity.update(.init(state: state, staleDate: nil))
     }
 

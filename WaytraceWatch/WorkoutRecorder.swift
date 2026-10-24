@@ -14,13 +14,13 @@ final class WorkoutRecorder: NSObject {
     enum State: Equatable { case idle, starting, running, paused, saving, finished }
 
     struct Summary: Equatable {
-        var activity: WatchActivity
+        var activity: ActivityType
         var distance: Double
         var duration: TimeInterval
     }
 
     private(set) var state: State = .idle
-    private(set) var activity: WatchActivity = .walking
+    private(set) var activity: ActivityType = .walking
     private(set) var points: [TrackPoint] = []
     private(set) var heartRate: Double?
     private(set) var startDate: Date?
@@ -33,8 +33,8 @@ final class WorkoutRecorder: NSObject {
     private(set) var linkedTripID: UUID?
 
     /// The activity chosen last time, offered first.
-    var lastActivity: WatchActivity {
-        WatchActivity(rawValue: UserDefaults.standard.string(forKey: "watch.lastActivity") ?? "") ?? .walking
+    var lastActivity: ActivityType {
+        ActivityType(rawValue: UserDefaults.standard.string(forKey: "watch.lastActivity") ?? "") ?? .walking
     }
 
     var isActive: Bool { state != .idle && state != .finished }
@@ -68,7 +68,7 @@ final class WorkoutRecorder: NSObject {
 
     // MARK: Control
 
-    func start(_ activity: WatchActivity, linkedToPhone: Bool = false) async {
+    func start(_ activity: ActivityType, linkedToPhone: Bool = false) async {
         guard state == .idle || state == .finished else { return }
         self.activity = activity
         isLinkedToPhone = linkedToPhone

@@ -40,6 +40,23 @@ struct TrackPoint: Codable, Hashable {
     static func distance(of points: [TrackPoint]) -> Double {
         zip(points, points.dropFirst()).reduce(0) { $0 + $1.0.location.distance(from: $1.1.location) }
     }
+
+    /// Total climb. GPS altitude wanders by a few metres even standing still, so only changes
+    /// of at least `threshold` count.
+    static func elevationGain(of points: [TrackPoint], threshold: Double = 5) -> Double {
+        var gain = 0.0
+        var reference: Double?
+        for point in points where point.altitude != 0 {
+            guard let base = reference else { reference = point.altitude; continue }
+            if point.altitude - base >= threshold {
+                gain += point.altitude - base
+                reference = point.altitude
+            } else if base - point.altitude >= threshold {
+                reference = point.altitude
+            }
+        }
+        return gain
+    }
 }
 
 /// Compact binary format: 8+8 bytes for the coordinate, 4 bytes each for altitude,

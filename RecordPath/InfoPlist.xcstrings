@@ -76,7 +76,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Adds photos to your trips."
+            "value": "Shows the photos you took at each place on your timeline, and adds photos to trips. Photos are read on your iPhone only and never uploaded."
           }
         }
       }

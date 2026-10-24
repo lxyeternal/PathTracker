@@ -5,7 +5,8 @@ import CoreLocation
 import MapKit
 
 /// Realistic sample history for development and screenshots: two weeks of home ↔ school
-/// commutes in Shanghai plus a past trip to Tokyo and Kyoto. Replaces all existing data.
+/// commutes in Shanghai with a morning run, a day in Hangzhou with a hike, a trip to Tokyo and
+/// Kyoto, and last New Year's Eve in Beijing. Replaces all existing data.
 enum DemoData {
     private struct Place {
         let name: String
@@ -15,6 +16,8 @@ enum DemoData {
         let country: String
         let code: String
         var landmark = false
+        var region: String?
+        var altitude: Double = 8
     }
 
     private static let poi = MKPointOfInterestCategory.self
@@ -55,6 +58,24 @@ enum DemoData {
     private static let narita = Place(name: "成田国际机场", coordinate: .init(latitude: 35.7720, longitude: 140.3929),
                                       category: poi.airport.rawValue, city: "成田", country: "日本", code: "JP")
 
+    private static let hangzhouStation = Place(name: "杭州东站", coordinate: .init(latitude: 30.2910, longitude: 120.2130),
+                                               category: poi.publicTransport.rawValue, city: "杭州", country: "中国", code: "CN",
+                                               region: "中国浙江杭州")
+    private static let westLake = Place(name: "西湖", coordinate: .init(latitude: 30.2470, longitude: 120.1480),
+                                        category: poi.landmark.rawValue, city: "杭州", country: "中国", code: "CN", landmark: true,
+                                        region: "中国浙江杭州")
+    private static let lingyin = Place(name: "灵隐寺", coordinate: .init(latitude: 30.2410, longitude: 120.1010),
+                                       category: poi.landmark.rawValue, city: "杭州", country: "中国", code: "CN", landmark: true,
+                                       region: "中国浙江杭州", altitude: 40)
+    private static let beigao = Place(name: "北高峰", coordinate: .init(latitude: 30.2475, longitude: 120.0930),
+                                      category: poi.nationalPark.rawValue, city: "杭州", country: "中国", code: "CN", landmark: true,
+                                      region: "中国浙江杭州", altitude: 314)
+    private static let forbiddenCity = Place(name: "故宫博物院", coordinate: .init(latitude: 39.9163, longitude: 116.3972),
+                                             category: poi.museum.rawValue, city: "北京", country: "中国", code: "CN", landmark: true,
+                                             region: "中国北京北京")
+    private static let daxing = Place(name: "北京大兴国际机场", coordinate: .init(latitude: 39.5098, longitude: 116.4105),
+                                      category: poi.airport.rawValue, city: "北京", country: "中国", code: "CN", region: "中国北京北京")
+
     @MainActor
     static func generate(in context: ModelContext) {
         try? context.delete(model: TrackChunk.self)
@@ -78,6 +99,15 @@ enum DemoData {
                         (offset % 2 == 0 ? park : bund, 11.3, 14.6, .automotive),
                         (mall, 15.4, 17.8, .automotive),
                         (home, 18.1, 24, .walking)]
+            } else if offset == 3 {
+                // A morning run along the Bund before class, recorded on its own.
+                plan = [(home, 0, 6.3, .walking),
+                        (bund, 6.75, 6.85, .running),
+                        (home, 7.3, 7.9, .running),
+                        (school, 8.6, 12.1, .automotive),
+                        (cafe, 12.3, 13.2, .walking),
+                        (school, 13.4, 17.4, .walking),
+                        (home, 18.3, 24, .cycling)]
             } else {
                 plan = [(home, 0, 7.9, .walking),
                         (school, 8.6, 12.1, .automotive),
@@ -87,6 +117,28 @@ enum DemoData {
                         (home, 19.5, 24, .cycling)]
             }
             carry = write(day: day, plan: plan, carry: carry, in: context, using: &generator)
+            if offset == 3 {
+                record(.running, title: "外滩晨跑", from: home, to: home, on: day, startHour: 6, endHour: 8, in: context)
+            }
+        }
+
+        // A day in Hangzhou three weeks ago, with the hike up to Beigao Peak recorded on its own.
+        if let day = calendar.date(byAdding: .day, value: -20, to: today) {
+            let plan: [(Place, Double, Double, MovementMode)] = [
+                (home, 0, 7.0, .walking), (hangzhouStation, 8.2, 8.5, .automotive), (westLake, 9.0, 11.5, .automotive),
+                (lingyin, 12.0, 13.0, .automotive), (beigao, 14.6, 15.2, .walking), (hangzhouStation, 16.5, 17.0, .automotive),
+                (home, 18.4, 24, .automotive)]
+            _ = write(day: day, plan: plan, carry: nil, in: context, using: &generator)
+            record(.hiking, title: "北高峰徒步", from: lingyin, to: beigao, on: day, startHour: 12, endHour: 15.3, in: context)
+        }
+
+        // Last New Year's Eve in Beijing, so this year's report has something to compare with.
+        if let lastYear = calendar.date(from: DateComponents(year: calendar.component(.year, from: today) - 1, month: 12, day: 30)) {
+            let plan: [(Place, Double, Double, MovementMode)] = [
+                (home, 0, 7.0, .walking), (pudong, 8.0, 9.5, .automotive), (daxing, 11.8, 12.4, .flying),
+                (forbiddenCity, 13.6, 17.0, .automotive), (daxing, 18.2, 19.0, .automotive), (pudong, 21.2, 21.6, .flying),
+                (home, 22.8, 24, .automotive)]
+            _ = write(day: lastYear, plan: plan, carry: nil, in: context, using: &generator)
         }
 
         // A trip to Japan a month ago.
@@ -118,6 +170,25 @@ enum DemoData {
         UserDefaults.standard.set(true, forKey: "debug.demoSteps")
     }
 
+    /// Files the stretch between leaving `from` and reaching `to` as a recording, like one
+    /// started from Today: its tracks get the recording's ID.
+    @MainActor
+    private static func record(_ activity: ActivityType, title: String, from: Place, to: Place, on day: Date,
+                               startHour: Double, endHour: Double, in context: ModelContext) {
+        let window = DateInterval(start: day.addingTimeInterval(startHour * 3600), end: day.addingTimeInterval(endHour * 3600))
+        let stays = ((try? context.fetch(FetchDescriptor<Stay>())) ?? []).filter { window.intersects(DateInterval(start: $0.arrival, end: max($0.departure ?? $0.arrival, $0.arrival))) }
+        guard let start = stays.first(where: { $0.placeName == from.name })?.departure,
+              let end = stays.last(where: { $0.placeName == to.name && $0.arrival > start })?.arrival else { return }
+        let trip = Trip(title: title, startDate: start)
+        trip.endDate = end
+        trip.activityRaw = activity.rawValue
+        trip.coverEmoji = activity.emoji
+        context.insert(trip)
+        for chunk in (try? context.fetch(FetchDescriptor<TrackChunk>())) ?? [] where chunk.startDate >= start && chunk.endDate <= end {
+            chunk.tripID = trip.id
+        }
+    }
+
     /// Writes one day's stays and the tracks between them. `carry` is last night's stay,
     /// which a plan entry starting at 00:00 continues instead of starting a new visit.
     @MainActor
@@ -135,7 +206,7 @@ enum DemoData {
 
             if let (from, left) = previous, left < arrival {
                 let points = route(from: from.coordinate, to: place.coordinate, start: left, end: min(arrival, now),
-                                   jitter: mode == .flying ? 0 : 6, using: &generator)
+                                   altitudes: (from.altitude, place.altitude), jitter: mode == .flying ? 0 : 6, using: &generator)
                 for start in stride(from: 0, to: points.count, by: 380) {
                     let slice = Array(points[max(0, start - 1)..<min(start + 380, points.count)])
                     if slice.count > 1 { context.insert(TrackChunk(points: slice, mode: mode, tripID: nil)) }
@@ -154,6 +225,7 @@ enum DemoData {
                 stay.city = place.city
                 stay.country = place.country
                 stay.countryCode = place.code
+                stay.region = place.region
                 stay.isLandmark = place.landmark
                 stay.tagState = .tagged
                 context.insert(stay)
@@ -166,7 +238,8 @@ enum DemoData {
 
     /// A gently curving path between two places with a point every ~25 m.
     private static func route(from: CLLocationCoordinate2D, to: CLLocationCoordinate2D, start: Date, end: Date,
-                              jitter: Double, using generator: inout SystemRandomNumberGenerator) -> [TrackPoint] {
+                              altitudes: (Double, Double), jitter: Double,
+                              using generator: inout SystemRandomNumberGenerator) -> [TrackPoint] {
         let a = CLLocation(latitude: from.latitude, longitude: from.longitude)
         let b = CLLocation(latitude: to.latitude, longitude: to.longitude)
         let distance = a.distance(from: b)
@@ -181,7 +254,9 @@ enum DemoData {
             let lat = from.latitude + (to.latitude - from.latitude) * t - (to.longitude - from.longitude) * curve
             let lon = from.longitude + (to.longitude - from.longitude) * t + (to.latitude - from.latitude) * curve
             let coordinate = CLLocationCoordinate2D(latitude: lat, longitude: lon).jittered(by: jitter, using: &generator)
-            points.append(TrackPoint(latitude: coordinate.latitude, longitude: coordinate.longitude, altitude: 8,
+            // Climbs follow the trail with a little GPS wobble.
+            let altitude = altitudes.0 + (altitudes.1 - altitudes.0) * t + Double.random(in: -1.5...1.5, using: &generator)
+            points.append(TrackPoint(latitude: coordinate.latitude, longitude: coordinate.longitude, altitude: altitude,
                                      speed: distance / max(duration, 1), accuracy: 6,
                                      timestamp: start.addingTimeInterval(duration * t)))
         }

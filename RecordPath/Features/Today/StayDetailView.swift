@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import MapKit
+import Photos
 
 /// Details for one stay, where the user can name the place (applies to every visit
 /// nearby), mark it as home/school/work, add a note, open it in Maps or delete it.
@@ -19,6 +20,8 @@ struct StayDetailView: View {
     @State private var kind: PlaceKind = .none
     @State private var note = ""
     @State private var confirmingDelete = false
+    @State private var photos: [PHAsset] = []
+    @State private var viewingPhoto: PHAsset?
 
     enum PlaceKind: String, CaseIterable, Identifiable {
         case none, home, school, work
@@ -53,8 +56,8 @@ struct StayDetailView: View {
         NavigationStack {
             Form {
                 Section {
-                    Map(initialPosition: .camera(MapCamera(centerCoordinate: stay.coordinate, distance: 900))) {
-                        Annotation(stay.displayName, coordinate: stay.coordinate) {
+                    Map(initialPosition: .camera(MapCamera(centerCoordinate: stay.coordinate.onMap, distance: 900))) {
+                        Annotation(stay.displayName, coordinate: stay.coordinate.onMap) {
                             PlaceIcon(category: stay.category, isLandmark: stay.isLandmark, size: 34)
                                 .overlay(Circle().stroke(.white, lineWidth: 2))
                         }
@@ -75,6 +78,18 @@ struct StayDetailView: View {
                     Text("名称")
                 } footer: {
                     Text("名称会应用到附近 150 米内的所有到访记录，比如把这里叫作“家”。")
+                }
+
+                if !photos.isEmpty {
+                    Section("在这里拍的照片") {
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 76), spacing: 6)], spacing: 6) {
+                            ForEach(photos, id: \.localIdentifier) { asset in
+                                Button { viewingPhoto = asset } label: { AssetThumbnail(asset: asset, side: 76) }
+                                    .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
                 }
 
                 Section("时间") {
@@ -133,6 +148,10 @@ struct StayDetailView: View {
                     Button("删除这条记录", systemImage: "trash", role: .destructive) { confirmingDelete = true }
                 }
             }
+            .task { photos = DayPhotos.assets(in: DayPhotos.interval(of: stay)) }
+            .fullScreenCover(item: Binding(get: { viewingPhoto.map(IdentifiedAsset.init) }, set: { viewingPhoto = $0?.asset })) {
+                AssetViewer(asset: $0.asset)
+            }
             .navigationTitle(stay.displayName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -185,4 +204,9 @@ struct StayDetailView: View {
         item.name = stay.displayName
         item.openInMaps()
     }
+}
+
+private struct IdentifiedAsset: Identifiable {
+    let asset: PHAsset
+    var id: String { asset.localIdentifier }
 }

@@ -110,7 +110,7 @@ final class WatchBridge: NSObject {
         if let id = engine.activeTripID,
            let trip = try? context.fetch(FetchDescriptor<Trip>(predicate: #Predicate { $0.id == id && $0.endDate == nil })).first {
             snapshot.activeRecording = ActiveRecording(tripID: trip.id, title: trip.title, emoji: trip.coverEmoji,
-                                                       start: trip.startDate, watchActivity: LiveRecording.watchActivity(for: trip.id))
+                                                       start: trip.startDate, watchActivity: LiveRecording.watchActivity(for: trip))
         }
         return snapshot
     }

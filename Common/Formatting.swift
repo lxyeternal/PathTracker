@@ -29,6 +29,18 @@ enum Format {
                                     numberFormatStyle: .number.precision(.fractionLength(1))).locale(appLocale))
     }
 
+    /// "6'05\" /km".
+    static func pace(secondsPerKilometre: Double) -> String {
+        let total = Int(secondsPerKilometre.rounded())
+        return String(format: "%d'%02d\"", total / 60, total % 60) + " /km"
+    }
+
+    static func elevation(_ meters: Double) -> String {
+        Measurement(value: meters, unit: UnitLength.meters)
+            .formatted(.measurement(width: .abbreviated, usage: .asProvided,
+                                    numberFormatStyle: .number.precision(.fractionLength(0))).locale(appLocale))
+    }
+
     static func steps(_ count: Double) -> String {
         Int(count).formatted(.number.locale(appLocale))
     }

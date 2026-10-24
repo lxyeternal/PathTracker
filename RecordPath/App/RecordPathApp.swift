@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UserNotifications
 
 @main
 struct RecordPathApp: App {
@@ -14,10 +15,11 @@ struct RecordPathApp: App {
                 .environment(services.engine)
                 .environment(services.activity)
                 .environment(services.account)
+                .environment(services.notifier)
                 .environment(\.placeTagger, services.tagger)
         }
         .modelContainer(services.container)
-        .onChange(of: scenePhase) { _, phase in
+        .onChange(of: scenePhase, initial: true) { _, phase in
             switch phase {
             case .background:
                 services.engine.persistNow()
@@ -25,8 +27,10 @@ struct RecordPathApp: App {
                 services.engine.refreshState()
                 services.tagger.enqueue()
                 services.liveRecording.refreshNow()
+                services.notifier.checkPeriodically()
                 Task {
                     await services.activity.refreshToday()
+                    await services.notifier.refreshAuthorization()
                     services.watch.scheduleUpdate(immediately: true)
                     await services.account.verifyCredential()
                 }
@@ -48,6 +52,8 @@ final class AppServices {
     let account: AccountManager
     let watch: WatchBridge
     let liveRecording: LiveRecording
+    let notifier: Notifier
+    private let notificationPresenter = NotificationPresenter()
 
     private init() {
         // Before anything builds a string, so even background launches use the chosen language.
@@ -62,6 +68,12 @@ final class AppServices {
         watch.activate()
         liveRecording = LiveRecording(context: container.mainContext, engine: engine)
         liveRecording.activate()
+        notifier = Notifier(context: container.mainContext, activity: activity)
+        tagger.onTagged = { [notifier] stay in
+            notifier.placeTagged(stay)
+            notifier.checkPeriodically()
+        }
+        UNUserNotificationCenter.current().delegate = notificationPresenter
     }
 }
 
@@ -73,5 +85,13 @@ extension EnvironmentValues {
     var placeTagger: PlaceTagger? {
         get { self[PlaceTaggerKey.self] }
         set { self[PlaceTaggerKey.self] = newValue }
+    }
+}
+
+/// Shows the app's notifications even while it's open, as a banner.
+private final class NotificationPresenter: NSObject, UNUserNotificationCenterDelegate {
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async
+        -> UNNotificationPresentationOptions {
+        [.banner, .sound]
     }
 }

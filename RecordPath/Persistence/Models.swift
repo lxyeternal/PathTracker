@@ -105,7 +105,9 @@ enum TagState: Int {
     case pending = 0, tagged = 1, failed = 2
 }
 
-/// A named journey ("日本 7 日"). Its track is every chunk inside its time range.
+/// Either a trip ("日本 7 日"), days of travel gathered from all-day recording, or a recording
+/// ("徒步 · 10月25日"), one activity recorded on its own at higher precision. Its track is every
+/// chunk inside its time range.
 @Model
 final class Trip {
     var id: UUID = UUID()
@@ -114,6 +116,8 @@ final class Trip {
     var endDate: Date?
     var notes: String = ""
     var coverEmoji: String = "🧭"
+    /// Set for a recording (hiking, running…); nil for a trip.
+    var activityRaw: String?
     @Relationship(deleteRule: .cascade, inverse: \TripPhoto.trip) var photos: [TripPhoto]? = []
 
     init(title: String, startDate: Date = Date()) {
@@ -122,6 +126,8 @@ final class Trip {
     }
 
     var isActive: Bool { endDate == nil }
+    var activity: ActivityType? { activityRaw.flatMap(ActivityType.init(rawValue:)) }
+    var isRecording: Bool { activityRaw != nil }
     var interval: DateInterval { DateInterval(start: startDate, end: max(endDate ?? Date(), startDate)) }
 
     /// "2026年10月5日" for one day, "2026年9月22日至25日" for several. A trip ending exactly at

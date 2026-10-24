@@ -12,6 +12,8 @@ final class PlaceTagger {
     private let context: ModelContext
     private var isRunning = false
     private var needsAnotherPass = false
+    /// Told about each place once it has been named.
+    var onTagged: ((Stay) -> Void)?
     private let log = Logger(subsystem: "PathTracker", category: "PlaceTagger")
 
     init(context: ModelContext) {
@@ -41,6 +43,7 @@ final class PlaceTagger {
             let outcome = await tag(stay)
             try? context.save()
             if outcome == .offline { return }
+            onTagged?(stay)
             // Up to three map requests per place; stay well under Apple's rate limit.
             try? await Task.sleep(for: .seconds(2))
         }
@@ -58,7 +61,8 @@ final class PlaceTagger {
                 stay.countryCode = address.region?.identifier
                 stay.city = CityName.normalized(cityName: address.cityName,
                                                 shortContext: address.cityWithContext(.short),
-                                                countryCode: address.region?.identifier)
+                                                countryCode: address.region?.identifier,
+                                                regionName: address.regionName)
                 stay.region = address.cityWithContext
                 stay.street = item.address?.shortAddress ?? item.name
             }
@@ -174,7 +178,17 @@ extension String {
 enum CityName {
     private static let tokyoNames: Set<String> = ["Tokyo", "東京", "東京都", "东京", "东京都", "도쿄", "도쿄도"]
 
-    static func normalized(cityName: String?, shortContext: String?, countryCode: String?) -> String? {
+    static func normalized(cityName: String?, shortContext: String?, countryCode: String?, regionName: String? = nil) -> String? {
+        // Hong Kong and Macau are one city each; geocoding reports their districts ("Central").
+        if countryCode == "HK" || countryCode == "MO" {
+            let chinese = (regionName ?? cityName ?? "").unicodeScalars.contains { (0x4E00...0x9FFF).contains($0.value) }
+            return countryCode == "HK" ? (chinese ? "香港" : "Hong Kong") : (chinese ? "澳门" : "Macao")
+        }
+        // Chinese addresses run together without separators ("中国浙江杭州"); the city is at the end.
+        if let cityName, let context = shortContext, !context.contains(where: { $0 == "," || $0 == "，" || $0 == "、" }),
+           context != cityName, context.hasSuffix(cityName) {
+            return cityName
+        }
         let parts = (shortContext ?? "")
             .split(whereSeparator: { $0 == "," || $0 == "，" || $0 == "、" })
             .map { $0.trimmingCharacters(in: .whitespaces) }

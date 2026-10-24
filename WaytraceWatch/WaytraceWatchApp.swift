@@ -17,7 +17,7 @@ struct WaytraceWatchApp: App {
         // same path for testing: `simctl launch … -simulateWorkoutLaunch hiking`.
         let arguments = ProcessInfo.processInfo.arguments
         if let index = arguments.firstIndex(of: "-simulateWorkoutLaunch"), index + 1 < arguments.count,
-           let activity = WatchActivity(rawValue: arguments[index + 1]) {
+           let activity = ActivityType(rawValue: arguments[index + 1]) {
             let configuration = HKWorkoutConfiguration()
             configuration.activityType = activity.workoutType
             WatchAppDelegate().handle(configuration)
@@ -42,7 +42,7 @@ struct WaytraceWatchApp: App {
 /// Starting a recording on the iPhone with "record on Apple Watch" on opens the app here.
 final class WatchAppDelegate: NSObject, WKApplicationDelegate {
     func handle(_ workoutConfiguration: HKWorkoutConfiguration) {
-        let activity = WatchActivity(workoutType: workoutConfiguration.activityType)
+        let activity = ActivityType(workoutType: workoutConfiguration.activityType)
         Task { @MainActor in
             PhoneLink.shared.refresh()
             await WorkoutRecorder.shared.start(activity, linkedToPhone: true)
