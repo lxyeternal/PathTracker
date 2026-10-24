@@ -46,6 +46,8 @@ final class AppServices {
     let account: AccountManager
 
     private init() {
+        // Before anything builds a string, so even background launches use the chosen language.
+        _ = LanguageSettings.shared
         let inMemory = ProcessInfo.processInfo.arguments.contains("-uiTesting")
         container = PersistenceController.makeContainer(inMemory: inMemory)
         tagger = PlaceTagger(context: container.mainContext)

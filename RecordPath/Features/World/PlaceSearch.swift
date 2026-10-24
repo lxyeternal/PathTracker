@@ -120,11 +120,11 @@ struct PlaceVisitsRow: View {
     private var summary: String {
         let date = place.latest.arrival
         let last = Calendar.current.isDate(date, equalTo: Date(), toGranularity: .year)
-            ? date.formatted(.dateTime.month().day()) : date.formatted(.dateTime.year().month().day())
+            ? date.formatted(.dateTime.month().day().locale(appLocale)) : date.formatted(.dateTime.year().month().day().locale(appLocale))
         let city = place.latest.city.map { "\($0) · " } ?? ""
         return place.visits.count == 1
             ? "\(city)\(last)"
-            : String(localized: "\(city)\(place.visits.count) 次 · 最近 \(last)")
+            : String(localized: "\(city)\(place.visits.count) 次 · 最近 \(last)", bundle: .appLanguage)
     }
 }
 
@@ -152,7 +152,7 @@ struct PlaceVisitsView: View {
             Section {
                 LabeledContent("到访次数", value: "\(place.visits.count)")
                 LabeledContent("累计停留", value: Format.duration(place.totalTime))
-                LabeledContent("第一次", value: place.first.arrival.formatted(date: .abbreviated, time: .omitted))
+                LabeledContent("第一次", value: place.first.arrival.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: appLocale)))
                 if let address = [place.latest.street, place.latest.city, place.latest.country].compactMap({ $0 }).first {
                     LabeledContent("位置", value: address)
                 }
@@ -164,7 +164,7 @@ struct PlaceVisitsView: View {
                     } label: {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(visit.arrival.formatted(.dateTime.year().month().day().weekday(.abbreviated)))
+                                Text(visit.arrival.formatted(.dateTime.year().month().day().weekday(.abbreviated).locale(appLocale)))
                                     .foregroundStyle(.primary)
                                 Text("\(Format.time(visit.arrival)) · 停留 \(Format.duration(visit.duration))")
                                     .font(.subheadline).foregroundStyle(.secondary)

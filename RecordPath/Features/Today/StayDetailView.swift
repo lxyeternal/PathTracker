@@ -34,9 +34,9 @@ struct StayDetailView: View {
         var name: String {
             switch self {
             case .none: ""
-            case .home: String(localized: "家")
-            case .school: String(localized: "学校")
-            case .work: String(localized: "公司")
+            case .home: String(localized: "家", bundle: .appLanguage)
+            case .school: String(localized: "学校", bundle: .appLanguage)
+            case .work: String(localized: "公司", bundle: .appLanguage)
             }
         }
         var symbol: String {
@@ -64,7 +64,7 @@ struct StayDetailView: View {
                 }
 
                 Section {
-                    TextField(stay.placeName ?? stay.street ?? String(localized: "给这个地方起个名字"), text: $name)
+                    TextField(stay.placeName ?? stay.street ?? String(localized: "给这个地方起个名字", bundle: .appLanguage), text: $name)
                         .submitLabel(.done)
                     Picker("类型", selection: $kind) {
                         ForEach(PlaceKind.allCases) { kind in
@@ -78,16 +78,16 @@ struct StayDetailView: View {
                 }
 
                 Section("时间") {
-                    LabeledContent("到达", value: stay.arrival.formatted(date: .abbreviated, time: .shortened))
-                    LabeledContent("离开", value: stay.departure?.formatted(date: .abbreviated, time: .shortened)
-                                   ?? String(localized: "仍在这里"))
+                    LabeledContent("到达", value: stay.arrival.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: appLocale)))
+                    LabeledContent("离开", value: stay.departure?.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: appLocale))
+                                   ?? String(localized: "仍在这里", bundle: .appLanguage))
                     LabeledContent("停留", value: Format.duration(stay.duration))
                 }
 
                 Section("位置") {
-                    if let placeName = stay.placeName { LabeledContent("地点", value: placeName) }
+                    if let placeName = stay.placeName { LabeledContent("地点名称", value: placeName) }
                     if let street = stay.street { LabeledContent("街道", value: street) }
-                    if let city = stay.city { LabeledContent("城市", value: city) }
+                    if let city = stay.city { LabeledContent("所在城市", value: city) }
                     if let country = stay.country {
                         LabeledContent("国家/地区", value: "\(String.flag(for: stay.countryCode)) \(country)")
                     }

@@ -9,7 +9,11 @@ struct RecordedDayCalendar: View {
     @State private var month: Date
     @State private var recorded: Set<Date> = []
 
-    private let calendar = Calendar.current
+    private let calendar: Calendar = {
+        var calendar = Calendar.current
+        calendar.locale = appLocale
+        return calendar
+    }()
 
     init(selection: Binding<Date>) {
         _selection = selection
@@ -34,7 +38,7 @@ struct RecordedDayCalendar: View {
     var body: some View {
         VStack(spacing: 14) {
             HStack {
-                Text(month.formatted(.dateTime.year().month(.wide)))
+                Text(month.formatted(.dateTime.year().month(.wide).locale(appLocale)))
                     .font(.title3.bold())
                     .contentTransition(.numericText())
                 Spacer()
@@ -97,8 +101,8 @@ struct RecordedDayCalendar: View {
         }
         .buttonStyle(.plain)
         .disabled(isFuture)
-        .accessibilityLabel(day.formatted(date: .complete, time: .omitted))
-        .accessibilityValue(hasData ? String(localized: "有记录") : "")
+        .accessibilityLabel(day.formatted(Date.FormatStyle(date: .complete, time: .omitted, locale: appLocale)))
+        .accessibilityValue(hasData ? String(localized: "有记录", bundle: .appLanguage) : "")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 

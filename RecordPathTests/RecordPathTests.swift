@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import UIKit
 import SwiftData
 import CoreLocation
 @testable import RecordPath
@@ -427,5 +428,34 @@ struct HomeBaseTests {
         let hangzhou = Stay(arrival: today, coordinate: CLLocationCoordinate2D(latitude: 30.25, longitude: 120.15))
         #expect(!TripSuggestionCard.isAway(pudong, from: home))
         #expect(TripSuggestionCard.isAway(hangzhou, from: home))
+    }
+}
+
+struct AvatarTests {
+    @Test @MainActor func cropsToACentredSquareAndCapsTheSize() throws {
+        let wide = UIGraphicsImageRenderer(size: CGSize(width: 1200, height: 800)).image { context in
+            UIColor.red.setFill(); context.fill(CGRect(x: 0, y: 0, width: 1200, height: 800))
+        }
+        let square = try #require(AccountManager.squareAvatar(from: wide))
+        #expect(square.size.width == square.size.height)
+        #expect(square.size.width <= AccountManager.avatarSide)
+
+        let small = UIGraphicsImageRenderer(size: CGSize(width: 90, height: 120),
+                                            format: { let f = UIGraphicsImageRendererFormat(); f.scale = 1; return f }()).image { _ in }
+        #expect(AccountManager.squareAvatar(from: small)?.size == CGSize(width: 90, height: 90))
+    }
+}
+
+struct AppLanguageTests {
+    @Test func explicitChoicesResolveToThemselves() {
+        #expect(AppLanguage.chinese.resolved == "zh-Hans")
+        #expect(AppLanguage.english.resolved == "en")
+        #expect(AppLanguage.english.locale.language.languageCode == .english)
+        #expect(["zh-Hans", "en"].contains(AppLanguage.system.resolved))
+    }
+
+    @Test func everyLanguageIsNamedInItself() {
+        #expect(AppLanguage.chinese.nativeName == "简体中文")
+        #expect(AppLanguage.english.nativeName == "English")
     }
 }

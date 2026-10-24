@@ -2,11 +2,14 @@ import SwiftUI
 
 struct RootView: View {
     @AppStorage("onboarding.completed") private var onboardingCompleted = false
+    @State private var navigator = AppNavigator()
+    @State private var showingSettings = false
+    private var language = LanguageSettings.shared
 
     var body: some View {
         ZStack {
             if onboardingCompleted {
-                MainTabView()
+                MainTabView(showingSettings: $showingSettings)
                     .transition(.opacity.combined(with: .scale(scale: 1.04)))
             } else {
                 OnboardingView { onboardingCompleted = true }
@@ -14,14 +17,24 @@ struct RootView: View {
             }
         }
         .animation(.smooth(duration: 0.5), value: onboardingCompleted)
+        // Rebuilding on a language change re-renders every string, including ones computed
+        // in code; Settings stays open because it's presented from outside this subtree.
+        .id(language.language)
+        .sheet(isPresented: $showingSettings) {
+            SettingsView()
+                .id(language.language)
+        }
+        .environment(navigator)
+        .environment(\.locale, language.locale)
     }
 }
 
 struct MainTabView: View {
-    @State private var navigator = AppNavigator()
-    @State private var showingSettings = false
+    @Binding var showingSettings: Bool
+    @Environment(AppNavigator.self) private var navigator
 
     var body: some View {
+        @Bindable var navigator = navigator
         TabView(selection: $navigator.section) {
             Tab("今天", systemImage: "point.topright.filled.arrow.triangle.backward.to.point.bottomleft.scurvepath", value: .today) {
                 TodayView(showingSettings: $showingSettings)
@@ -37,35 +50,35 @@ struct MainTabView: View {
             }
         }
         .sensoryFeedback(.selection, trigger: navigator.section)
-        .sheet(isPresented: $showingSettings) {
-            SettingsView()
-        }
-        .environment(navigator)
     }
 }
 
 /// The avatar button in every tab's toolbar that opens settings, like Apple's own apps.
 struct ProfileToolbarButton: View {
-    @Environment(AccountManager.self) private var account
     @Binding var showingSettings: Bool
 
     var body: some View {
         Button {
             showingSettings = true
         } label: {
-            Avatar(name: account.profile?.displayName, size: 32)
+            Avatar(size: 32)
         }
         .accessibilityLabel("设置")
     }
 }
 
+/// The user's photo, or their initial, or a placeholder.
 struct Avatar: View {
-    let name: String?
     let size: CGFloat
+    @Environment(AccountManager.self) private var account
 
     var body: some View {
         Group {
-            if let initial = name?.first {
+            if let image = account.avatar {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else if let initial = account.profile.displayName?.first {
                 Text(String(initial))
                     .font(.system(size: size * 0.45, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
@@ -73,11 +86,13 @@ struct Avatar: View {
                     .background(Circle().fill(Color.accentColor.gradient))
             } else {
                 Image(systemName: "person.crop.circle.fill")
-                    .font(.system(size: size))
+                    .resizable()
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(.tint)
             }
         }
         .frame(width: size, height: size)
+        .clipShape(Circle())
+        .accessibilityHidden(true)
     }
 }

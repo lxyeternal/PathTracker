@@ -1,6 +1,6 @@
-# PathTracker
+# 漫迹 · Waytrace
 
-全天自动记录足迹的 iOS App：在后台记录你走过的每一条路，自动识别停留的地点、城市、国家和知名景点，并统计每天的步数和移动距离。数据只保存在用户自己的设备和 iCloud 中。
+全天自动记录足迹的 iOS App（Bundle ID `com.honywen.waytrace`）：在后台记录你走过的每一条路，自动识别停留的地点、城市、国家和知名景点，并统计每天的步数和移动距离。数据只保存在用户自己的设备和 iCloud 中。
 
 ## 功能
 
@@ -12,7 +12,9 @@
 - **足迹**：去过的国家和地区（停留天数、城市、景点）、城市数、景点、常去的地方、全部足迹地图；全局搜索地点、城市、国家；每个地点都有完整的到访历史。
 - **旅程**：开始一段旅程（高精度），或为过去的日期补建；按天分组、照片（读取 EXIF 时间和位置）、备注、分享图片、导出 GPX。
 - **统计**：周、月、年的步数和移动距离（点柱子看某一天），出行方式占比，累计国家、城市、记录天数。
-- **设置**：Apple 登录（可选）、全天记录开关、记录精度（省电 / 均衡 / 精细）、权限与 iCloud 状态、隐私区域、导入和导出 GPX、删除所有数据、隐私政策。
+- **个人资料**：设置和更换头像（从相册选取，自动裁成方形）、名字、邮箱、一句话简介；Apple 登录可选，退出登录不会丢失资料。
+- **语言**：App 内可在“跟随系统 / 简体中文 / English”之间切换，立即生效；系统权限弹窗在下次打开时切换。
+- **设置**：全天记录开关、记录精度（省电 / 均衡 / 精细）、权限与 iCloud 状态、隐私区域、导入和导出 GPX、删除所有数据、隐私政策。
 
 迭代过程和每一轮的实测记录见 [PRODUCT_REVIEW.md](PRODUCT_REVIEW.md)。
 
@@ -26,7 +28,8 @@
 | 地点标注 | `MKReverseGeocodingRequest`（国家、城市）+ `MKLocalPointsOfInterestRequest`（地点名称、景点） |
 | 出行方式 | CoreMotion 运动识别，无法获取时按速度推断 |
 | 步数 | HealthKit 每日统计，“健康”不可用时退回 CMPedometer |
-| 登录 | Sign in with Apple，资料存放在 iCloud 键值存储 |
+| 登录与资料 | Sign in with Apple（可选）；名字、简介和头像（≤400px JPEG）存放在 iCloud 键值存储 |
+| 多语言 | String Catalog（`Localizable.xcstrings`、`InfoPlist.xcstrings`），源语言简体中文，另有英文；App 内切换通过 `AppLanguage.swift` |
 | UI | SwiftUI、MapKit、Swift Charts，iOS 26 Liquid Glass |
 
 轨迹点按段压缩成 `TrackChunk`（每段最多约 400 个点，用 LZFSE 压缩），一天只有几十条 CloudKit 记录，同步快，也节省用户的 iCloud 空间。

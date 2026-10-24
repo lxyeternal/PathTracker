@@ -133,7 +133,7 @@ struct WorldInsights {
     }
 
     static func countryName(code: String, fallback: String?) -> String {
-        Locale.current.localizedString(forRegionCode: code) ?? fallback ?? code
+        appLocale.localizedString(forRegionCode: code) ?? fallback ?? code
     }
 
     /// Groups stays within 150 m of each other; places visited at least three times.

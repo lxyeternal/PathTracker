@@ -203,6 +203,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				"zh-Hans",
+				en,
 				Base,
 			);
 			mainGroup = 324BE9432E25240100B8D401;
@@ -411,7 +412,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				CODE_SIGN_ENTITLEMENTS = RecordPath/RecordPath.entitlements;
 				INFOPLIST_FILE = RecordPath/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = PathTracker;
+				INFOPLIST_KEY_CFBundleDisplayName = "漫迹";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "读取步数和步行距离，用来展示你每天走了多少路。数据只在你的设备和 iCloud 中。";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "在后台持续记录你走过的路线，自动标出去过的地点、城市和国家。轨迹只保存在你自己的 iCloud 中。";
@@ -428,7 +429,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.pathtracker.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.honywen.waytrace;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -447,7 +448,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				CODE_SIGN_ENTITLEMENTS = RecordPath/RecordPath.entitlements;
 				INFOPLIST_FILE = RecordPath/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = PathTracker;
+				INFOPLIST_KEY_CFBundleDisplayName = "漫迹";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "读取步数和步行距离，用来展示你每天走了多少路。数据只在你的设备和 iCloud 中。";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "在后台持续记录你走过的路线，自动标出去过的地点、城市和国家。轨迹只保存在你自己的 iCloud 中。";
@@ -464,7 +465,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.pathtracker.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.honywen.waytrace;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -481,7 +482,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.pathtracker.app.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.honywen.waytrace.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -499,7 +500,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.pathtracker.app.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.honywen.waytrace.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -515,7 +516,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.pathtracker.app.uitests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.honywen.waytrace.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -531,7 +532,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.pathtracker.app.uitests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.honywen.waytrace.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;

@@ -47,8 +47,8 @@ struct MoveDetailView: View {
                         }
                         .padding(.top, 6)
                         VStack(alignment: .leading, spacing: 14) {
-                            endpoint(title: from?.displayName ?? String(localized: "出发"), time: move.start)
-                            endpoint(title: to?.displayName ?? String(localized: "到达"), time: move.end)
+                            endpoint(title: from?.displayName ?? String(localized: "出发", bundle: .appLanguage), time: move.start)
+                            endpoint(title: to?.displayName ?? String(localized: "到达", bundle: .appLanguage), time: move.end)
                         }
                     }
                     .padding(.vertical, 4)
@@ -111,7 +111,7 @@ struct MoveDetailView: View {
         let durations = history.map(\.duration)
         let average = durations.reduce(0, +) / Double(durations.count)
         return Section {
-            LabeledContent("走过", value: String(localized: "\(history.count) 次"))
+            LabeledContent("走过次数", value: String(localized: "\(history.count) 次", bundle: .appLanguage))
             LabeledContent("平均用时", value: Format.duration(average))
             LabeledContent("最快", value: Format.duration(durations.min() ?? 0))
             ForEach(history.prefix(10)) { trip in
@@ -120,7 +120,7 @@ struct MoveDetailView: View {
                     navigator.show(day: trip.departure)
                 } label: {
                     HStack {
-                        Text(trip.departure.formatted(.dateTime.month().day().weekday(.abbreviated)))
+                        Text(trip.departure.formatted(.dateTime.month().day().weekday(.abbreviated).locale(appLocale)))
                             .foregroundStyle(.primary)
                         Text(Format.time(trip.departure)).foregroundStyle(.secondary)
                         Spacer()

@@ -50,6 +50,28 @@ struct OnboardingView: View {
         onFinish()
     }
 
+    private var languageMenu: some View {
+        Menu {
+            ForEach(AppLanguage.allCases) { language in
+                Button {
+                    withAnimation(.smooth) { LanguageSettings.shared.set(language) }
+                } label: {
+                    if language == LanguageSettings.shared.language {
+                        Label(language.nativeName, systemImage: "checkmark")
+                    } else {
+                        Text(verbatim: language.nativeName)
+                    }
+                }
+            }
+        } label: {
+            Label("语言", systemImage: "globe")
+                .font(.subheadline.weight(.medium))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .glassEffect(.regular, in: .capsule)
+        }
+    }
+
     private var pageDots: some View {
         HStack(spacing: 8) {
             ForEach(Step.allCases, id: \.self) { item in
@@ -65,19 +87,24 @@ struct OnboardingView: View {
     // MARK: Steps
 
     private var welcome: some View {
-        VStack(spacing: 28) {
-            Spacer()
+        VStack(spacing: 24) {
+            HStack {
+                Spacer()
+                languageMenu
+            }
+            Spacer(minLength: 0)
             HeroSymbol(systemName: "point.topright.filled.arrow.triangle.backward.to.point.bottomleft.scurvepath", tint: .accentColor)
             VStack(spacing: 10) {
                 Text("走过的路，都会被记住")
                     .font(.largeTitle.bold())
                     .multilineTextAlignment(.center)
-                Text("PathTracker 在后台安静地记录你每天的轨迹，自动整理去过的地方、城市和国家。")
+                Text("漫迹在后台安静地记录你每天的轨迹，自动整理去过的地方、城市和国家。")
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            VStack(alignment: .leading, spacing: 22) {
+            VStack(alignment: .leading, spacing: 20) {
                 FeatureRow(symbol: "map.fill", tint: .blue, title: "全天自动记录",
                            detail: "不用每次手动开始，放大地图就能看到走过的每条街。")
                 FeatureRow(symbol: "flag.2.crossed.fill", tint: .orange, title: "足迹自动标注",
@@ -85,8 +112,7 @@ struct OnboardingView: View {
                 FeatureRow(symbol: "lock.icloud.fill", tint: .green, title: "只属于你",
                            detail: "数据只保存在你的设备和你自己的 iCloud 中。")
             }
-            .padding(.top, 8)
-            Spacer()
+            Spacer(minLength: 0)
             PrimaryButton(title: "开始使用", action: advance)
         }
     }
@@ -137,9 +163,9 @@ struct OnboardingView: View {
         case .authorizedWhenInUse:
             "选择“始终允许”后，即使你没有打开 App，轨迹也会被记录下来。系统会在手机静止时自动暂停定位，尽量省电。"
         case .denied, .restricted:
-            "定位权限已关闭。你可以在“设置”里打开，PathTracker 才能记录轨迹。"
+            "定位权限已关闭。你可以在“设置”里打开，漫迹才能记录轨迹。"
         default:
-            "PathTracker 用你的位置来画出走过的路线、识别停留的地点。位置数据不会离开你的设备和 iCloud。"
+            "漫迹用你的位置来画出走过的路线、识别停留的地点。位置数据不会离开你的设备和 iCloud。"
         }
     }
 
@@ -245,6 +271,7 @@ private struct FeatureRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.headline)
                 Text(detail).font(.subheadline).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }

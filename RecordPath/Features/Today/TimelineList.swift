@@ -90,9 +90,9 @@ private struct StayRow: View {
         func label(_ date: Date) -> String {
             Calendar.current.isDate(date, inSameDayAs: day)
                 ? Format.time(date)
-                : date.formatted(.dateTime.month().day().hour().minute())
+                : date.formatted(.dateTime.month().day().hour().minute().locale(appLocale))
         }
-        let end = stay.departure.map(label) ?? String(localized: "现在")
+        let end = stay.departure.map(label) ?? String(localized: "现在", bundle: .appLanguage)
         return "\(label(stay.arrival)) – \(end)"
     }
 }

@@ -36,9 +36,9 @@ struct CountryDetailView: View {
                 MetricGrid {
                     MetricTile(title: "停留天数", value: "\(country.days.count)", symbol: "calendar", tint: .teal)
                     MetricTile(title: "城市", value: "\(cities.count)", symbol: "building.2.fill", tint: .indigo)
-                    MetricTile(title: "首次到访", value: country.firstVisit.formatted(.dateTime.year().month().day()),
+                    MetricTile(title: "首次到访", value: country.firstVisit.formatted(.dateTime.year().month().day().locale(appLocale)),
                                symbol: "airplane.arrival", tint: .blue)
-                    MetricTile(title: "最近一次", value: country.lastVisit.formatted(.dateTime.year().month().day()),
+                    MetricTile(title: "最近一次", value: country.lastVisit.formatted(.dateTime.year().month().day().locale(appLocale)),
                                symbol: "clock.fill", tint: .orange)
                 }
 

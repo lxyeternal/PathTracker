@@ -27,8 +27,8 @@ enum GPXImporter {
         case unreadable, empty
         var errorDescription: String? {
             switch self {
-            case .unreadable: String(localized: "无法读取这个文件，它可能不是 GPX 格式。")
-            case .empty: String(localized: "文件里没有带时间的轨迹点。")
+            case .unreadable: String(localized: "无法读取这个文件，它可能不是 GPX 格式。", bundle: .appLanguage)
+            case .empty: String(localized: "文件里没有带时间的轨迹点。", bundle: .appLanguage)
             }
         }
     }

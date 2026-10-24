@@ -12,9 +12,6 @@ struct SettingsView: View {
     @Environment(AccountManager.self) private var account
 
     @State private var syncStatus: SyncStatus = .checking
-    @State private var editingName = false
-    @State private var nameDraft = ""
-    @State private var confirmingSignOut = false
     @State private var confirmingDeleteAll = false
     @State private var stats: (chunks: Int, stays: Int, trips: Int) = (0, 0, 0)
     @State private var retagged = false
@@ -26,6 +23,7 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 accountSection
+                languageSection
                 trackingSection
                 permissionsSection
                 privacySection
@@ -60,8 +58,11 @@ struct SettingsView: View {
                 }
                 tagger?.enqueue()
                 refreshCounts()
-                var message = String(localized: "导入了 \(tracks) 段轨迹、\(places) 个地点。")
-                if duplicates > 0 { message += String(localized: "跳过了 \(duplicates) 条已经存在的记录。") }
+                var message = String(localized: "导入了 \(tracks) 段轨迹、\(places) 个地点。", bundle: .appLanguage)
+                if duplicates > 0 {
+                    let skipped = String(localized: "跳过了 \(duplicates) 条已经存在的记录。", bundle: .appLanguage)
+                    message += (message.last.map { "。！？".contains($0) } == true ? "" : " ") + skipped
+                }
                 if !failures.isEmpty { message += "\n" + failures.joined(separator: "\n") }
                 importMessage = message
             }
@@ -69,16 +70,6 @@ struct SettingsView: View {
                 Button("好", role: .cancel) {}
             } message: {
                 Text(importMessage ?? "")
-            }
-            .alert("修改名字", isPresented: $editingName) {
-                TextField("名字", text: $nameDraft)
-                Button("取消", role: .cancel) {}
-                Button("保存") { account.updateDisplayName(nameDraft) }
-            }
-            .confirmationDialog("退出登录？", isPresented: $confirmingSignOut, titleVisibility: .visible) {
-                Button("退出登录", role: .destructive) { account.signOut() }
-            } message: {
-                Text("你的轨迹和地点仍然保留在这台设备和 iCloud 中。")
             }
             .confirmationDialog("删除所有数据？", isPresented: $confirmingDeleteAll, titleVisibility: .visible) {
                 Button("删除所有数据", role: .destructive, action: deleteEverything)
@@ -92,38 +83,40 @@ struct SettingsView: View {
 
     private var accountSection: some View {
         Section {
-            if let profile = account.profile {
+            NavigationLink {
+                ProfileEditView()
+            } label: {
                 HStack(spacing: 14) {
-                    Avatar(name: profile.displayName, size: 52)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(profile.displayName ?? String(localized: "旅行者")).font(.headline)
-                        Text(profile.email ?? String(localized: "已通过 Apple 登录"))
+                    Avatar(size: 60)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(account.displayName).font(.title3.weight(.semibold))
+                        Text(account.profile.bio ?? account.profile.email
+                             ?? String(localized: "设置头像、名字和个人信息", bundle: .appLanguage))
                             .font(.subheadline).foregroundStyle(.secondary)
+                            .lineLimit(2)
+                        if account.isSignedIn {
+                            Label("已通过 Apple 登录", systemImage: "apple.logo")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
                     }
                 }
-                .padding(.vertical, 4)
-                Button("修改名字", systemImage: "pencil") {
-                    nameDraft = profile.displayName ?? ""
-                    editingName = true
-                }
-                Button("退出登录", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) {
-                    confirmingSignOut = true
-                }
-            } else {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("登录后，你的名字会在所有设备上同步。").font(.subheadline).foregroundStyle(.secondary)
-                    SignInWithAppleButton(.signIn, onRequest: account.configure, onCompletion: account.handle)
-                        .signInWithAppleButtonStyle(.black)
-                        .frame(height: 46)
-                        .clipShape(.capsule)
-                }
                 .padding(.vertical, 6)
-                if let error = account.lastError {
-                    Text(error).font(.footnote).foregroundStyle(.red)
-                }
             }
-        } header: {
-            Text("账户")
+        }
+    }
+
+    private var languageSection: some View {
+        Section {
+            Picker(selection: Binding(get: { LanguageSettings.shared.language },
+                                      set: { newValue in withAnimation(.smooth) { LanguageSettings.shared.set(newValue) } })) {
+                ForEach(AppLanguage.allCases) { language in
+                    Text(verbatim: language.nativeName).tag(language)
+                }
+            } label: {
+                Label("语言", systemImage: "globe")
+            }
+        } footer: {
+            Text("系统权限弹窗的语言会在下次打开 App 时更新。")
         }
     }
 
@@ -169,7 +162,7 @@ struct SettingsView: View {
                 }
             }
             permissionRow(title: "健康（步数）", symbol: "heart.circle.fill", tint: .pink,
-                          value: activity.isAuthorizationRequested ? String(localized: "已请求") : String(localized: "未开启"),
+                          value: activity.isAuthorizationRequested ? String(localized: "已请求", bundle: .appLanguage) : String(localized: "未开启", bundle: .appLanguage),
                           needsAction: !activity.isAuthorizationRequested) {
                 if activity.isAuthorizationRequested {
                     // Health permissions can only be changed in the Health app afterwards.
@@ -191,7 +184,7 @@ struct SettingsView: View {
             LabeledContent("轨迹片段", value: "\(stats.chunks)")
             LabeledContent("到访记录", value: "\(stats.stays)")
             LabeledContent("旅程", value: "\(stats.trips)")
-            ShareLink(item: AllTracksExport(container: context.container), preview: SharePreview("PathTracker.gpx")) {
+            ShareLink(item: AllTracksExport(container: context.container), preview: SharePreview(AppInfo.exportFileName)) {
                 Label("导出全部轨迹（GPX）", systemImage: "square.and.arrow.up")
             }
             .disabled(stats.chunks == 0)
@@ -275,32 +268,35 @@ struct SettingsView: View {
     private var precisionFooter: String {
         let mode: String
         switch engine.precision {
-        case .battery: mode = String(localized: "省电：只记录到过的地点和大致路线，几乎不耗电。")
-        case .balanced: mode = String(localized: "均衡：移动时记录完整路线，静止时自动暂停定位。适合大多数人。")
-        case .precise: mode = String(localized: "精细：路线最贴合街道，耗电更多，适合徒步和骑行爱好者。")
+        case .battery: mode = String(localized: "省电：只记录到过的地点和大致路线，几乎不耗电。", bundle: .appLanguage)
+        case .balanced: mode = String(localized: "均衡：移动时记录完整路线，静止时自动暂停定位。适合大多数人。", bundle: .appLanguage)
+        case .precise: mode = String(localized: "精细：路线最贴合街道，耗电更多，适合徒步和骑行爱好者。", bundle: .appLanguage)
         }
-        return mode + String(localized: "关闭全天记录后，仍可以在“今天”页右上角手动记录一段。")
+        let manual = String(localized: "关闭全天记录后，仍可以在“今天”页右上角手动记录一段。", bundle: .appLanguage)
+        // Chinese sentences sit side by side; languages with spaces need one between them.
+        let separator = mode.last.map { "。！？".contains($0) } == true ? "" : " "
+        return mode + separator + manual
     }
 
     private var locationText: String {
         switch engine.authorization {
-        case .authorizedAlways: engine.isPreciseLocation ? String(localized: "始终允许") : String(localized: "精确位置已关闭")
-        case .authorizedWhenInUse: String(localized: "使用期间")
-        case .denied: String(localized: "已拒绝")
-        case .restricted: String(localized: "受限制")
-        default: String(localized: "未设置")
+        case .authorizedAlways: engine.isPreciseLocation ? String(localized: "始终允许", bundle: .appLanguage) : String(localized: "精确位置已关闭", bundle: .appLanguage)
+        case .authorizedWhenInUse: String(localized: "使用期间", bundle: .appLanguage)
+        case .denied: String(localized: "已拒绝", bundle: .appLanguage)
+        case .restricted: String(localized: "受限制", bundle: .appLanguage)
+        default: String(localized: "未设置", bundle: .appLanguage)
         }
     }
 
     private var statusText: String {
-        if engine.isPaused, engine.activeTripID == nil { return String(localized: "已暂停") }
-        guard engine.isRecording else { return String(localized: "已关闭") }
+        if engine.isPaused, engine.activeTripID == nil { return String(localized: "已暂停", bundle: .appLanguage) }
+        guard engine.isRecording else { return String(localized: "已关闭", bundle: .appLanguage) }
         switch engine.activity {
-        case .moving: return String(localized: "移动中")
-        case .stationary: return String(localized: "静止")
-        case .starting: return String(localized: "启动中")
-        case .unavailable: return String(localized: "无法定位")
-        case .off: return String(localized: "等待权限")
+        case .moving: return String(localized: "移动中", bundle: .appLanguage)
+        case .stationary: return String(localized: "静止", bundle: .appLanguage)
+        case .starting: return String(localized: "启动中", bundle: .appLanguage)
+        case .unavailable: return String(localized: "无法定位", bundle: .appLanguage)
+        case .off: return String(localized: "等待权限", bundle: .appLanguage)
         }
     }
 
@@ -324,7 +320,7 @@ struct SettingsView: View {
         #if DEBUG
         UserDefaults.standard.removeObject(forKey: "debug.demoSteps")
         #endif
-        account.signOut()
+        account.reset()
         refreshCounts()
     }
 
@@ -333,11 +329,14 @@ struct SettingsView: View {
     }
 }
 
-/// Public contact details. Replace the support address before submitting to the App Store.
+/// The app's public name and contact details.
 enum AppInfo {
-    static let supportEmail = "support@pathtracker.app"
+    /// "漫迹" in Chinese, "Waytrace" in English.
+    static var name: String { String(localized: "漫迹", bundle: .appLanguage) }
+    static var exportFileName: String { "Waytrace.gpx" }
+    static let supportEmail = "honywendev@gmail.com"
     static var supportURL: URL {
-        URL(string: "mailto:\(supportEmail)?subject=PathTracker%20\(Bundle.main.versionString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")!
+        URL(string: "mailto:\(supportEmail)?subject=Waytrace%20\(Bundle.main.versionString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")!
     }
 }
 
