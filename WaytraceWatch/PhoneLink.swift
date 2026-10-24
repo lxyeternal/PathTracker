@@ -65,10 +65,16 @@ final class PhoneLink: NSObject {
         send(.resume)
     }
 
-    private func send(_ command: WatchCommand, until: Date? = nil) {
+    func endIPhoneRecording(_ tripID: UUID) {
+        snapshot?.activeRecording = nil
+        send(.endRecording, trip: tripID)
+    }
+
+    private func send(_ command: WatchCommand, until: Date? = nil, trip: UUID? = nil) {
         guard let session, session.activationState == .activated else { return }
         var message: [String: Any] = [WatchCommand.key: command.rawValue]
         if let until { message[WatchCommand.untilKey] = until }
+        if let trip { message[WatchCommand.tripKey] = trip.uuidString }
         if session.isReachable {
             session.sendMessage(message, replyHandler: { reply in
                 let data = reply[WatchSnapshot.key] as? Data
@@ -145,12 +151,25 @@ final class PhoneLink: NSObject {
         guard let snapshot else { return }
         let previous = self.snapshot
         self.snapshot = snapshot
+        followIPhoneRecording(snapshot)
         SharedSnapshot.save(snapshot)
         applyLanguage(of: snapshot)
         if previous.map(ComplicationContent.init) != ComplicationContent(snapshot) {
             WidgetCenter.shared.reloadAllTimelines()
         }
         transferPending()
+    }
+
+    /// Keeps a recording started from the iPhone in step with it: learns which trip it belongs
+    /// to, and ends when the iPhone recording ends.
+    private func followIPhoneRecording(_ snapshot: WatchSnapshot) {
+        let recorder = WorkoutRecorder.shared
+        guard recorder.isLinkedToPhone, recorder.isActive else { return }
+        if let active = snapshot.activeRecording {
+            recorder.link(to: active.tripID)
+        } else if recorder.linkedTripID != nil {
+            Task { await recorder.end(becauseIPhoneEnded: true) }
+        }
     }
 
     private func applyLanguage(of snapshot: WatchSnapshot) {

@@ -1342,6 +1342,16 @@
         }
       }
     },
+    "在 Apple Watch 上同时记录": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Also Record on Apple Watch"
+          }
+        }
+      }
+    },
     "在“地图”中打开": {
       "localizations": {
         "en": {
@@ -2020,6 +2030,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Manual recording in progress, using high accuracy"
+          }
+        }
+      }
+    },
+    "手表上的漫迹会自动打开，记录心率并存为体能训练；在任一设备上结束，两边一起结束。适合徒步、跑步这类几个小时内的活动。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waytrace opens on your Watch by itself, records your heart rate and saves a workout. Ending on either device ends both. Best for activities of a few hours, like hikes and runs."
           }
         }
       }

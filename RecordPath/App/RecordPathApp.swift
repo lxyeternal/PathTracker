@@ -24,6 +24,7 @@ struct RecordPathApp: App {
             case .active:
                 services.engine.refreshState()
                 services.tagger.enqueue()
+                services.liveRecording.refreshNow()
                 Task {
                     await services.activity.refreshToday()
                     services.watch.scheduleUpdate(immediately: true)
@@ -46,6 +47,7 @@ final class AppServices {
     let activity: ActivityProvider
     let account: AccountManager
     let watch: WatchBridge
+    let liveRecording: LiveRecording
 
     private init() {
         // Before anything builds a string, so even background launches use the chosen language.
@@ -58,6 +60,8 @@ final class AppServices {
         account = AccountManager()
         watch = WatchBridge(context: container.mainContext, engine: engine, activity: activity)
         watch.activate()
+        liveRecording = LiveRecording(context: container.mainContext, engine: engine)
+        liveRecording.activate()
     }
 }
 

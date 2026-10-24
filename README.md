@@ -19,6 +19,9 @@
   - “今天”里可以看步数、距离、地点，并在手表上暂停或恢复 iPhone 的全天记录。
   - 表盘复杂功能：今天的距离、现在所在的地点，轻点直接打开 App。
   - 跟随 iPhone App 里选的语言。
+- **iPhone 和手表联动**：在 iPhone 上开始手动记录时，
+  - 锁屏、灵动岛显示实时活动（名称、用时、距离），iOS 会自动把它放进手表的智能叠放，抬腕就能看到；
+  - 打开“在 Apple Watch 上同时记录”（徒步、步行这类默认打开，开车、坐飞机、坐火车默认关闭），手表上的漫迹会自动打开并一起记录（心率、体能训练）；在任一设备上结束，两边一起结束，手表的记录并入同一段旅程。
 - **设置**：全天记录开关、记录精度（省电 / 均衡 / 精细）、权限与 iCloud 状态、隐私区域、导入和导出 GPX、删除所有数据、隐私政策。
 
 迭代过程和每一轮的实测记录见 [PRODUCT_REVIEW.md](PRODUCT_REVIEW.md)。
@@ -36,7 +39,8 @@
 | 登录与资料 | Sign in with Apple（可选）；名字、简介和头像（≤400px JPEG）存放在 iCloud 键值存储 |
 | 多语言 | String Catalog（`Localizable.xcstrings`、`InfoPlist.xcstrings`），源语言简体中文，另有英文；App 内切换通过 `AppLanguage.swift` |
 | UI | SwiftUI、MapKit、Swift Charts，iOS 26 Liquid Glass |
-| Apple Watch | watchOS 26 SwiftUI App + WidgetKit 复杂功能；`HKWorkoutSession` 让记录在抬腕之外也持续进行；WatchConnectivity 同步 |
+| 实时活动 | ActivityKit（`WaytraceLiveActivity`），带手表智能叠放的小尺寸布局 |
+| Apple Watch | watchOS 26 SwiftUI App + WidgetKit 复杂功能；`HKHealthStore.startWatchApp` 从 iPhone 打开手表 App；`HKWorkoutSession` 让记录在抬腕之外也持续进行；WatchConnectivity 同步 |
 
 轨迹点按段压缩成 `TrackChunk`（每段最多约 400 个点，用 LZFSE 压缩），一天只有几十条 CloudKit 记录，同步快，也节省用户的 iCloud 空间。
 
@@ -54,6 +58,7 @@ RecordPath/
 Common/             iPhone、手表、复杂功能共用：轨迹编码、格式化、语言、同步消息
 WaytraceWatch/      Apple Watch App：地图首页、记录（体能训练 + GPS）、今天
 WaytraceWidgets/    表盘复杂功能
+WaytraceLiveActivity/  iPhone 实时活动（锁屏、灵动岛、手表智能叠放）
 ```
 
 ### iPhone 和手表怎么配合

@@ -540,3 +540,41 @@ struct WatchRecordingImportTests {
         #expect(trip.interval.duration > 0)
     }
 }
+
+struct LinkedRecordingTests {
+    @Test func tripIconDecidesWhetherTheWatchRecordsAlong() {
+        #expect(WatchActivity.forTripEmoji("🥾") == .hiking)
+        #expect(WatchActivity.forTripEmoji("🏔️") == .hiking)
+        #expect(WatchActivity.forTripEmoji("🚲") == .cycling)
+        #expect(WatchActivity.forTripEmoji("🧭") == .walking)
+        #expect(WatchActivity.forTripEmoji("✈️") == nil)
+        #expect(WatchActivity.forTripEmoji("🚗") == nil)
+    }
+
+    @Test func workoutTypeRoundTrips() {
+        for activity in WatchActivity.allCases {
+            #expect(WatchActivity(workoutType: activity.workoutType) == activity)
+        }
+    }
+
+    @Test @MainActor func watchRecordingJoinsTheIPhoneTripItWasStartedFrom() throws {
+        let context = ModelContext(PersistenceController.makeContainer(inMemory: true))
+        let trip = Trip(title: "外滩", startDate: Date(timeIntervalSince1970: 1_800_000_000))
+        context.insert(trip)
+        let points = (0...60).map { point(31.24 - Double($0) * 0.0002, 121.49, Double($0) * 10) }
+        let info = WatchRecordingInfo(id: UUID(), activity: .walking, start: points[0].timestamp,
+                                      end: points[60].timestamp, distance: TrackPoint.distance(of: points), tripID: trip.id)
+        let result = WatchRecordingImporter.importRecording(points: points, info: info, into: context)
+        #expect(result?.id == trip.id)
+        #expect(try context.fetchCount(FetchDescriptor<Trip>()) == 1)
+        let chunks = try context.fetch(FetchDescriptor<TrackChunk>())
+        #expect(!chunks.isEmpty && chunks.allSatisfy { $0.tripID == trip.id })
+    }
+
+    @Test func activeRecordingTravelsInTheSnapshot() throws {
+        var snapshot = WatchSnapshot()
+        snapshot.activeRecording = ActiveRecording(tripID: UUID(), title: "徒步", emoji: "🥾", start: Date(), watchActivity: .hiking)
+        let decoded = try #require(WatchSnapshot.decode(snapshot.encoded()))
+        #expect(decoded.activeRecording == snapshot.activeRecording)
+    }
+}

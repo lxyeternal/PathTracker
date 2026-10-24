@@ -46,6 +46,7 @@ final class WatchBridge: NSObject {
             _ = engine.pausedUntil
             _ = engine.isEnabled
             _ = engine.openStay
+            _ = engine.activeTripID
             _ = activity.today
             _ = LanguageSettings.shared.language
         } onChange: { [weak self] in
@@ -106,6 +107,11 @@ final class WatchBridge: NSObject {
         snapshot.isRecording = engine.isRecording
         snapshot.pausedUntil = engine.isPaused ? engine.pausedUntil : nil
         snapshot.receivedRecordings = WatchRecordingImporter.receivedIDs
+        if let id = engine.activeTripID,
+           let trip = try? context.fetch(FetchDescriptor<Trip>(predicate: #Predicate { $0.id == id && $0.endDate == nil })).first {
+            snapshot.activeRecording = ActiveRecording(tripID: trip.id, title: trip.title, emoji: trip.coverEmoji,
+                                                       start: trip.startDate, watchActivity: LiveRecording.watchActivity(for: trip.id))
+        }
         return snapshot
     }
 
@@ -146,6 +152,12 @@ final class WatchBridge: NSObject {
             if let until = message[WatchCommand.untilKey] as? Date { engine.pause(until: until) }
         case .resume:
             engine.resume()
+        case .endRecording:
+            // Ended on the Watch: end it here too, but only the recording the Watch was part of.
+            if let id = (message[WatchCommand.tripKey] as? String).flatMap(UUID.init(uuidString:)), engine.activeTripID == id,
+               let trip = try? context.fetch(FetchDescriptor<Trip>(predicate: #Predicate { $0.id == id })).first {
+                engine.endTrip(trip)
+            }
         case .refresh, nil:
             break
         }
