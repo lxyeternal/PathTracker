@@ -1,8 +1,8 @@
 import SwiftUI
 import Photos
 
-/// The day as a vertical story on one continuous line: places as stops, the way between them
-/// drawn in the colour of how you travelled. Times sit in the margin, like a train timetable.
+/// The day as a story: each place a card, and between them the way you went, drawn as a line in
+/// the colour of how you travelled with a small map of the route.
 struct TimelineList: View {
     let entries: [TimelineEntry]
     var day: Date = Date()
@@ -14,20 +14,21 @@ struct TimelineList: View {
             ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
                 switch entry {
                 case .stay(let stay):
-                    Button { onSelect(stay) } label: {
-                        StayRow(stay: stay, day: day, isFirst: index == 0, isLast: index == entries.count - 1)
-                    }
-                    .buttonStyle(TimelineRowStyle())
+                    if index > 0, case .stay = entries[index - 1] { GapConnector() }
+                    Button { onSelect(stay) } label: { StayCard(stay: stay, day: day) }
+                        .buttonStyle(PressableStyle())
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
                 case .move(let move):
                     Button {
                         onSelectMove(MoveSelection(move: move, from: neighbourStay(before: index), to: neighbourStay(after: index)))
                     } label: {
-                        MoveRow(move: move)
+                        MoveConnector(move: move, isFirst: index == 0, isLast: index == entries.count - 1)
                     }
-                    .buttonStyle(TimelineRowStyle())
+                    .buttonStyle(PressableStyle())
                 }
             }
         }
+        .animation(.smooth, value: entries.map(\.id))
     }
 
     private func neighbourStay(before index: Int) -> Stay? {
@@ -39,43 +40,35 @@ struct TimelineList: View {
     }
 }
 
-/// Rows highlight softly while pressed instead of showing a chevron on every line.
-private struct TimelineRowStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color.primary.opacity(configuration.isPressed ? 0.06 : 0))
-            )
-            .scaleEffect(configuration.isPressed ? 0.985 : 1)
-            .animation(.snappy(duration: 0.18), value: configuration.isPressed)
-    }
-}
-
-/// Column widths shared by both kinds of row, so the line runs straight.
+/// Where the connecting line runs: under the centre of each card's icon.
 private enum Rail {
-    static let time: CGFloat = 52
-    static let node: CGFloat = 40
-    static let line: CGFloat = 4
+    static let cardPadding: CGFloat = 14
+    static let icon: CGFloat = 42
+    static var x: CGFloat { cardPadding + icon / 2 }
 }
 
-private struct StayRow: View {
+// MARK: - Places
+
+private struct StayCard: View {
     let stay: Stay
     let day: Date
-    let isFirst: Bool
-    let isLast: Bool
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var libraryPhotos: [PHAsset] = []
 
+    private var isHere: Bool { stay.departure == nil }
     private var posted: [TripPhoto] { (stay.photos ?? []).sorted { $0.takenAt < $1.takenAt } }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            timeColumn
-            rail
-            VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center, spacing: 12) {
+                PlaceIcon(category: stay.category, isLandmark: stay.isLandmark, size: Rail.icon)
+                    .overlay {
+                        if isHere {
+                            Circle().stroke(stay.category.tint.opacity(0.5), lineWidth: 2).padding(-4)
+                        }
+                    }
                 VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 5) {
                         Text(stay.displayName)
                             .font(.body.weight(.semibold))
                             .lineLimit(typeSize.isAccessibilitySize ? 3 : 1)
@@ -83,119 +76,161 @@ private struct StayRow: View {
                             Image(systemName: "star.fill").font(.caption2).foregroundStyle(.yellow)
                         }
                     }
-                    HStack(spacing: 6) {
-                        Text(Format.duration(stay.duration))
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(stay.category.tint)
-                            .padding(.horizontal, 7).padding(.vertical, 2)
-                            .background(stay.category.tint.opacity(0.12), in: .capsule)
-                        if let subtitle = stay.subtitle {
-                            Text(subtitle).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                        } else if stay.tagState == .pending {
-                            Text("正在识别地点…").font(.caption).foregroundStyle(.tertiary)
-                        }
+                    Text(detail)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+                Spacer(minLength: 6)
+                durationChip
+            }
+
+            if let note = stay.note, !note.isEmpty {
+                Text(note)
+                    .font(.subheadline)
+                    .foregroundStyle(.primary.opacity(0.85))
+                    .lineLimit(4)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            if !posted.isEmpty || !libraryPhotos.isEmpty { photos }
+        }
+        .padding(Rail.cardPadding)
+        .background {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(.background.secondary)
+                .overlay {
+                    if isHere {
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .strokeBorder(stay.category.tint.opacity(0.45), lineWidth: 1.5)
                     }
                 }
-                if let note = stay.note, !note.isEmpty {
-                    Text(note)
-                        .font(.subheadline)
-                        .foregroundStyle(.primary.opacity(0.85))
-                        .lineLimit(3)
-                }
-                if !posted.isEmpty || !libraryPhotos.isEmpty { photoStrip }
-            }
-            .padding(.vertical, 10)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.trailing, 8)
-        .fixedSize(horizontal: false, vertical: true)
-        .contentShape(.rect)
+        .contentShape(.rect(cornerRadius: 22, style: .continuous))
+        .foregroundStyle(.primary)
         .task(id: "\(stay.arrival.timeIntervalSince1970)-\(stay.departure?.timeIntervalSince1970 ?? 0)") {
             libraryPhotos = DayPhotos.assets(in: DayPhotos.interval(of: stay))
         }
         .accessibilityElement(children: .combine)
     }
 
-    private var timeColumn: some View {
-        VStack(alignment: .trailing, spacing: 2) {
-            Text(timeLabel(stay.arrival))
+    @ViewBuilder
+    private var durationChip: some View {
+        if isHere {
+            HStack(spacing: 5) {
+                PulsingDot(color: stay.category.tint)
+                Text("现在").font(.caption.weight(.bold))
+            }
+            .foregroundStyle(stay.category.tint)
+            .padding(.horizontal, 9).padding(.vertical, 5)
+            .background(stay.category.tint.opacity(0.12), in: .capsule)
+        } else {
+            Text(Format.duration(stay.duration))
                 .font(.caption.weight(.semibold).monospacedDigit())
-                .lineLimit(1)
-                .fixedSize()
-            if !Calendar.current.isDate(stay.arrival, inSameDayAs: day) {
-                Text(stay.arrival.formatted(.dateTime.month().day().locale(appLocale)))
-                    .font(.caption2).foregroundStyle(.tertiary)
-            }
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 9).padding(.vertical, 5)
+                .background(Color.secondary.opacity(0.1), in: .capsule)
         }
-        .foregroundStyle(.secondary)
-        .frame(width: Rail.time, alignment: .trailing)
-        .padding(.top, 21)
     }
 
-    private var rail: some View {
-        ZStack(alignment: .top) {
-            VStack(spacing: 0) {
-                Rectangle().fill(isFirst ? Color.clear : Color.secondary.opacity(0.25)).frame(width: Rail.line, height: 12)
-                Rectangle().fill(isLast ? Color.clear : Color.secondary.opacity(0.25))
-                    .frame(width: Rail.line)
-                    .frame(maxHeight: .infinity)
-            }
-            PlaceIcon(category: stay.category, isLandmark: stay.isLandmark, size: Rail.node)
-                .overlay(Circle().stroke(Color(.systemBackground), lineWidth: 3))
-                .padding(.top, 8)
+    /// "11:19 – 14:37 · 上海"
+    private var detail: String {
+        func label(_ date: Date) -> String {
+            Calendar.current.isDate(date, inSameDayAs: day)
+                ? Format.time(date)
+                : date.formatted(.dateTime.month().day().hour().minute().locale(appLocale))
         }
-        .frame(width: Rail.node)
+        let end = stay.departure.map(label) ?? String(localized: "现在", bundle: .appLanguage)
+        let times = "\(label(stay.arrival)) – \(end)"
+        if stay.tagState == .pending { return times + " · " + String(localized: "正在识别地点…", bundle: .appLanguage) }
+        return [times, stay.city].compactMap { $0 }.joined(separator: " · ")
     }
 
-    /// Posted photos first, then ones from the library taken here.
-    private var photoStrip: some View {
+    /// Posted photos, else the ones taken here, as a filmstrip.
+    private var photos: some View {
         ScrollView(.horizontal) {
             HStack(spacing: 6) {
-                ForEach(posted.prefix(8)) { photo in
-                    PhotoThumbnail(photo: photo, cornerRadius: 12).frame(width: 64, height: 64)
-                }
                 if posted.isEmpty {
-                    ForEach(libraryPhotos.prefix(8), id: \.localIdentifier) { AssetThumbnail(asset: $0, side: 64) }
+                    ForEach(libraryPhotos.prefix(10), id: \.localIdentifier) { AssetThumbnail(asset: $0, side: 76) }
+                } else {
+                    ForEach(posted.prefix(10)) { PhotoThumbnail(photo: $0, cornerRadius: 14).frame(width: 76, height: 76) }
                 }
             }
         }
         .scrollIndicators(.hidden)
         .scrollClipDisabled()
     }
+}
 
-    private func timeLabel(_ date: Date) -> String {
-        date.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits).locale(Locale(identifier: "en_GB")))
+// MARK: - The way between
+
+private struct MoveConnector: View {
+    let move: Move
+    let isFirst: Bool
+    let isLast: Bool
+    var body: some View {
+        HStack(spacing: 0) {
+            line
+                .frame(width: Rail.x * 2)
+            HStack(spacing: 10) {
+                Image(systemName: move.mode.symbol)
+                    .font(.footnote.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 30, height: 30)
+                    .background(Circle().fill(move.mode.color.gradient))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(move.mode.title).font(.subheadline.weight(.semibold))
+                    Text("\(Format.distance(move.distance)) · \(Format.duration(move.duration))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+                Spacer(minLength: 6)
+                thumbnail
+            }
+            .padding(.vertical, 12)
+            .padding(.trailing, 4)
+        }
+        .frame(minHeight: 78)
+        .contentShape(.rect)
+        .foregroundStyle(.primary)
+        .accessibilityElement(children: .combine)
+    }
+
+    /// The route in the travel mode's colour, fading where it meets a card.
+    private var line: some View {
+        Capsule()
+            .fill(LinearGradient(colors: [move.mode.color.opacity(isFirst ? 0 : 0.5), move.mode.color, move.mode.color.opacity(isLast ? 0 : 0.5)],
+                                 startPoint: .top, endPoint: .bottom))
+            .frame(width: 5)
+            .padding(.vertical, 2)
+    }
+
+    private var thumbnail: some View {
+        RouteSketch(lines: lines, tint: move.mode.color)
+            .frame(width: 84, height: 54)
+            .clipShape(.rect(cornerRadius: 12, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(move.mode.color.opacity(0.15)))
+    }
+
+    private var lines: [RouteImage.Line] {
+        move.chunks.map { RouteImage.Line(coordinates: $0.points.simplified(tolerance: 8).map(\.coordinate), color: $0.mode.color) }
     }
 }
 
-private struct MoveRow: View {
-    let move: Move
-
+/// Between two places with no recorded travel: a short dotted line.
+private struct GapConnector: View {
     var body: some View {
-        HStack(alignment: .center, spacing: 10) {
-            Color.clear.frame(width: Rail.time)
-            Rectangle()
-                .fill(move.mode.color.gradient)
-                .frame(width: Rail.line + 1)
-                .frame(maxHeight: .infinity)
-                .frame(width: Rail.node)
-            HStack(spacing: 8) {
-                Image(systemName: move.mode.symbol)
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 24, height: 24)
-                    .background(Circle().fill(move.mode.color.gradient))
-                Text(move.mode.title).font(.footnote.weight(.semibold))
-                Text("\(Format.distance(move.distance)) · \(Format.duration(move.duration))")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-            }
-            .padding(.vertical, 14)
-            Spacer(minLength: 0)
+        HStack(spacing: 0) {
+            DotLine()
+                .stroke(Color.secondary.opacity(0.35), style: StrokeStyle(lineWidth: 2.5, lineCap: .round, dash: [0.5, 6]))
+                .frame(width: Rail.x * 2, height: 22)
+            Spacer()
         }
-        .fixedSize(horizontal: false, vertical: true)
-        .contentShape(.rect)
-        .accessibilityElement(children: .combine)
+    }
+
+    private struct DotLine: Shape {
+        func path(in rect: CGRect) -> Path {
+            Path { $0.move(to: CGPoint(x: rect.midX, y: rect.minY)); $0.addLine(to: CGPoint(x: rect.midX, y: rect.maxY)) }
+        }
     }
 }

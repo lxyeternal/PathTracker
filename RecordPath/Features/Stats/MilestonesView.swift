@@ -31,9 +31,9 @@ struct MilestonesView: View {
         HStack(alignment: .center, spacing: 18) {
             ZStack {
                 ForEach(Array(progress.reached.prefix(3).enumerated().reversed()), id: \.element.id) { index, item in
-                    MilestoneBadge(milestone: item.milestone, size: 64)
-                        .rotationEffect(.degrees(Double(index - 1) * -12))
-                        .offset(x: CGFloat(index - 1) * -20)
+                    MilestoneBadge(milestone: item.milestone, size: 70)
+                        .rotationEffect(.degrees(Double(index - 1) * -10))
+                        .offset(x: CGFloat(index - 1) * -26)
                 }
             }
             .frame(width: 120, height: 80)
@@ -57,7 +57,7 @@ struct MilestonesView: View {
                 Spacer()
                 Text("\(items.filter(\.isReached).count) / \(items.count)").font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
             }
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 12)], spacing: 18) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 12)], spacing: 22) {
                 ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                     Button { selected = item } label: { cell(item) }
                         .buttonStyle(PressableStyle())
@@ -71,7 +71,7 @@ struct MilestonesView: View {
 
     private func cell(_ item: MilestoneProgress.Status) -> some View {
         VStack(spacing: 4) {
-            MilestoneBadge(milestone: item.milestone, isReached: item.isReached, progress: item.fraction, size: 70)
+            MilestoneBadge(milestone: item.milestone, isReached: item.isReached, progress: item.fraction, size: 82)
                 .padding(.bottom, 4)
             Text(item.milestone.title)
                 .font(.footnote.weight(.semibold))
