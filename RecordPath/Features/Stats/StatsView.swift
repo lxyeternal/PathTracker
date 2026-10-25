@@ -30,6 +30,9 @@ struct StatsView: View {
     @State private var daily: [DailyActivity] = []
     @State private var movement: [Date: [MovementMode: Double]] = [:]
     @State private var selectedDay: Date?
+    @State private var distanceSelection: Date?
+    @State private var modeAngle: Double?
+    @State private var selectedMode: MovementMode?
     @State private var isLoading = true
     @State private var lifetime = WorldInsights()
     @State private var showingYearReport = false
@@ -100,6 +103,7 @@ struct StatsView: View {
             }
             .task(id: period) {
                 selectedDay = nil
+                distanceSelection = nil
                 await load()
             }
             .task(id: stays.count) {
@@ -138,7 +142,7 @@ struct StatsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 header(title: "步数", symbol: "shoeprints.fill", tint: .orange,
                        value: selectedValue(\.steps).map(Format.steps) ?? Format.steps(averageSteps),
-                       caption: selectedDay.map { $0.formatted(.dateTime.month().day().locale(appLocale)) } ?? String(localized: "日均", bundle: .appLanguage))
+                       caption: snapped(selectedDay).map(dayLabel) ?? String(localized: "日均", bundle: .appLanguage))
                 Chart {
                     ForEach(bucketed(\.steps), id: \.date) { item in
                         BarMark(x: .value("日期", item.date, unit: bucketUnit), y: .value("步数", item.value))
@@ -146,22 +150,19 @@ struct StatsView: View {
                             .cornerRadius(4)
                             .opacity(selectedDay == nil || Calendar.current.isDate(item.date, equalTo: selectedDay!, toGranularity: bucketUnit) ? 1 : 0.35)
                     }
-                    if averageSteps > 0 && period != .year {
+                    if averageSteps > 0 && period != .year && selectedDay == nil {
                         RuleMark(y: .value("日均", averageSteps))
                             .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
                             .foregroundStyle(.secondary)
                     }
-                }
-                .chartGesture { proxy in
-                    SpatialTapGesture().onEnded { value in
-                        guard let date: Date = proxy.value(atX: value.location.x) else { return }
-                        withAnimation(.snappy) {
-                            let isSame = selectedDay.map { Calendar.current.isDate($0, equalTo: date, toGranularity: bucketUnit) } ?? false
-                            selectedDay = isSame ? nil : date
-                        }
+                    if let day = snapped(selectedDay) {
+                        RuleMark(x: .value("日期", day, unit: bucketUnit))
+                            .foregroundStyle(Color.orange.opacity(0.25))
+                            .lineStyle(StrokeStyle(lineWidth: 1))
                     }
                 }
-                .sensoryFeedback(.selection, trigger: selectedDay)
+                .chartXSelection(value: $selectedDay)
+                .sensoryFeedback(.selection, trigger: snapped(selectedDay))
                 .chartXAxis { xAxis }
                 .frame(height: 180)
                 .overlay { if daily.allSatisfy({ $0.steps == 0 }) && !isLoading { activityProvider.isAuthorizationRequested
@@ -175,8 +176,10 @@ struct StatsView: View {
         Card {
             VStack(alignment: .leading, spacing: 12) {
                 header(title: "移动距离", symbol: "point.topright.arrow.triangle.backward.to.point.bottomleft.scurvepath",
-                       tint: .blue, value: Format.distance(totalMovement),
-                       caption: String(localized: "合计 · 不含飞行", bundle: .appLanguage))
+                       tint: .blue, value: Format.distance(snapped(distanceSelection).map(groundTotal) ?? totalMovement),
+                       caption: snapped(distanceSelection).map(dayLabel) ?? String(localized: "合计 · 不含飞行", bundle: .appLanguage))
+                modeChips(snapped(distanceSelection).map(breakdown)
+                          ?? modeTotals.filter { $0.mode != .flying })
                 Chart {
                     ForEach(Array(groundMovement.keys), id: \.self) { day in
                         ForEach(MovementMode.allCases, id: \.self) { mode in
@@ -184,12 +187,19 @@ struct StatsView: View {
                                 BarMark(x: .value("日期", day, unit: bucketUnit), y: .value("距离", value / 1000))
                                     .foregroundStyle(by: .value("方式", mode.title))
                                     .cornerRadius(3)
+                                    .opacity(snapped(distanceSelection).map { Calendar.current.isDate($0, equalTo: day, toGranularity: bucketUnit) } ?? true ? 1 : 0.3)
                             }
                         }
                     }
+                    if let day = snapped(distanceSelection) {
+                        RuleMark(x: .value("日期", day, unit: bucketUnit))
+                            .foregroundStyle(Color.blue.opacity(0.2))
+                    }
                 }
+                .chartXSelection(value: $distanceSelection)
+                .sensoryFeedback(.selection, trigger: snapped(distanceSelection))
                 .chartForegroundStyleScale(domain: usedModes.map(\.title), range: usedModes.map(\.color))
-                .chartLegend(position: .bottom, spacing: 8)
+                .chartLegend(.hidden)
                 .chartYAxis {
                     AxisMarks { value in
                         AxisGridLine()
@@ -205,30 +215,115 @@ struct StatsView: View {
     }
 
     private var modesCard: some View {
-        Card {
-            VStack(alignment: .leading, spacing: 12) {
+        let total = modeTotals.reduce(0) { $0 + $1.distance }
+        let focus = selectedMode.flatMap { mode in modeTotals.first { $0.mode == mode } }
+        return Card {
+            VStack(alignment: .leading, spacing: 14) {
                 Text("出行方式").font(.headline)
                 HStack(spacing: 20) {
                     Chart(modeTotals, id: \.mode) { item in
-                        SectorMark(angle: .value("距离", item.distance), innerRadius: .ratio(0.62), angularInset: 2)
+                        SectorMark(angle: .value("距离", item.distance),
+                                   innerRadius: .ratio(0.64),
+                                   outerRadius: .ratio(selectedMode == item.mode ? 1 : 0.9),
+                                   angularInset: 2)
                             .foregroundStyle(item.mode.color.gradient)
-                            .cornerRadius(4)
+                            .cornerRadius(5)
+                            .opacity(selectedMode == nil || selectedMode == item.mode ? 1 : 0.3)
                     }
-                    .frame(width: 120, height: 120)
-                    VStack(alignment: .leading, spacing: 8) {
-                        ForEach(modeTotals, id: \.mode) { item in
-                            HStack {
-                                Image(systemName: item.mode.symbol).foregroundStyle(item.mode.color).frame(width: 22)
-                                Text(item.mode.title)
-                                Spacer()
-                                Text(Format.distance(item.distance)).foregroundStyle(.secondary).monospacedDigit()
+                    .chartAngleSelection(value: $modeAngle)
+                    .chartBackground { _ in
+                        VStack(spacing: 0) {
+                            if let focus {
+                                Image(systemName: focus.mode.symbol).font(.caption.bold()).foregroundStyle(focus.mode.color)
+                                Text((focus.distance / max(total, 1)).formatted(.percent.precision(.fractionLength(0)).locale(appLocale)))
+                                    .font(.system(.title3, design: .rounded, weight: .bold))
+                                    .contentTransition(.numericText())
+                            } else {
+                                Text(Format.distance(total))
+                                    .font(.system(.subheadline, design: .rounded, weight: .bold))
+                                    .minimumScaleFactor(0.6)
+                                Text("合计").font(.caption2).foregroundStyle(.secondary)
                             }
-                            .font(.subheadline)
+                        }
+                        .frame(width: 70)
+                    }
+                    .frame(width: 130, height: 130)
+                    VStack(spacing: 4) {
+                        ForEach(modeTotals, id: \.mode) { item in
+                            Button {
+                                withAnimation(.snappy) { selectedMode = selectedMode == item.mode ? nil : item.mode }
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: item.mode.symbol)
+                                        .font(.caption.bold())
+                                        .foregroundStyle(.white)
+                                        .frame(width: 26, height: 26)
+                                        .background(Circle().fill(item.mode.color.gradient))
+                                    Text(item.mode.title).foregroundStyle(.primary)
+                                    Spacer(minLength: 4)
+                                    Text(Format.distance(item.distance)).foregroundStyle(.secondary).monospacedDigit()
+                                }
+                                .font(.subheadline)
+                                .padding(.horizontal, 8).padding(.vertical, 5)
+                                .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(selectedMode == item.mode ? item.mode.color.opacity(0.14) : .clear))
+                                .contentShape(.rect)
+                            }
+                            .buttonStyle(.plain)
+                            .opacity(selectedMode == nil || selectedMode == item.mode ? 1 : 0.5)
                         }
                     }
                 }
             }
         }
+        .onChange(of: modeAngle) { _, angle in
+            guard let angle else { return }
+            var running = 0.0
+            let mode = modeTotals.first { running += $0.distance; return angle <= running }?.mode
+            withAnimation(.snappy) { selectedMode = mode == selectedMode ? nil : mode }
+        }
+        .sensoryFeedback(.selection, trigger: selectedMode)
+    }
+
+    // MARK: Chart selection
+
+    /// The bar a scrub position falls on.
+    private func snapped(_ date: Date?) -> Date? {
+        guard let date else { return nil }
+        return Calendar.current.dateInterval(of: bucketUnit, for: date)?.start
+    }
+
+    private func dayLabel(_ date: Date) -> String {
+        period == .year ? date.formatted(.dateTime.year().month(.wide).locale(appLocale))
+                        : date.formatted(.dateTime.month().day().weekday(.abbreviated).locale(appLocale))
+    }
+
+    private func breakdown(_ day: Date) -> [(mode: MovementMode, distance: Double)] {
+        let modes = groundMovement.first { Calendar.current.isDate($0.key, equalTo: day, toGranularity: bucketUnit) }?.value ?? [:]
+        return modes.filter { $0.value > 0 }.map { ($0.key, $0.value) }.sorted { $0.distance > $1.distance }
+    }
+
+    private func groundTotal(_ day: Date) -> Double { breakdown(day).reduce(0) { $0 + $1.distance } }
+
+    /// Distance by travel mode as small chips; doubles as the chart's legend.
+    private func modeChips(_ items: [(mode: MovementMode, distance: Double)]) -> some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 6) {
+                ForEach(items, id: \.mode) { item in
+                    HStack(spacing: 4) {
+                        Image(systemName: item.mode.symbol).font(.caption2.bold())
+                        Text(Format.distance(item.distance)).font(.caption.weight(.semibold)).monospacedDigit()
+                            .contentTransition(.numericText())
+                    }
+                    .foregroundStyle(item.mode.color)
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .background(item.mode.color.opacity(0.12), in: .capsule)
+                }
+            }
+        }
+        .scrollIndicators(.hidden)
+        .frame(height: 24)
+        .animation(.snappy, value: items.map(\.distance))
     }
 
     /// Badges earned so far as a row of medals, with the closest one still to go.
@@ -242,13 +337,13 @@ struct StatsView: View {
                         .font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
                     Image(systemName: "chevron.forward").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
                 }
-                HStack(spacing: -10) {
+                HStack(alignment: .top, spacing: -8) {
                     ForEach(Array(milestones.reached.prefix(5).enumerated()), id: \.element.id) { index, item in
-                        MilestoneBadge(milestone: item.milestone, size: 50)
+                        MilestoneBadge(milestone: item.milestone, size: 58)
                             .zIndex(Double(10 - index))
                     }
                     if let next = milestones.next.first {
-                        MilestoneBadge(milestone: next.milestone, isReached: false, progress: next.fraction, size: 50)
+                        MilestoneBadge(milestone: next.milestone, isReached: false, progress: next.fraction, size: 58)
                             .padding(.leading, milestones.reached.isEmpty ? 0 : 18)
                     }
                     Spacer(minLength: 0)

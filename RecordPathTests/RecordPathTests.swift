@@ -799,11 +799,18 @@ struct BadgeTests {
         #expect(progress.all.first { $0.id == "distance.500" }?.fraction == 0.3)
     }
 
-    @Test func hexagonFitsItsFrame() {
-        let rect = CGRect(x: 0, y: 0, width: 100, height: 110)
-        let bounds = Hexagon(cornerRadius: 10).path(in: rect).boundingRect
+    @Test func rosetteFitsItsFrame() {
+        let rect = CGRect(x: 0, y: 0, width: 100, height: 100)
+        let bounds = Rosette(points: 18, depth: 0.05).path(in: rect).boundingRect
         #expect(rect.insetBy(dx: -0.5, dy: -0.5).contains(bounds))
-        #expect(bounds.width > 80 && bounds.height > 95)
+        #expect(bounds.width > 95)
+    }
+
+    @Test func medalNumbersStayShort() {
+        #expect(Milestone(kind: .distance, threshold: 100).badgeNumber == "100")
+        #expect(Milestone(kind: .distance, threshold: 1_000).badgeNumber == "1K")
+        #expect(Milestone(kind: .distance, threshold: 40_075).badgeNumber == "40K")
+        #expect(Milestone(kind: .countries, threshold: 5).badgeNumber == "5")
     }
 }
 

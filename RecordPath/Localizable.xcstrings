@@ -511,6 +511,16 @@
         }
       }
     },
+    "—": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "—"
+          }
+        }
+      }
+    },
     "。": {
       "localizations": {
         "en": {
@@ -1709,6 +1719,16 @@
         }
       }
     },
+    "合计": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total"
+          }
+        }
+      }
+    },
     "合计 · 不含飞行": {
       "localizations": {
         "en": {
@@ -1805,6 +1825,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tracks and places within 300 m are left out of shared images and GPX files. You still see everything yourself. Useful for home and other private places."
+          }
+        }
+      }
+    },
+    "国家": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Countries"
           }
         }
       }
@@ -4765,12 +4795,112 @@
         }
       }
     },
-    "还差 %@ %@": {
+    "还差 %lld 个国家和地区": {
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ %@ to go"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld more country or region"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld more countries & regions"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "还差 %lld 个省份": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld more province"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld more provinces"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "还差 %lld 公里": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld km to go"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld km to go"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "还差 %lld 天": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld more day"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld more days"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "还差 %lld 座城市": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld more city"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld more cities"
+                }
+              }
+            }
           }
         }
       }
