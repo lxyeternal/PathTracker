@@ -27,7 +27,7 @@ struct TripsView: View {
                     if let openTrip {
                         NavigationLink(value: openTrip) { ActiveTripCard(trip: openTrip) }
                             .buttonStyle(PressableStyle())
-                    } else {
+                    } else if trips.isEmpty && recordings.isEmpty {
                         startCard
                     }
 
@@ -42,12 +42,14 @@ struct TripsView: View {
                     if items.isEmpty {
                         emptyState
                     } else {
-                        LazyVStack(spacing: 12) {
+                        LazyVStack(spacing: 14) {
                             ForEach(items) { trip in
                                 NavigationLink(value: trip) { TripRow(trip: trip) }
                                     .buttonStyle(PressableStyle())
+                                    .transition(.opacity.combined(with: .scale(scale: 0.97)))
                             }
                         }
+                        .id(list)
                     }
                 }
                 .padding(.horizontal)
@@ -170,27 +172,41 @@ private struct ActiveTripCard: View {
     }
 }
 
+/// A trip or recording as a picture card: its route or first photo, with what and when.
 struct TripRow: View {
     let trip: Trip
 
     var body: some View {
-        HStack(spacing: 14) {
-            Text(trip.coverEmoji)
-                .font(.system(size: 30))
-                .frame(width: 56, height: 56)
-                .background(.background.tertiary, in: .rect(cornerRadius: 16, style: .continuous))
-            VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 0) {
+            TripCover(trip: trip)
+                .frame(height: 132)
+                .overlay(alignment: .topLeading) {
+                    Text(trip.coverEmoji)
+                        .font(.title3)
+                        .frame(width: 38, height: 38)
+                        .background(.regularMaterial, in: .circle)
+                        .padding(10)
+                }
+                .overlay(alignment: .topTrailing) {
+                    if let count = trip.photos?.count, count > 0 {
+                        Label("\(count)", systemImage: "photo.fill")
+                            .font(.caption.weight(.semibold))
+                            .padding(.horizontal, 9).padding(.vertical, 5)
+                            .background(.regularMaterial, in: .capsule)
+                            .padding(10)
+                    }
+                }
+            VStack(alignment: .leading, spacing: 2) {
                 Text(trip.title).font(.headline).lineLimit(1)
-                Text(dateText).font(.subheadline).foregroundStyle(.secondary)
+                Text(dateText).font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
             }
-            Spacer()
-            if let count = trip.photos?.count, count > 0 {
-                Label("\(count)", systemImage: "photo").font(.footnote).foregroundStyle(.secondary)
-            }
-            Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
         }
-        .padding(14)
-        .background(.background.secondary, in: .rect(cornerRadius: 22, style: .continuous))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.background.secondary)
+        .clipShape(.rect(cornerRadius: 22, style: .continuous))
+        .contentShape(.rect(cornerRadius: 22, style: .continuous))
         .foregroundStyle(.primary)
     }
 

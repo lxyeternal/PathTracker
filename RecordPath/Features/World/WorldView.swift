@@ -27,6 +27,7 @@ struct WorldView: View {
                         summaryGrid
                         lightUpCard
                         mapCard
+                        GalleryPreview()
                         if !insights.countries.isEmpty { countries }
                         if !insights.frequentPlaces.isEmpty { frequentPlaces }
                         if !insights.landmarks.isEmpty { landmarks }
@@ -52,6 +53,7 @@ struct WorldView: View {
             .navigationDestination(for: LightUpRoute.self) { _ in
                 LightUpView(stays: stays)
             }
+            .navigationDestination(for: GalleryRoute.self) { _ in GalleryView() }
             .sheet(item: $selectedStay) { StayDetailView(stay: $0) }
             .fullScreenCover(isPresented: $showingMap) {
                 WorldMapScreen(stays: stays)
@@ -157,13 +159,16 @@ struct WorldView: View {
                             FrequentPlaceCard(place: place)
                         }
                         .buttonStyle(PressableStyle())
+                        .scrollTransition(.interactive, axis: .horizontal) { content, phase in
+                            content.scaleEffect(phase.isIdentity ? 1 : 0.94).opacity(phase.isIdentity ? 1 : 0.8)
+                        }
                     }
                 }
                 .scrollTargetLayout()
             }
             .scrollIndicators(.hidden)
             .scrollTargetBehavior(.viewAligned)
-            .contentMargins(.horizontal, 0)
+            .scrollClipDisabled()
             Text("给常去的地方起个名字，比如“家”或“学校”，以后每次到访都会自动用上。")
                 .font(.footnote).foregroundStyle(.secondary).padding(.horizontal, 4)
         }
@@ -175,14 +180,21 @@ struct WorldView: View {
                 SectionHeader(title: "去过的景点")
                 NavigationLink("全部", value: PlacesList.landmarks).font(.subheadline).padding(.top, 8).padding(.trailing, 4)
             }
-            VStack(spacing: 0) {
-                ForEach(insights.landmarks.prefix(5)) { stay in
-                    NavigationLink(value: PlaceVisits.around(stay, in: stays)) { PlaceRow(stay: stay) }
-                        .buttonStyle(.plain)
+            ScrollView(.horizontal) {
+                HStack(spacing: 12) {
+                    ForEach(insights.landmarks.prefix(10)) { stay in
+                        NavigationLink(value: PlaceVisits.around(stay, in: stays)) { SightCard(stay: stay) }
+                            .buttonStyle(PressableStyle())
+                            .scrollTransition(.interactive, axis: .horizontal) { content, phase in
+                                content.scaleEffect(phase.isIdentity ? 1 : 0.94).opacity(phase.isIdentity ? 1 : 0.8)
+                            }
+                    }
                 }
+                .scrollTargetLayout()
             }
-            .padding(.vertical, 6)
-            .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
+            .scrollIndicators(.hidden)
+            .scrollTargetBehavior(.viewAligned)
+            .scrollClipDisabled()
         }
     }
 }
@@ -191,19 +203,23 @@ struct FrequentPlaceCard: View {
     let place: FrequentPlace
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            PlaceIcon(category: place.representative.category, isLandmark: false, size: 40)
-            Spacer(minLength: 0)
-            Text(place.representative.displayName)
-                .font(.headline)
-                .lineLimit(1)
-            Text("\(place.visits) 次 · \(Format.duration(place.totalTime))")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 0) {
+            PlacePicture(stay: place.representative)
+                .frame(height: 96)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(place.representative.displayName)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+                Text("\(place.visits) 次 · \(Format.duration(place.totalTime))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
         }
-        .padding(14)
-        .frame(width: 150, height: 140, alignment: .leading)
-        .background(.background.secondary, in: .rect(cornerRadius: 22, style: .continuous))
+        .frame(width: 150, alignment: .leading)
+        .background(.background.secondary)
+        .clipShape(.rect(cornerRadius: 20, style: .continuous))
     }
 }
 

@@ -100,25 +100,33 @@ struct PlacesListView: View {
 
     var body: some View {
         let insights = WorldInsights(stays: stays)
-        List {
+        Group {
             switch list {
             case .frequent:
-                ForEach(insights.frequentPlaces.filter { matches($0.representative) }) { place in
-                    NavigationLink(value: PlaceVisits.around(place.representative, in: stays)) {
-                        HStack(spacing: 14) {
-                            PlaceIcon(category: place.representative.category)
-                            VStack(alignment: .leading) {
-                                Text(place.representative.displayName).font(.body.weight(.semibold))
-                                Text("\(place.visits) 次 · 共 \(Format.duration(place.totalTime))")
-                                    .font(.subheadline).foregroundStyle(.secondary)
+                List {
+                    ForEach(insights.frequentPlaces.filter { matches($0.representative) }) { place in
+                        NavigationLink(value: PlaceVisits.around(place.representative, in: stays)) {
+                            HStack(spacing: 14) {
+                                PlaceIcon(category: place.representative.category)
+                                VStack(alignment: .leading) {
+                                    Text(place.representative.displayName).font(.body.weight(.semibold))
+                                    Text("\(place.visits) 次 · 共 \(Format.duration(place.totalTime))")
+                                        .font(.subheadline).foregroundStyle(.secondary)
+                                }
                             }
                         }
                     }
                 }
             case .landmarks:
-                ForEach(insights.landmarks.filter(matches)) { stay in
-                    NavigationLink(value: PlaceVisits.around(stay, in: stays)) { PlaceRow(stay: stay) }
-                        .listRowInsets(EdgeInsets())
+                ScrollView {
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                        ForEach(insights.landmarks.filter(matches)) { stay in
+                            NavigationLink(value: PlaceVisits.around(stay, in: stays)) { SightCard(stay: stay, width: nil) }
+                                .buttonStyle(PressableStyle())
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 24)
                 }
             }
         }

@@ -4,7 +4,7 @@ import MapKit
 import Photos
 
 /// Details for one stay, where the user can name the place (applies to every visit
-/// nearby), mark it as home/school/work, add a note, open it in Maps or delete it.
+/// nearby), mark it as home/school/work, post photos and words, open it in Maps or delete it.
 struct StayDetailView: View {
     @Bindable var stay: Stay
     /// Hidden when the sheet is already shown from that day.
@@ -18,10 +18,10 @@ struct StayDetailView: View {
 
     @State private var name = ""
     @State private var kind: PlaceKind = .none
-    @State private var note = ""
+    @State private var composing = false
+    @State private var pagerStart: TripPhoto?
     @State private var confirmingDelete = false
     @State private var photos: [PHAsset] = []
-    @State private var viewingPhoto: PHAsset?
 
     enum PlaceKind: String, CaseIterable, Identifiable {
         case none, home, school, work
@@ -49,6 +49,48 @@ struct StayDetailView: View {
             case .school: "graduationcap.fill"
             case .work: "briefcase.fill"
             }
+        }
+    }
+
+    private var posted: [TripPhoto] { (stay.photos ?? []).sorted { $0.takenAt < $1.takenAt } }
+
+    /// The post for this visit: its photos and words, or an invitation to write one.
+    @ViewBuilder
+    private var postSection: some View {
+        Section {
+            if posted.isEmpty && (stay.note ?? "").isEmpty {
+                Button { composing = true } label: {
+                    HStack(spacing: 14) {
+                        Image(systemName: "photo.badge.plus")
+                            .font(.title2)
+                            .foregroundStyle(.white)
+                            .frame(width: 48, height: 48)
+                            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.accentColor.gradient))
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("发布照片和心情").font(.headline).foregroundStyle(.primary)
+                            Text(photos.isEmpty ? String(localized: "留下这一刻", bundle: .appLanguage)
+                                                : String(localized: "你在这里拍了 \(photos.count) 张照片", bundle: .appLanguage))
+                                .font(.subheadline).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            } else {
+                if let note = stay.note, !note.isEmpty {
+                    Text(note).font(.body)
+                }
+                if !posted.isEmpty {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 3), spacing: 4) {
+                        ForEach(posted) { photo in
+                            Button { pagerStart = photo } label: { PhotoThumbnail(photo: photo, cornerRadius: 10) }
+                                .buttonStyle(.plain)
+                        }
+                    }
+                    .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+                }
+                Button("编辑", systemImage: "square.and.pencil") { composing = true }
+            }
+        } header: {
+            Text("动态")
         }
     }
 
@@ -80,17 +122,7 @@ struct StayDetailView: View {
                     Text("名称会应用到附近 150 米内的所有到访记录，比如把这里叫作“家”。")
                 }
 
-                if !photos.isEmpty {
-                    Section("在这里拍的照片") {
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 76), spacing: 6)], spacing: 6) {
-                            ForEach(photos, id: \.localIdentifier) { asset in
-                                Button { viewingPhoto = asset } label: { AssetThumbnail(asset: asset, side: 76) }
-                                    .buttonStyle(.plain)
-                            }
-                        }
-                        .padding(.vertical, 4)
-                    }
-                }
+                postSection
 
                 Section("时间") {
                     LabeledContent("到达", value: stay.arrival.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: appLocale)))
@@ -139,19 +171,13 @@ struct StayDetailView: View {
                     Text("周围 300 米内的轨迹和地点不会出现在分享图片和 GPX 文件里，你自己仍然能看到。适合家和其他私人地点。")
                 }
 
-                Section("备注") {
-                    TextField("写点什么…", text: $note, axis: .vertical)
-                        .lineLimit(3...8)
-                }
-
                 Section {
                     Button("删除这条记录", systemImage: "trash", role: .destructive) { confirmingDelete = true }
                 }
             }
             .task { photos = DayPhotos.assets(in: DayPhotos.interval(of: stay)) }
-            .fullScreenCover(item: Binding(get: { viewingPhoto.map(IdentifiedAsset.init) }, set: { viewingPhoto = $0?.asset })) {
-                AssetViewer(asset: $0.asset)
-            }
+            .sheet(isPresented: $composing) { PostComposer(stay: stay) }
+            .fullScreenCover(item: $pagerStart) { PhotoPager(photos: posted, selection: $0.id) }
             .navigationTitle(stay.displayName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -179,7 +205,6 @@ struct StayDetailView: View {
 
     private func load() {
         name = stay.customName ?? ""
-        note = stay.note ?? ""
         kind = PlaceKind(rawValue: stay.categoryRaw ?? "") ?? .none
     }
 
@@ -194,7 +219,6 @@ struct StayDetailView: View {
             // Without a home/school/work kind, look the place up again for its real category.
             if case .clear = change { tagger?.enqueue() }
         }
-        stay.note = note.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
         try? context.save()
         dismiss()
     }
@@ -204,9 +228,4 @@ struct StayDetailView: View {
         item.name = stay.displayName
         item.openInMaps()
     }
-}
-
-private struct IdentifiedAsset: Identifiable {
-    let asset: PHAsset
-    var id: String { asset.localIdentifier }
 }

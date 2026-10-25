@@ -107,6 +107,7 @@ struct StatsView: View {
                 milestones = notifier.currentMilestones()
             }
             .fullScreenCover(isPresented: $showingYearReport) { YearReportView() }
+            .navigationDestination(for: MilestonesRoute.self) { _ in MilestonesView(progress: milestones) }
             .refreshable { await load() }
         }
     }
@@ -230,56 +231,42 @@ struct StatsView: View {
         }
     }
 
+    /// Badges earned so far as a row of medals, with the closest one still to go.
     private var milestonesCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SectionHeader(title: "里程碑", trailing: milestones.reached.isEmpty ? nil : "\(milestones.reached.count)")
-            if !milestones.reached.isEmpty {
-                ScrollView(.horizontal) {
-                    HStack(spacing: 10) {
-                        ForEach(milestones.reached) { item in
-                            VStack(alignment: .leading, spacing: 8) {
-                                Image(systemName: item.milestone.kind.symbol)
-                                    .font(.title3.weight(.semibold))
-                                    .foregroundStyle(.white)
-                                    .frame(width: 40, height: 40)
-                                    .background(Circle().fill(item.milestone.kind.tint.gradient))
-                                Text(item.milestone.title).font(.subheadline.weight(.semibold)).lineLimit(2)
-                                Text(item.date.formatted(.dateTime.year().month().day().locale(appLocale)))
-                                    .font(.caption).foregroundStyle(.secondary)
-                            }
-                            .frame(width: 128, alignment: .leading)
-                            .padding(12)
-                            .background(.background.secondary, in: .rect(cornerRadius: 20, style: .continuous))
-                        }
-                    }
+        NavigationLink(value: MilestonesRoute()) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("里程碑").font(.title3.bold()).foregroundStyle(.primary)
+                    Spacer()
+                    Text("\(milestones.reached.count) / \(milestones.all.count)")
+                        .font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
+                    Image(systemName: "chevron.forward").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
                 }
-                .scrollIndicators(.hidden)
-            }
-            VStack(spacing: 14) {
-                ForEach(milestones.next) { item in
-                    HStack(spacing: 12) {
-                        Image(systemName: item.milestone.kind.symbol)
-                            .foregroundStyle(item.milestone.kind.tint)
-                            .frame(width: 24)
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack {
-                                Text(item.milestone.title).font(.subheadline)
-                                Spacer()
-                                Text(progressText(item)).font(.caption).foregroundStyle(.secondary).monospacedDigit()
-                            }
-                            ProgressView(value: item.fraction).tint(item.milestone.kind.tint)
-                        }
+                HStack(spacing: -10) {
+                    ForEach(Array(milestones.reached.prefix(5).enumerated()), id: \.element.id) { index, item in
+                        MilestoneBadge(milestone: item.milestone, size: 50)
+                            .zIndex(Double(10 - index))
                     }
+                    if let next = milestones.next.first {
+                        MilestoneBadge(milestone: next.milestone, isReached: false, progress: next.fraction, size: 50)
+                            .padding(.leading, milestones.reached.isEmpty ? 0 : 18)
+                    }
+                    Spacer(minLength: 0)
+                }
+                if let next = milestones.next.first {
+                    HStack(spacing: 6) {
+                        Text("下一个").foregroundStyle(.secondary)
+                        Text(next.milestone.title).fontWeight(.semibold).foregroundStyle(.primary)
+                        Spacer()
+                        Text(progressText(next)).foregroundStyle(.secondary).monospacedDigit()
+                    }
+                    .font(.subheadline)
                 }
             }
             .padding(16)
             .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
-            if notifier.authorization == .notDetermined {
-                Button("达成时通知我", systemImage: "bell.badge") { Task { await notifier.requestAuthorization() } }
-                    .font(.subheadline)
-                    .padding(.horizontal, 4)
-            }
         }
+        .buttonStyle(PressableStyle())
     }
 
     private func progressText(_ item: MilestoneProgress.Next) -> String {
