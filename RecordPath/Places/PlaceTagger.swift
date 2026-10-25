@@ -18,6 +18,20 @@ final class PlaceTagger {
 
     init(context: ModelContext) {
         self.context = context
+        retagMisnamedCities()
+    }
+
+    /// Earlier versions stored a whole Chinese address ("中国上海市上海") or a Hong Kong district
+    /// as the city. Those places are named again, once.
+    private func retagMisnamedCities() {
+        let key = "tagger.retaggedCities.v1"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+        let stays = (try? context.fetch(FetchDescriptor<Stay>())) ?? []
+        for stay in stays where (stay.city?.hasPrefix("中国") ?? false) || stay.countryCode == "HK" || stay.countryCode == "MO" {
+            stay.tagState = .pending
+        }
+        try? context.save()
+        UserDefaults.standard.set(true, forKey: key)
     }
 
     func enqueue() {

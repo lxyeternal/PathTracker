@@ -43,15 +43,34 @@ struct SectionHeader: View {
     }
 }
 
-/// Two columns of metric tiles, or one column at accessibility text sizes.
+/// Metrics in one card, two to a row, divided by hairlines rather than boxed one by one.
+/// One column at accessibility text sizes.
 struct MetricGrid<Content: View>: View {
     @ViewBuilder var content: Content
     @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        let columns = typeSize.isAccessibilitySize ? 1 : 2
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: columns), spacing: 12) {
-            content
+        Group(subviews: content) { subviews in
+            let columns = typeSize.isAccessibilitySize ? 1 : 2
+            let items = Array(subviews)
+            let rows = stride(from: 0, to: items.count, by: columns).map { Array(items[$0..<min($0 + columns, items.count)]) }
+            VStack(spacing: 0) {
+                ForEach(rows.indices, id: \.self) { row in
+                    if row > 0 { Divider().padding(.horizontal, 16) }
+                    HStack(spacing: 0) {
+                        ForEach(rows[row].indices, id: \.self) { column in
+                            if column > 0 { Divider().padding(.vertical, 14) }
+                            rows[row][column].frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        if rows[row].count < columns {
+                            Divider().padding(.vertical, 14)
+                            Color.clear.frame(maxWidth: .infinity)
+                        }
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
         }
     }
 }
@@ -61,23 +80,27 @@ struct MetricTile: View {
     let value: String
     let symbol: String
     let tint: Color
-    @ScaledMetric(relativeTo: .title2) private var minHeight: CGFloat = 84
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Label(title, systemImage: symbol)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(tint)
-                .labelStyle(.titleAndIcon)
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 5) {
+                Image(systemName: symbol)
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(tint)
+                Text(title)
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
             Text(value)
                 .font(.system(.title2, design: .rounded, weight: .semibold))
                 .contentTransition(.numericText())
                 .lineLimit(1)
-                .minimumScaleFactor(0.7)
+                .minimumScaleFactor(0.6)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, minHeight: minHeight, alignment: .topLeading)
-        .background(.background.secondary, in: .rect(cornerRadius: 20, style: .continuous))
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .accessibilityElement(children: .combine)
     }
 }

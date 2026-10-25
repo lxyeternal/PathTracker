@@ -77,7 +77,7 @@ struct TripDetailView: View {
         }
         .sheet(isPresented: $showingEdit) { EditTripSheet(trip: trip) }
         .sheet(item: $selectedStay) { StayDetailView(stay: $0) }
-        .sheet(item: $viewingPhoto) { PhotoViewer(photo: $0) }
+        .fullScreenCover(item: $viewingPhoto) { PhotoPager(photos: photos, selection: $0.id) }
         .fullScreenCover(isPresented: $showingMap) {
             DayMapScreen(title: trip.title, chunks: chunks, stays: stays,
                          livePoints: trip.isActive ? engine.pendingPoints : [])
@@ -284,93 +284,14 @@ struct TripDetailView: View {
         Task {
             for item in items {
                 guard let data = try? await item.loadTransferable(type: Data.self),
-                      let image = UIImage(data: data) else { continue }
-                // Re-encode at a sensible size; full-resolution originals stay in the photo library.
-                let jpeg = image.preparingThumbnail(of: image.size.fitting(maxDimension: 2048))?.jpegData(compressionQuality: 0.82) ?? data
-                let metadata = PhotoMetadata(data: data)
-                let photo = TripPhoto(imageData: jpeg, takenAt: metadata.date ?? Date(),
-                                      coordinate: metadata.coordinate ?? engine.currentLocation?.coordinate)
+                      let photo = PhotoImport.makePhoto(from: data, fallbackDate: Date(),
+                                                        fallbackCoordinate: engine.currentLocation?.coordinate) else { continue }
                 photo.trip = trip
                 context.insert(photo)
             }
             try? context.save()
             pickerItems = []
             isImporting = false
-        }
-    }
-}
-
-private extension CGSize {
-    func fitting(maxDimension: CGFloat) -> CGSize {
-        let scale = min(1, maxDimension / max(width, height))
-        return CGSize(width: width * scale, height: height * scale)
-    }
-}
-
-private struct PhotoThumbnail: View {
-    let photo: TripPhoto
-    @State private var image: UIImage?
-
-    var body: some View {
-        Color.secondary.opacity(0.15)
-            .aspectRatio(1, contentMode: .fit)
-            .overlay {
-                if let image {
-                    Image(uiImage: image).resizable().scaledToFill()
-                }
-            }
-            .clipped()
-            .task(id: photo.id) {
-                guard let data = photo.imageData else { return }
-                image = await Task.detached { UIImage(data: data)?.preparingThumbnail(of: CGSize(width: 300, height: 300)) }.value
-            }
-    }
-}
-
-private struct PhotoViewer: View {
-    @Bindable var photo: TripPhoto
-    @Environment(\.modelContext) private var context
-    @Environment(\.dismiss) private var dismiss
-    @State private var confirmingDelete = false
-    @State private var caption = ""
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 16) {
-                if let data = photo.imageData, let image = UIImage(data: data) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
-                        .clipShape(.rect(cornerRadius: 16, style: .continuous))
-                        .frame(maxHeight: .infinity)
-                }
-                TextField("添加说明", text: $caption, axis: .vertical)
-                    .padding(14)
-                    .background(.background.secondary, in: .rect(cornerRadius: 16, style: .continuous))
-            }
-            .padding()
-            .navigationTitle(photo.takenAt.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: appLocale)))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("删除", systemImage: "trash", role: .destructive) { confirmingDelete = true }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("完成", systemImage: "checkmark") {
-                        photo.caption = caption.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
-                        try? context.save()
-                        dismiss()
-                    }
-                }
-            }
-            .confirmationDialog("删除这张照片？", isPresented: $confirmingDelete, titleVisibility: .visible) {
-                Button("删除照片", role: .destructive) {
-                    context.delete(photo)
-                    try? context.save()
-                    dismiss()
-                }
-            }
-            .onAppear { caption = photo.caption ?? "" }
         }
     }
 }
@@ -424,30 +345,5 @@ struct EditTripSheet: View {
             }
         }
         .presentationDetents([.medium, .large])
-    }
-}
-
-/// Capture date and GPS position read from a photo's EXIF data.
-struct PhotoMetadata {
-    var date: Date?
-    var coordinate: CLLocationCoordinate2D?
-
-    init(data: Data) {
-        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
-              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] else { return }
-        if let exif = properties[kCGImagePropertyExifDictionary] as? [CFString: Any],
-           let original = exif[kCGImagePropertyExifDateTimeOriginal] as? String {
-            let formatter = DateFormatter()
-            formatter.locale = Locale(identifier: "en_US_POSIX")
-            formatter.dateFormat = "yyyy:MM:dd HH:mm:ss"
-            date = formatter.date(from: original)
-        }
-        if let gps = properties[kCGImagePropertyGPSDictionary] as? [CFString: Any],
-           var latitude = gps[kCGImagePropertyGPSLatitude] as? Double,
-           var longitude = gps[kCGImagePropertyGPSLongitude] as? Double {
-            if (gps[kCGImagePropertyGPSLatitudeRef] as? String) == "S" { latitude = -latitude }
-            if (gps[kCGImagePropertyGPSLongitudeRef] as? String) == "W" { longitude = -longitude }
-            coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-        }
     }
 }

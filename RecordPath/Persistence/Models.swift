@@ -67,7 +67,10 @@ final class Stay {
 
     /// What the user called this place ("家", "学校"); wins over everything else.
     var customName: String?
+    /// The words of a post about this visit.
     var note: String?
+    /// Photos posted for this visit.
+    @Relationship(deleteRule: .cascade, inverse: \TripPhoto.stay) var photos: [TripPhoto]? = []
 
     init(arrival: Date, coordinate: CLLocationCoordinate2D) {
         self.arrival = arrival
@@ -151,6 +154,8 @@ final class TripPhoto {
     var longitude: Double?
     var caption: String?
     var trip: Trip?
+    /// The place visit it was posted for, if any.
+    var stay: Stay?
 
     init(imageData: Data, takenAt: Date, coordinate: CLLocationCoordinate2D?) {
         self.imageData = imageData

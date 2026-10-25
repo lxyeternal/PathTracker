@@ -779,3 +779,54 @@ struct MilestoneTests {
         #expect(progress.next.contains { $0.id == "distance.1000" })
     }
 }
+
+struct BadgeTests {
+    @Test func everyMilestoneHasItsOwnLook() {
+        for kind in Milestone.Kind.allCases {
+            let symbols = kind.thresholds.map { Milestone(kind: kind, threshold: $0).symbol }
+            #expect(Set(symbols).count == symbols.count, "\(kind) repeats a symbol")
+            #expect(kind.colors.count == 2)
+        }
+        #expect(Milestone(kind: .distance, threshold: 100).tier == 0)
+        #expect(Milestone(kind: .distance, threshold: 1_000).tier == 2)
+    }
+
+    @Test @MainActor func everyMilestoneIsListedReachedOrNot() {
+        let progress = MilestoneProgress(stays: [], movements: [(Date(), 150_000)])
+        #expect(progress.all.count == Milestone.Kind.allCases.reduce(0) { $0 + $1.thresholds.count })
+        #expect(progress.all.first { $0.id == "distance.100" }?.isReached == true)
+        #expect(progress.all.first { $0.id == "distance.500" }?.isReached == false)
+        #expect(progress.all.first { $0.id == "distance.500" }?.fraction == 0.3)
+    }
+
+    @Test func hexagonFitsItsFrame() {
+        let rect = CGRect(x: 0, y: 0, width: 100, height: 110)
+        let bounds = Hexagon(cornerRadius: 10).path(in: rect).boundingRect
+        #expect(rect.insetBy(dx: -0.5, dy: -0.5).contains(bounds))
+        #expect(bounds.width > 80 && bounds.height > 95)
+    }
+}
+
+@MainActor
+struct PostTests {
+    @Test func photosPostedToAPlaceBelongToIt() throws {
+        let context = ModelContext(PersistenceController.makeContainer(inMemory: true))
+        let stay = Stay(arrival: Date(), coordinate: CLLocationCoordinate2D(latitude: 31.24, longitude: 121.49))
+        context.insert(stay)
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 3000, height: 2000)).image { $0.fill(CGRect(x: 0, y: 0, width: 3000, height: 2000)) }
+        let png = try #require(image.pngData())
+        let photo = try #require(PhotoImport.makePhoto(from: png, fallbackDate: stay.arrival, fallbackCoordinate: stay.coordinate))
+        photo.stay = stay
+        context.insert(photo)
+        try context.save()
+        #expect(stay.photos?.count == 1)
+        #expect(photo.placeTitle == stay.displayName)
+        // Stored at a sensible size, not the original's.
+        let stored = try #require(photo.imageData.flatMap(UIImage.init(data:)))
+        #expect(max(stored.size.width, stored.size.height) * stored.scale <= 2048)
+        // Deleting the visit takes its photos with it.
+        context.delete(stay)
+        try context.save()
+        #expect(try context.fetchCount(FetchDescriptor<TripPhoto>()) == 0)
+    }
+}

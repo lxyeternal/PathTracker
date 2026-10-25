@@ -76,7 +76,7 @@ struct TrackingStatusCard: View {
                 .contentTransition(.opacity)
             Spacer()
             if let stay = engine.openStay {
-                Text(stay.displayName)
+                Label(stay.displayName, systemImage: "mappin.circle.fill")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -123,7 +123,7 @@ struct TrackingStatusCard: View {
     private var statusText: LocalizedStringKey {
         let trip = engine.activeTripID != nil
         if engine.openStay != nil, engine.activity != .unavailable {
-            return trip ? "旅程记录中 · 停留在" : "正在记录 · 停留在"
+            return trip ? "记录中" : "正在记录"
         }
         switch engine.activity {
         case .moving: return trip ? "旅程记录中 · 移动中" : "正在记录 · 移动中"

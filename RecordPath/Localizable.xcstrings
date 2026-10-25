@@ -17,9 +17,6 @@
     "%@ · %@": {
       "shouldTranslate": false
     },
-    "%@ · %@ · %@": {
-      "shouldTranslate": false
-    },
     "%@ · 停留 %@": {
       "localizations": {
         "en": {
@@ -56,6 +53,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Recording from %@"
+          }
+        }
+      }
+    },
+    "%@ 达成": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reached %@"
           }
         }
       }
@@ -574,6 +581,16 @@
         }
       }
     },
+    "下一个": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next"
+          }
+        }
+      }
+    },
     "下个月": {
       "localizations": {
         "en": {
@@ -864,6 +881,28 @@
         }
       }
     },
+    "你在这里拍了 %lld 张照片": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "You took %lld photo here"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "You took %lld photos here"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "你好像在%@": {
       "localizations": {
         "en": {
@@ -1054,6 +1093,16 @@
         }
       }
     },
+    "公里": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "km"
+          }
+        }
+      }
+    },
     "关于": {
       "localizations": {
         "en": {
@@ -1100,6 +1149,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "One More Step: Always Allow"
+          }
+        }
+      }
+    },
+    "写点什么": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write something"
           }
         }
       }
@@ -1190,6 +1249,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Share My Year"
+          }
+        }
+      }
+    },
+    "分组": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Group"
           }
         }
       }
@@ -1394,6 +1463,16 @@
         }
       }
     },
+    "动态": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Post"
+          }
+        }
+      }
+    },
     "卫星": {
       "localizations": {
         "en": {
@@ -1566,6 +1645,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sights Visited"
+          }
+        }
+      }
+    },
+    "发布": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Post"
+          }
+        }
+      }
+    },
+    "发布照片和心情": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Post Photos and Thoughts"
           }
         }
       }
@@ -1840,6 +1939,36 @@
         }
       }
     },
+    "在时间线上点开一个地点，发布照片和心情，它们会收在这里。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open a place on your timeline to post photos and thoughts. They're collected here."
+          }
+        }
+      }
+    },
+    "在时间线上点开一个地点，就能发布照片和心情。旅程里添加的照片也会出现在这里。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open a place on your timeline to post photos and thoughts. Photos added to trips appear here too."
+          }
+        }
+      }
+    },
+    "在这里拍的": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taken Here"
+          }
+        }
+      }
+    },
     "在这里拍的照片": {
       "localizations": {
         "en": {
@@ -1946,6 +2075,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Notes"
+          }
+        }
+      }
+    },
+    "天": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "days"
           }
         }
       }
@@ -2252,12 +2391,32 @@
         }
       }
     },
+    "已获得": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Earned"
+          }
+        }
+      }
+    },
     "已请求": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Requested"
+          }
+        }
+      }
+    },
+    "已达成": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Earned"
           }
         }
       }
@@ -2628,6 +2787,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Turn On Notifications"
+          }
+        }
+      }
+    },
+    "按地点": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By Place"
+          }
+        }
+      }
+    },
+    "按月份": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By Month"
           }
         }
       }
@@ -3652,6 +3831,16 @@
         }
       }
     },
+    "留下这一刻": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep this moment"
+          }
+        }
+      }
+    },
     "登录以同步资料": {
       "localizations": {
         "en": {
@@ -3678,6 +3867,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Signing in is optional. Every feature works without it."
+          }
+        }
+      }
+    },
+    "相册": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Album"
           }
         }
       }
@@ -4112,6 +4311,16 @@
         }
       }
     },
+    "编辑说明": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit Caption"
+          }
+        }
+      }
+    },
     "联系我们": {
       "localizations": {
         "en": {
@@ -4298,6 +4507,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Language"
+          }
+        }
+      }
+    },
+    "说明": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caption"
           }
         }
       }
@@ -4546,6 +4765,16 @@
         }
       }
     },
+    "还差 %@ %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %@ to go"
+          }
+        }
+      }
+    },
     "还没去过": {
       "localizations": {
         "en": {
@@ -4562,6 +4791,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "No Steps Yet"
+          }
+        }
+      }
+    },
+    "还没有照片": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Photos Yet"
           }
         }
       }
@@ -4592,6 +4831,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Not Lit Up Yet"
+          }
+        }
+      }
+    },
+    "这一刻，想记下点什么…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What do you want to remember…"
           }
         }
       }
