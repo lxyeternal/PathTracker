@@ -144,8 +144,7 @@ struct CityStintView: View {
 
                 if !photos.isEmpty {
                     // A collage, folded: the days below stay in reach. Tap for all of them.
-                    Button { showingGallery = true } label: { PhotoCollage(assets: photos) }
-                        .buttonStyle(PressableStyle())
+                    PhotoStack(assets: photos) { showingGallery = true }
                 } else if !DayPhotos.canRead {
                     Label("允许访问照片后，这里会显示你在这段时间拍的照片。", systemImage: "photo.on.rectangle.angled")
                         .font(.footnote).foregroundStyle(.secondary)
@@ -250,55 +249,94 @@ private struct TrailingIconLabelStyle: LabelStyle {
     }
 }
 
-/// Five photos as one picture: a large one and four small, the last saying how many more.
-struct PhotoCollage: View {
+/// A trip's photos as a pile on the table: a few overlapping, turned a little, with the count.
+/// Tap it and they spread out into two rows you can scroll; "All" opens every one by day.
+struct PhotoStack: View {
     let assets: [PHAsset]
+    let openAll: () -> Void
+    @State private var expanded = false
+    @State private var viewing: AssetPagerStart?
+    @Namespace private var space
+
+    private let card = CGSize(width: 116, height: 146)
 
     var body: some View {
-        let shown = Array(assets.prefix(5))
-        GeometryReader { geo in
-            let gap: CGFloat = 4
-            let big = shown.count >= 3 ? (geo.size.width - gap) * 0.58 : geo.size.width
-            let small = (geo.size.height - gap) / 2
-            let rest = geo.size.width - big - gap
-            HStack(spacing: gap) {
-                if let first = shown.first {
-                    AssetThumbnail(asset: first, side: max(big, geo.size.height))
-                        .frame(width: big, height: geo.size.height)
-                        .clipped()
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("照片").font(.title3.bold())
+                Text("\(assets.count)").font(.subheadline).foregroundStyle(.secondary)
+                Spacer()
+                if expanded {
+                    Button("全部", action: openAll).font(.subheadline.weight(.semibold))
+                    Button("收起") { withAnimation(.spring(response: 0.5, dampingFraction: 0.82)) { expanded = false } }
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.leading, 10)
                 }
-                if shown.count >= 3 {
-                    let tiles = Array(shown.dropFirst())
-                    let columns = tiles.count >= 4 ? 2 : 1
-                    let width = (rest - gap * CGFloat(columns - 1)) / CGFloat(columns)
-                    LazyVGrid(columns: Array(repeating: GridItem(.fixed(width), spacing: gap), count: columns), spacing: gap) {
-                        ForEach(Array(tiles.prefix(columns * 2).enumerated()), id: \.element.localIdentifier) { index, asset in
-                            AssetThumbnail(asset: asset, side: max(width, small))
-                                .frame(width: width, height: small)
-                                .clipped()
-                                .overlay {
-                                    if index == min(tiles.count, columns * 2) - 1, assets.count > 5 {
-                                        ZStack {
-                                            Color.black.opacity(0.45)
-                                            Text("+\(assets.count - 5)").font(.title2.bold()).foregroundStyle(.white)
-                                        }
-                                    }
-                                }
-                        }
+            }
+            if expanded { spread } else { pile }
+        }
+        .fullScreenCover(item: $viewing) { AssetPager(assets: assets, selection: $0.id) }
+        .sensoryFeedback(.impact(weight: .light), trigger: expanded)
+    }
+
+    /// Up to six, fanned from the left; the rest are counted.
+    private var pile: some View {
+        let shown = Array(assets.prefix(6))
+        let step: CGFloat = shown.count > 1 ? min(44, (UIScreen.main.bounds.width - 40 - card.width - 90) / CGFloat(shown.count - 1)) : 0
+        return Button {
+            withAnimation(.spring(response: 0.55, dampingFraction: 0.78)) { expanded = true }
+        } label: {
+            HStack(alignment: .center, spacing: 0) {
+                ZStack(alignment: .leading) {
+                    ForEach(Array(shown.enumerated()).reversed(), id: \.element.localIdentifier) { index, asset in
+                        thumb(asset, size: card)
+                            .rotationEffect(.degrees(Double(index % 2 == 0 ? -1 : 1) * Double(min(index, 3)) * 2.5))
+                            .offset(x: CGFloat(index) * step, y: CGFloat(index % 2) * 4)
+                            .shadow(color: .black.opacity(0.22), radius: 6, y: 3)
+                            .zIndex(Double(shown.count - index))
                     }
-                    .frame(width: rest)
+                }
+                .frame(width: card.width + step * CGFloat(max(shown.count - 1, 0)), height: card.height + 10, alignment: .leading)
+                Spacer(minLength: 12)
+                VStack(spacing: 4) {
+                    Image(systemName: "rectangle.expand.vertical")
+                        .font(.title3.weight(.semibold))
+                    Text(assets.count > shown.count ? "+\(assets.count - shown.count)" : "展开")
+                        .font(.subheadline.weight(.bold))
+                }
+                .foregroundStyle(.tint)
+                .frame(width: 64, height: 64)
+                .background(.tint.opacity(0.12), in: .circle)
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(PressableStyle())
+    }
+
+    /// Two rows across, scrolling sideways; every photo opens full screen.
+    private var spread: some View {
+        let side: CGFloat = 108
+        return ScrollView(.horizontal) {
+            LazyHGrid(rows: [GridItem(.fixed(side), spacing: 6), GridItem(.fixed(side), spacing: 6)], spacing: 6) {
+                ForEach(assets, id: \.localIdentifier) { asset in
+                    Button { viewing = AssetPagerStart(id: asset.localIdentifier) } label: {
+                        thumb(asset, size: CGSize(width: side, height: side))
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
-        .frame(height: 220)
-        .clipShape(.rect(cornerRadius: 22, style: .continuous))
-        .overlay(alignment: .bottomLeading) {
-            Label("\(assets.count) 张照片", systemImage: "photo.on.rectangle.angled")
-                .font(.footnote.weight(.semibold))
-                .padding(.horizontal, 12).padding(.vertical, 7)
-                .glassEffect(.regular, in: .capsule)
-                .padding(10)
-        }
+        .scrollIndicators(.hidden)
+        .scrollClipDisabled()
+        .frame(height: side * 2 + 6)
+    }
+
+    private func thumb(_ asset: PHAsset, size: CGSize) -> some View {
+        AssetThumbnail(asset: asset, side: max(size.width, size.height))
+            .frame(width: size.width, height: size.height)
+            .clipShape(.rect(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(.white.opacity(0.9), lineWidth: 2))
+            .matchedGeometryEffect(id: asset.localIdentifier, in: space)
     }
 }
 

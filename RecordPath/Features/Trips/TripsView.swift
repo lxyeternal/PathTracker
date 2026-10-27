@@ -8,6 +8,8 @@ struct TripsView: View {
     @State private var showingNewTrip = false
     @State private var showingNewRecording = false
     @AppStorage("trips.list") private var list = ListKind.trips
+    /// The year shown, or 0 for every year.
+    @State private var year = 0
 
     enum ListKind: String { case trips, recordings }
 
@@ -44,14 +46,24 @@ struct TripsView: View {
                     if items.isEmpty {
                         emptyState
                     } else {
-                        LazyVStack(spacing: 14) {
-                            ForEach(items) { trip in
-                                NavigationLink(value: trip) { TripRow(trip: trip) }
-                                    .buttonStyle(PressableStyle())
-                                    .transition(.opacity.combined(with: .scale(scale: 0.97)))
+                        if years(of: items).count > 1 { yearFilter(items) }
+                        // A year at a time, with how much happened in it.
+                        LazyVStack(alignment: .leading, spacing: 14, pinnedViews: .sectionHeaders) {
+                            ForEach(byYear(items), id: \.year) { group in
+                                Section {
+                                    ForEach(group.trips) { trip in
+                                        NavigationLink(value: trip) {
+                                            if list == .trips { TripCard(trip: trip) } else { TripRow(trip: trip) }
+                                        }
+                                        .buttonStyle(PressableStyle())
+                                        .transition(.opacity.combined(with: .scale(scale: 0.97)))
+                                    }
+                                } header: {
+                                    YearHeader(year: group.year, trips: group.trips)
+                                }
                             }
                         }
-                        .id(list)
+                        .id("\(list)-\(year)")
                     }
                 }
                 .padding(.horizontal)
@@ -75,6 +87,47 @@ struct TripsView: View {
             .sheet(isPresented: $showingNewTrip) { NewTripSheet() }
             .sheet(isPresented: $showingNewRecording) { NewRecordingSheet() }
         }
+    }
+
+    private func years(of items: [Trip]) -> [Int] {
+        Set(items.map { Calendar.current.component(.year, from: $0.startDate) }).sorted(by: >)
+    }
+
+    private func byYear(_ items: [Trip]) -> [(year: Int, trips: [Trip])] {
+        Dictionary(grouping: items) { Calendar.current.component(.year, from: $0.startDate) }
+            .filter { year == 0 || $0.key == year }
+            .map { ($0.key, $0.value.sorted { $0.startDate > $1.startDate }) }
+            .sorted { $0.year > $1.year }
+    }
+
+    private func yearFilter(_ items: [Trip]) -> some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 8) {
+                chip(String(localized: "全部", bundle: .appLanguage), count: items.count, value: 0)
+                ForEach(years(of: items), id: \.self) { y in
+                    chip(String(y), count: items.filter { Calendar.current.component(.year, from: $0.startDate) == y }.count, value: y)
+                }
+            }
+        }
+        .scrollIndicators(.hidden)
+        .scrollClipDisabled()
+    }
+
+    private func chip(_ title: String, count: Int, value: Int) -> some View {
+        let selected = year == value
+        return Button {
+            withAnimation(.snappy) { year = value }
+        } label: {
+            HStack(spacing: 5) {
+                Text(verbatim: title).font(.subheadline.weight(.semibold))
+                Text("\(count)").font(.caption.weight(.bold)).opacity(0.7)
+            }
+            .padding(.horizontal, 14).padding(.vertical, 8)
+            .foregroundStyle(selected ? Color.white : Color.primary)
+            .background(selected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.quaternary.opacity(0.6)), in: .capsule)
+        }
+        .buttonStyle(.plain)
+        .sensoryFeedback(.selection, trigger: year)
     }
 
     @ViewBuilder
@@ -336,5 +389,28 @@ struct EmojiPicker: View {
         }
         .scrollIndicators(.hidden)
         .sensoryFeedback(.selection, trigger: selection)
+    }
+}
+
+/// "2026 · 6 段 · 41 天", pinned while scrolling through that year.
+private struct YearHeader: View {
+    let year: Int
+    let trips: [Trip]
+
+    var body: some View {
+        let days = trips.reduce(0) { total, trip in
+            let calendar = Calendar.current
+            let last = max(trip.interval.start, trip.interval.end.addingTimeInterval(-1))
+            return total + (calendar.dateComponents([.day], from: calendar.startOfDay(for: trip.interval.start),
+                                                    to: calendar.startOfDay(for: last)).day ?? 0) + 1
+        }
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Text(verbatim: String(year)).font(.system(.title, design: .rounded, weight: .heavy))
+            Text("\(trips.count) 段 · \(days) 天").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+            Spacer()
+        }
+        .padding(.vertical, 6)
+        .padding(.horizontal, 4)
+        .background(.background)
     }
 }

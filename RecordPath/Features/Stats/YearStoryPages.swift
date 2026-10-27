@@ -15,11 +15,11 @@ struct MapBackdrop {
 
     @MainActor
     static func render(region: MKCoordinateRegion, size: CGSize,
-                       lines: [[CLLocationCoordinate2D]] = [], pins: [CLLocationCoordinate2D] = []) async -> MapBackdrop? {
+                       lines: [[CLLocationCoordinate2D]] = [], pins: [CLLocationCoordinate2D] = [], dark: Bool = true) async -> MapBackdrop? {
         let options = MKMapSnapshotter.Options()
         options.region = region
         options.size = size
-        options.traitCollection = UITraitCollection(userInterfaceStyle: .dark)
+        options.traitCollection = UITraitCollection(userInterfaceStyle: dark ? .dark : .light)
         let configuration = MKStandardMapConfiguration(elevationStyle: .flat, emphasisStyle: .muted)
         configuration.pointOfInterestFilter = .excludingAll
         options.preferredConfiguration = configuration

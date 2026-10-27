@@ -43,7 +43,9 @@ struct AssetThumbnail: View {
             }
             .clipShape(.rect(cornerRadius: side * 0.18, style: .continuous))
             .task(id: asset.localIdentifier) {
-                image = await AssetLoader.image(for: asset, size: CGSize(width: side * scale, height: side * scale), exact: false)
+                for await next in AssetLoader.images(for: asset, size: CGSize(width: side * scale, height: side * scale)) {
+                    image = next
+                }
             }
             .accessibilityLabel("照片")
     }
@@ -153,6 +155,24 @@ struct AssetViewer: View {
 }
 
 private enum AssetLoader {
+    /// A blurry preview at once, then the full one (from iCloud if need be).
+    static func images(for asset: PHAsset, size: CGSize) -> AsyncStream<UIImage> {
+        AsyncStream { continuation in
+            let options = PHImageRequestOptions()
+            options.isNetworkAccessAllowed = true
+            options.deliveryMode = .opportunistic
+            options.resizeMode = .fast
+            let id = cache.requestImage(for: asset, targetSize: size, contentMode: .aspectFill, options: options) { image, info in
+                if let image { continuation.yield(image) }
+                let degraded = (info?[PHImageResultIsDegradedKey] as? Bool) ?? false
+                if !degraded || image == nil { continuation.finish() }
+            }
+            continuation.onTermination = { _ in cache.cancelImageRequest(id) }
+        }
+    }
+
+    nonisolated(unsafe) static let cache = PHCachingImageManager()
+
     static func image(for asset: PHAsset, size: CGSize, exact: Bool) async -> UIImage? {
         let options = PHImageRequestOptions()
         options.isNetworkAccessAllowed = true
