@@ -693,7 +693,9 @@
 				INFOPLIST_FILE = RecordPath/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "漫迹";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "读取步数和步行距离，用来展示你每天走了多少路。数据只在你的设备和 iCloud 中。";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "让 Apple Watch 上的徒步、跑步和骑行记录保存为“健身”中的体能训练。漫迹不会改写你的其他健康数据。";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "在后台持续记录你走过的路线，自动标出去过的地点、城市和国家。轨迹只保存在你自己的 iCloud 中。";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "记录你走过的路线，并在地图上显示你的位置。";
 				INFOPLIST_KEY_NSMotionUsageDescription = "识别你在步行、骑行还是乘车，让轨迹更准确也更省电。";
@@ -731,7 +733,9 @@
 				INFOPLIST_FILE = RecordPath/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "漫迹";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "读取步数和步行距离，用来展示你每天走了多少路。数据只在你的设备和 iCloud 中。";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "让 Apple Watch 上的徒步、跑步和骑行记录保存为“健身”中的体能训练。漫迹不会改写你的其他健康数据。";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "在后台持续记录你走过的路线，自动标出去过的地点、城市和国家。轨迹只保存在你自己的 iCloud 中。";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "记录你走过的路线，并在地图上显示你的位置。";
 				INFOPLIST_KEY_NSMotionUsageDescription = "识别你在步行、骑行还是乘车，让轨迹更准确也更省电。";
