@@ -1812,6 +1812,16 @@
         }
       }
     },
+    "另外飞行 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus %@ in the air"
+          }
+        }
+      }
+    },
     "只属于你": {
       "localizations": {
         "en": {
@@ -2846,6 +2856,16 @@
         }
       }
     },
+    "张照片": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "photos"
+          }
+        }
+      }
+    },
     "张照片和视频": {
       "localizations": {
         "en": {
@@ -3626,6 +3646,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Last Day"
+          }
+        }
+      }
+    },
+    "最常在路上的是 %@，共 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Busiest month: %1$@, %2$@"
           }
         }
       }
@@ -4520,6 +4550,16 @@
         }
       }
     },
+    "第一次去": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First time"
+          }
+        }
+      }
+    },
     "第一次去：%@": {
       "localizations": {
         "en": {
@@ -5344,6 +5384,16 @@
         }
       }
     },
+    "还有 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "And %@"
+          }
+        }
+      }
+    },
     "还没去过": {
       "localizations": {
         "en": {
@@ -5502,6 +5552,16 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "这一年去过": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This year you visited"
           }
         }
       }

@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import CoreLocation
 import MapKit
+import Photos
 
 /// The year in footprints as a story: full-screen pages on moving colour, numbers that count
 /// up, the year's routes drawn as art, ending with a poster to share.
@@ -25,6 +26,15 @@ struct YearReportView: View {
         var lightUp: LightUpInsights
         /// The year's places on a dark map, drawn once the rest has loaded.
         var cover: UIImage?
+        var placesMap: MapBackdrop?
+        var placesPins: [String] = []
+        /// Countries too far from the rest to fit on the map.
+        var placesElsewhere: [String] = []
+        var dayMap: MapBackdrop?
+        /// Photos from the library this year: the ones to show, and how many there were.
+        var libraryPhotos: [PHAsset] = []
+        var libraryCount = 0
+        var favoritePhoto: PHAsset?
     }
 
     var body: some View {
@@ -141,7 +151,59 @@ struct YearReportView: View {
         let size = UIScreen.main.bounds.size
         if let cover = await YearCover.render(cities: cities, routes: routes, size: size), data?.report.year == year {
             withAnimation(.easeOut(duration: 0.8)) { data?.cover = cover }
+            if let data { shareImage = render(data) }
         }
+        await loadPictures(yearStays: yearStays, interval: DateInterval(start: start, end: min(end, Date())),
+                           longest: longest, report: report, size: size)
+    }
+
+    /// The pictures behind the later pages: countries pinned on a map, the longest day's
+    /// route on its streets, and the year's photos from the library.
+    private func loadPictures(yearStays: [Stay], interval: DateInterval, longest: [RouteImage.Line], report: YearReport, size: CGSize) async {
+        let year = self.year
+        // A pin per country, where most of its visits were.
+        let byCountry = Dictionary(grouping: yearStays.filter { $0.countryCode != nil }, by: { $0.countryCode! })
+        let pins = byCountry.map { code, stays -> (String, CLLocationCoordinate2D) in
+            let lat = stays.map(\.latitude).reduce(0, +) / Double(stays.count)
+            let lon = stays.map(\.longitude).reduce(0, +) / Double(stays.count)
+            return (code, CLLocationCoordinate2D(latitude: lat, longitude: lon))
+        }
+        .sorted { (byCountry[$0.0]?.count ?? 0) > (byCountry[$1.0]?.count ?? 0) }
+        // The map shows the part of the world with the most of them; the rest are named below it.
+        func place(_ c: CLLocationCoordinate2D) -> CLLocation { CLLocation(latitude: c.latitude, longitude: c.longitude) }
+        let anchor = pins.max { a, b in
+            func weight(_ p: (String, CLLocationCoordinate2D)) -> Int {
+                pins.filter { place($0.1).distance(from: place(p.1)) < 3_500_000 }.reduce(0) { $0 + (byCountry[$1.0]?.count ?? 0) }
+            }
+            return weight(a) < weight(b)
+        }
+        let framed = anchor.map { a in pins.filter { place($0.1).distance(from: place(a.1)) < 3_500_000 } } ?? []
+        if let region = MapBackdrop.region(around: framed.map(\.1), size: size, minimumSpan: 8, lift: 0.12),
+           let map = await MapBackdrop.render(region: region, size: size, pins: framed.map(\.1)), data?.report.year == year {
+            data?.placesMap = map
+            data?.placesPins = framed.map(\.0)
+            data?.placesElsewhere = pins.map(\.0).filter { !data!.placesPins.contains($0) }
+        }
+        let dayLines = longest.map(\.coordinates).filter { $0.count > 1 }
+        if let region = MapBackdrop.region(around: dayLines.flatMap { $0 }, size: size, minimumSpan: 0.02),
+           let map = await MapBackdrop.render(region: region, size: size, lines: dayLines), data?.report.year == year {
+            data?.dayMap = map
+        }
+        guard DayPhotos.canRead else { return }
+        let all = DayPhotos.assets(in: interval)
+        let favorites = all.filter(\.isFavorite)
+        let pool = favorites.count >= 9 ? favorites : all
+        let step = max(1, pool.count / 9)
+        let picked = stride(from: 0, to: pool.count, by: step).prefix(9).map { pool[$0] }
+        var favoritePhoto: PHAsset?
+        if let stay = report.favoritePlace?.stay {
+            let near = all.filter { ($0.location?.distance(from: stay.location) ?? .infinity) < 500 }
+            favoritePhoto = near.isEmpty ? nil : near[near.count / 2]
+        }
+        guard data?.report.year == year else { return }
+        data?.libraryPhotos = picked
+        data?.libraryCount = all.count
+        data?.favoritePhoto = favoritePhoto
     }
 
     /// The routes around where most of the year was spent, so the cover shows a web of
@@ -176,13 +238,22 @@ struct YearReportView: View {
         let r = data.report
         var pages: [StoryPage] = [
             StoryPage { AnyView(CoverPage(data: data, isActive: $0)) },
-            StoryPage { AnyView(DistancePage(report: r, isActive: $0)) },
+            StoryPage { AnyView(StoryDistancePage(report: r, isActive: $0)) },
         ]
-        if r.steps > 0 { pages.append(StoryPage { AnyView(StepsPage(report: r, isActive: $0)) }) }
-        if !r.countries.isEmpty { pages.append(StoryPage { AnyView(PlacesPage(data: data, isActive: $0)) }) }
-        if r.longestDay != nil, !data.longestDayRoutes.isEmpty { pages.append(StoryPage { AnyView(LongestDayPage(data: data, isActive: $0)) }) }
-        if r.favoritePlace != nil || r.farthestPlace != nil { pages.append(StoryPage { AnyView(FavoritePage(report: r, isActive: $0)) }) }
-        if data.photos.count >= 3 { pages.append(StoryPage { AnyView(PhotosPage(photos: data.photos, isActive: $0)) }) }
+        if r.steps > 0 { pages.append(StoryPage { AnyView(StoryStepsPage(report: r, isActive: $0)) }) }
+        if !r.countries.isEmpty {
+            pages.append(StoryPage { AnyView(StoryPlacesPage(report: r, backdrop: data.placesMap, pinCodes: data.placesPins,
+                                                             elsewhere: data.placesElsewhere, isActive: $0)) })
+        }
+        if r.longestDay != nil, !data.longestDayRoutes.isEmpty {
+            pages.append(StoryPage { AnyView(StoryLongestDayPage(report: r, backdrop: data.dayMap, isActive: $0)) })
+        }
+        if r.favoritePlace != nil || r.farthestPlace != nil {
+            pages.append(StoryPage { AnyView(StoryFavoritePage(report: r, photo: data.favoritePhoto, isActive: $0)) })
+        }
+        if data.libraryPhotos.count >= 3 {
+            pages.append(StoryPage { AnyView(StoryPhotosPage(assets: data.libraryPhotos, total: data.libraryCount, isActive: $0)) })
+        }
         let image = shareImage
         pages.append(StoryPage { _ in AnyView(SharePage(data: data, image: image)) })
         return pages
@@ -367,225 +438,6 @@ private struct CoverPage: View {
     }
 }
 
-private struct DistancePage: View {
-    let report: YearReport
-    let isActive: Bool
-
-    var body: some View {
-        PageLayout(colors: Palette.ocean) {
-            Text("这一年你移动了").font(.title2.weight(.semibold)).reveal(isActive)
-            CountUp(value: isActive ? report.distance / 1000 : 0) { "\(Int($0).formatted(.number.locale(appLocale)))" }
-                .font(.system(size: 88, weight: .black, design: .rounded))
-                .minimumScaleFactor(0.5).lineLimit(1)
-                .animation(.easeOut(duration: 1.6).delay(0.2), value: isActive)
-            Text("公里").font(.title.bold()).foregroundStyle(.white.opacity(0.8)).reveal(isActive, after: 0.3)
-            HStack(spacing: 18) {
-                ZStack {
-                    Circle().stroke(.white.opacity(0.2), lineWidth: 10)
-                    Circle()
-                        .trim(from: 0, to: isActive ? max(0.02, min(1, report.shareOfEquator)) : 0)
-                        .stroke(.white, style: StrokeStyle(lineWidth: 10, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
-                        .animation(.easeOut(duration: 1.8).delay(0.6), value: isActive)
-                    Image(systemName: "globe.asia.australia.fill").font(.system(size: 34))
-                }
-                .frame(width: 92, height: 92)
-                Text("地面上的路程相当于绕赤道 \(report.shareOfEquator.formatted(.percent.precision(.fractionLength(0...1)).locale(appLocale)))")
-                    .font(.title3.weight(.semibold))
-            }
-            .padding(.top, 20)
-            .reveal(isActive, after: 0.6)
-            if report.flightDistance > 0 {
-                Label("其中飞行 \(Format.distance(report.flightDistance))", systemImage: "airplane")
-                    .font(.headline).foregroundStyle(.white.opacity(0.75))
-                    .reveal(isActive, after: 0.9)
-            }
-        }
-    }
-}
-
-private struct StepsPage: View {
-    let report: YearReport
-    let isActive: Bool
-
-    var body: some View {
-        PageLayout(colors: Palette.forest) {
-            Text("一步一步，走了").font(.title2.weight(.semibold)).reveal(isActive)
-            CountUp(value: isActive ? report.steps : 0) { Int($0).formatted(.number.locale(appLocale)) }
-                .font(.system(size: 76, weight: .black, design: .rounded))
-                .minimumScaleFactor(0.4).lineLimit(1)
-                .animation(.easeOut(duration: 1.6).delay(0.2), value: isActive)
-            Text("步").font(.title.bold()).foregroundStyle(.white.opacity(0.8)).reveal(isActive, after: 0.3)
-            let marathons = Int(report.marathons.rounded(.down))
-            VStack(alignment: .leading, spacing: 10) {
-                Text("步行 \(Format.distance(report.walkingDistance))，相当于 \(report.marathons.formatted(.number.precision(.fractionLength(0...1)).locale(appLocale))) 个全程马拉松")
-                    .font(.title3.weight(.semibold))
-                LazyVGrid(columns: Array(repeating: GridItem(.fixed(26), spacing: 6), count: 10), alignment: .leading, spacing: 6) {
-                    ForEach(0..<min(max(marathons, 1), 50), id: \.self) { index in
-                        Image(systemName: "figure.run")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundStyle(.white)
-                            .opacity(isActive ? 1 : 0)
-                            .scaleEffect(isActive ? 1 : 0.3)
-                            .animation(.spring(response: 0.4, dampingFraction: 0.6).delay(0.8 + Double(index) * 0.03), value: isActive)
-                    }
-                }
-            }
-            .padding(.top, 18)
-            .reveal(isActive, after: 0.6)
-        }
-    }
-}
-
-private struct PlacesPage: View {
-    let data: YearReportView.StoryData
-    let isActive: Bool
-
-    var body: some View {
-        let r = data.report
-        PageLayout(colors: Palette.sunset) {
-            Text("去过的地方").font(.title2.weight(.semibold)).reveal(isActive)
-            HStack(alignment: .firstTextBaseline, spacing: 12) {
-                count(r.countries.count, "国家和地区", delay: 0.1)
-                count(r.cities.count, "座城市", delay: 0.2)
-                if !r.provinces.isEmpty { count(r.provinces.count, "个省份", delay: 0.3) }
-            }
-            if !r.provinces.isEmpty {
-                ProvinceTileMap(insights: data.lightUp)
-                    .allowsHitTesting(false)
-                    .padding(14)
-                    .background(.black.opacity(0.22), in: .rect(cornerRadius: 22, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(.white.opacity(0.15), lineWidth: 1))
-                    .padding(.top, 12)
-                    .reveal(isActive, after: 0.5)
-            }
-            Text(r.countries.prefix(16).map { String.flag(for: $0) }.joined(separator: " "))
-                .font(.system(size: 34))
-                .reveal(isActive, after: 0.7)
-            if !r.newCities.isEmpty {
-                Text("新去的城市：\(r.newCities.prefix(6).joined(separator: "、"))")
-                    .font(.headline).foregroundStyle(.white.opacity(0.8))
-                    .reveal(isActive, after: 0.85)
-            }
-        }
-    }
-
-    private func count(_ value: Int, _ label: LocalizedStringKey, delay: Double) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            CountUp(value: isActive ? Double(value) : 0) { "\(Int($0.rounded()))" }
-                .font(.system(size: 58, weight: .black, design: .rounded))
-                .animation(.easeOut(duration: 1.0).delay(delay), value: isActive)
-            Text(label).font(.subheadline.weight(.semibold)).foregroundStyle(.white.opacity(0.75))
-                .lineLimit(2).fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-private struct LongestDayPage: View {
-    let data: YearReportView.StoryData
-    let isActive: Bool
-    @State private var drawn: CGFloat = 0
-
-    var body: some View {
-        let r = data.report
-        ZStack {
-            StoryBackground(colors: Palette.violet)
-            VStack(alignment: .leading, spacing: 10) {
-                Spacer(minLength: 90)
-                Text("移动最远的一天").font(.title2.weight(.semibold)).reveal(isActive)
-                if let longest = r.longestDay {
-                    Text(longest.date.formatted(.dateTime.month(.wide).day().weekday(.wide).locale(appLocale)))
-                        .font(.title3).foregroundStyle(.white.opacity(0.75)).reveal(isActive, after: 0.1)
-                    CountUp(value: isActive ? longest.distance / 1000 : 0) { $0.formatted(.number.precision(.fractionLength(1)).locale(appLocale)) + " km" }
-                        .font(.system(size: 70, weight: .black, design: .rounded))
-                        .animation(.easeOut(duration: 1.4).delay(0.2), value: isActive)
-                }
-                RouteArt(lines: data.longestDayRoutes, color: .white, lineWidth: 3, progress: drawn)
-                    .frame(maxWidth: .infinity, minHeight: 260)
-                    .background(.white.opacity(0.08), in: .rect(cornerRadius: 28, style: .continuous))
-                if let month = r.busiestMonth {
-                    Label("最常在路上的月份：\(month.month.formatted(.dateTime.month(.wide).locale(appLocale)))，共 \(Format.distance(month.distance))",
-                          systemImage: "calendar")
-                        .font(.headline).foregroundStyle(.white.opacity(0.8))
-                        .reveal(isActive, after: 1.2)
-                }
-                Spacer(minLength: 60)
-            }
-            .foregroundStyle(.white)
-            .padding(.horizontal, 28)
-        }
-        .onChange(of: isActive, initial: true) { _, active in
-            drawn = 0
-            if active { withAnimation(.easeInOut(duration: 2).delay(0.4)) { drawn = 1 } }
-        }
-    }
-}
-
-private struct FavoritePage: View {
-    let report: YearReport
-    let isActive: Bool
-
-    var body: some View {
-        PageLayout(colors: Palette.sunset.reversed()) {
-            if let favorite = report.favoritePlace {
-                Text("除了家，你最常去").font(.title2.weight(.semibold)).reveal(isActive)
-                if let stay = favorite.stay {
-                    PlacePicture(stay: stay)
-                        .frame(height: 220)
-                        .clipShape(.rect(cornerRadius: 28, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous).stroke(.white.opacity(0.3), lineWidth: 1))
-                        .shadow(color: .black.opacity(0.3), radius: 20, y: 10)
-                        .rotationEffect(.degrees(isActive ? -2 : 4))
-                        .reveal(isActive, after: 0.2)
-                }
-                Text(favorite.name).font(.system(size: 40, weight: .black)).lineLimit(2).minimumScaleFactor(0.6)
-                    .reveal(isActive, after: 0.4)
-                Text("去了 \(favorite.visits) 次").font(.title3.weight(.semibold)).foregroundStyle(.white.opacity(0.8))
-                    .reveal(isActive, after: 0.5)
-            }
-            if let farthest = report.farthestPlace {
-                Label("离家最远到过\(farthest.name)，\(Format.distance(farthest.distance))", systemImage: "location.north.line.fill")
-                    .font(.headline).foregroundStyle(.white.opacity(0.85))
-                    .padding(.top, 16)
-                    .reveal(isActive, after: 0.8)
-            }
-        }
-    }
-}
-
-private struct PhotosPage: View {
-    let photos: [TripPhoto]
-    let isActive: Bool
-
-    var body: some View {
-        PageLayout(colors: Palette.night) {
-            Text("这一年留下的画面").font(.title2.weight(.semibold)).reveal(isActive)
-            Text("\(photos.count) 张照片").font(.title3).foregroundStyle(.white.opacity(0.75)).reveal(isActive, after: 0.1)
-            let shown = Array(photos.shuffledStably.prefix(9))
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 3), spacing: 6) {
-                ForEach(Array(shown.enumerated()), id: \.element.id) { index, photo in
-                    PhotoThumbnail(photo: photo, cornerRadius: 14)
-                        .rotationEffect(.degrees(isActive ? 0 : Double(index % 3 - 1) * 8))
-                        .scaleEffect(isActive ? 1 : 0.6)
-                        .opacity(isActive ? 1 : 0)
-                        .animation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.2 + Double(index) * 0.06), value: isActive)
-                }
-            }
-            .padding(.top, 10)
-        }
-    }
-}
-
-private extension Array where Element == TripPhoto {
-    /// A mix across the year that doesn't change every time the page draws.
-    var shuffledStably: [TripPhoto] {
-        guard count > 9 else { return self }
-        let step = Double(count) / 9
-        return (0..<9).map { self[Int(Double($0) * step)] }
-    }
-}
-
 private struct SharePage: View {
     let data: YearReportView.StoryData
     let image: Image?
@@ -593,11 +445,17 @@ private struct SharePage: View {
     var body: some View {
         ZStack {
             StoryBackground(colors: Palette.night)
+            if let cover = data.cover {
+                Image(uiImage: cover).resizable().scaledToFill().blur(radius: 24).opacity(0.6).ignoresSafeArea()
+            }
             VStack(spacing: 22) {
                 Spacer(minLength: 80)
+                // Laid out at the size it is shared at, shown smaller.
                 YearPoster(data: data)
+                    .frame(width: 390, height: 640)
+                    .clipShape(.rect(cornerRadius: 38, style: .continuous))
+                    .scaleEffect(300 / 390)
                     .frame(width: 300, height: 492)
-                    .clipShape(.rect(cornerRadius: 30, style: .continuous))
                     .shadow(color: .black.opacity(0.4), radius: 30, y: 14)
                 if let image {
                     ShareLink(item: image, preview: SharePreview(String(localized: "我的年度足迹", bundle: .appLanguage), image: image)) {
@@ -623,10 +481,17 @@ private struct YearPoster: View {
     var body: some View {
         let r = data.report
         ZStack(alignment: .topLeading) {
-            LinearGradient(colors: [Color(red: 0.08, green: 0.07, blue: 0.25), Color(red: 0.35, green: 0.12, blue: 0.45), Color(red: 0.95, green: 0.45, blue: 0.3)],
-                           startPoint: .top, endPoint: .bottom)
-            RouteArt(lines: data.routes, color: .white.opacity(0.7), lineWidth: 1.1)
-                .padding(.top, 150).padding(.bottom, 170)
+            if let cover = data.cover {
+                // Filling the card without setting its size.
+                Color.clear.overlay { Image(uiImage: cover).resizable().scaledToFill() }.clipped()
+                LinearGradient(stops: [.init(color: .black.opacity(0.55), location: 0), .init(color: .clear, location: 0.3),
+                                       .init(color: .black.opacity(0.85), location: 0.75)], startPoint: .top, endPoint: .bottom)
+            } else {
+                LinearGradient(colors: [Color(red: 0.08, green: 0.07, blue: 0.25), Color(red: 0.35, green: 0.12, blue: 0.45), Color(red: 0.95, green: 0.45, blue: 0.3)],
+                               startPoint: .top, endPoint: .bottom)
+                RouteArt(lines: data.routes, color: .white.opacity(0.7), lineWidth: 1.1)
+                    .padding(.top, 150).padding(.bottom, 170)
+            }
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(verbatim: String(r.year)).font(.system(size: 52, weight: .black, design: .rounded))
