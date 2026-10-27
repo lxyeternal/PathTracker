@@ -1,7 +1,16 @@
 import SwiftUI
+import SwiftData
 import MapKit
 
 /// Every visit to one place, grouped so "我什么时候去过外滩？" has an answer.
+/// A place to open, by the stay that stands for it. Cheap to make in a list; the visits
+/// around it are gathered when the page opens.
+struct PlaceAround: Hashable {
+    let id: PersistentIdentifier
+
+    init(_ stay: Stay) { id = stay.persistentModelID }
+}
+
 struct PlaceVisits: Identifiable, Hashable {
     let name: String
     let visits: [Stay]
