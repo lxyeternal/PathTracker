@@ -5,6 +5,7 @@ import MapKit
 struct WorldView: View {
     @Binding var showingSettings: Bool
     private var summaries = PlaceSummaries.shared
+    @Environment(\.placeTagger) private var tagger
     private var stays: [Stay] { summaries.stays }
     private var insights: WorldInsights { summaries.world }
     private var lightUp: LightUpInsights { summaries.lightUp }
@@ -71,6 +72,9 @@ struct WorldView: View {
             .navigationDestination(for: DayRoute.self) { DayPage(day: $0.day) }
             .sheet(isPresented: $importingPhotos) { PhotoImportSheet() }
             .sheet(item: $selectedStay) { StayDetailView(stay: $0) }
+            .task(id: insights.frequentPlaces.map(\.id)) {
+                tagger?.nameFrequentPlaces(insights.frequentPlaces.map(\.representative))
+            }
             .fullScreenCover(isPresented: $showingMap) {
                 WorldMapScreen(dots: summaries.dots)
                     .navigationTransition(.zoom(sourceID: "world", in: namespace))

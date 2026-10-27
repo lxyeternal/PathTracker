@@ -16,6 +16,7 @@ struct SettingsView: View {
     @AppStorage(Notifier.Setting.weekly.rawValue) private var notifyWeekly = true
 
     @State private var syncStatus: SyncStatus = .checking
+    private var cloud = CloudSync.shared
     @State private var confirmingDeleteAll = false
     @State private var stats: (chunks: Int, stays: Int, trips: Int) = (0, 0, 0)
     @State private var retagged = false
@@ -207,9 +208,28 @@ struct SettingsView: View {
                 }
             }
             LabeledContent {
-                Text(syncStatus.title).foregroundStyle(syncStatus == .available ? .green : .secondary)
+                VStack(alignment: .trailing, spacing: 1) {
+                    Text(syncStatus == .available ? String(localized: "自动同步", bundle: .appLanguage) : syncStatus.title)
+                        .foregroundStyle(syncStatus == .available ? .green : .secondary)
+                    if syncStatus == .available, let last = cloud.lastSync {
+                        Text("上次 \(last.formatted(.relative(presentation: .named).locale(appLocale)))")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
             } label: {
                 Label("iCloud 同步", systemImage: "icloud.fill")
+            }
+            if syncStatus == .available {
+                Button {
+                    cloud.syncNow { try context.save() }
+                } label: {
+                    HStack {
+                        Label("立即同步", systemImage: "arrow.triangle.2.circlepath.icloud")
+                        Spacer()
+                        if cloud.isSyncing { ProgressView() }
+                    }
+                }
+                .disabled(cloud.isSyncing)
             }
         }
     }
@@ -234,6 +254,10 @@ struct SettingsView: View {
             .disabled(stats.chunks == 0)
             Button("导入 GPX 文件", systemImage: "square.and.arrow.down") { importing = true }
             Button("从相册点亮足迹", systemImage: "photo.stack") { importingPhotos = true }
+            Button("重新显示引导", systemImage: "arrow.uturn.backward") {
+                UserDefaults.standard.set(false, forKey: "onboarding.completed")
+                dismiss()
+            }
             Button(retagged ? "已开始重新识别" : "重新识别未命名的地点", systemImage: "arrow.clockwise") {
                 tagger?.retryFailed()
                 withAnimation { retagged = true }
@@ -296,10 +320,6 @@ struct SettingsView: View {
             }
             Button("预览庆祝动画", systemImage: "sparkles") {
                 Celebrations.shared.addSamples()
-                dismiss()
-            }
-            Button("重新显示引导", systemImage: "arrow.uturn.backward") {
-                UserDefaults.standard.set(false, forKey: "onboarding.completed")
                 dismiss()
             }
         }

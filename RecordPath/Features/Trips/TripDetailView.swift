@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import PhotosUI
+import Photos
 import ImageIO
 import CoreLocation
 
@@ -21,6 +22,9 @@ struct TripDetailView: View {
     @State private var confirmingEnd = false
     @State private var confirmingDelete = false
     @State private var isImporting = false
+    /// Photos in the library from the trip's days, read on the device.
+    @State private var libraryPhotos: [PHAsset] = []
+    @State private var showingGallery = false
     @Namespace private var namespace
 
     init(trip: Trip) {
@@ -44,6 +48,10 @@ struct TripDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                if !libraryPhotos.isEmpty {
+                    Button { showingGallery = true } label: { PhotoCollage(assets: libraryPhotos) }
+                        .buttonStyle(PressableStyle())
+                }
                 mapCard
                 if trip.isActive { endButton }
                 metrics
@@ -56,6 +64,14 @@ struct TripDetailView: View {
         }
         .navigationTitle("\(trip.coverEmoji) \(trip.title)")
         .navigationBarTitleDisplayMode(.inline)
+        .task(id: trip.id) {
+            guard DayPhotos.canRead else { return }
+            let interval = trip.interval
+            libraryPhotos = await Task.detached(priority: .userInitiated) { DayPhotos.assets(in: interval) }.value
+        }
+        .sheet(isPresented: $showingGallery) {
+            PhotoGallerySheet(title: trip.title, subtitle: trip.dateRangeText, assets: libraryPhotos)
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu("更多", systemImage: "ellipsis") {

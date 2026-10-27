@@ -95,10 +95,9 @@ private struct FoundTripCard: View {
                     if let cover {
                         GeometryReader { geo in AssetThumbnail(asset: cover, side: geo.size.width) }
                     } else {
-                        LinearGradient(colors: [Color(hue: Monogram.hue(found.title), saturation: 0.5, brightness: 0.95),
-                                                Color(hue: Monogram.hue(found.title), saturation: 0.75, brightness: 0.7)],
-                                       startPoint: .topLeading, endPoint: .bottomTrailing)
-                            .overlay(Text(found.countryCode.map { String.flag(for: $0) } ?? "🧳").font(.system(size: 54)))
+                        TimeCover(interval: found.interval,
+                                  stays: PlaceSummaries.shared.stays.filter { found.interval.contains($0.arrival) },
+                                  key: "found-\(found.id)")
                     }
                 }
                 .frame(width: 250, height: 150)
