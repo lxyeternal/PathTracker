@@ -27,12 +27,16 @@ final class CloudSync {
     }
 
     private func handle(_ event: NSPersistentCloudKitContainer.Event) {
+        if event.type == .setup, let end = event.endDate {
+            Diagnostics.record("cloud setup ok=\(event.succeeded) at=\(end) \(event.error.map { "\($0)" } ?? "")")
+        }
         guard event.type == .import || event.type == .export else { return }
         if event.endDate == nil {
             isSyncing = true
             return
         }
         isSyncing = false
+        Diagnostics.record("cloud \(event.type == .import ? "import" : "export") ok=\(event.succeeded) \(event.error.map { "\($0)" } ?? "")")
         if event.succeeded {
             lastSync = event.endDate
             lastError = nil

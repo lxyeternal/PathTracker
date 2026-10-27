@@ -17,9 +17,13 @@ enum PersistenceController {
             isStoredInMemoryOnly: inMemory,
             cloudKitDatabase: cloudAvailable ? .automatic : .none
         )
+        if !inMemory {
+            Diagnostics.record("store cloud=\(cloudAvailable) token=\(FileManager.default.ubiquityIdentityToken != nil)")
+        }
         do {
             return try ModelContainer(for: schema, configurations: configuration)
         } catch {
+            Diagnostics.record("store cloudKit container failed: \(error)")
             // A local-only store is better than not launching at all.
             let fallback = ModelConfiguration(name, schema: schema, isStoredInMemoryOnly: inMemory,
                                               cloudKitDatabase: .none)
