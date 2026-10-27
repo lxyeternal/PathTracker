@@ -8,7 +8,7 @@ struct LightUpView: View {
     private var summaries = PlaceSummaries.shared
     private var insights: LightUpInsights { summaries.lightUp }
     @State private var scope = Scope.china
-    @State private var selectedProvince: Province?
+    @State private var openProvince: Province?
     @State private var shareImage: Image?
 
     enum Scope: Hashable { case china, world }
@@ -41,9 +41,11 @@ struct LightUpView: View {
                 }
             }
         }
-        .sheet(item: $selectedProvince) { province in
-            ProvinceSheet(province: province, visit: insights.provinces[province.id])
-                .presentationDetents([.medium])
+        // Unlit provinces have nothing to open yet: a gentle note instead of an empty page.
+        .sheet(item: $openProvince) { province in
+            ContentUnavailableView("还没点亮", systemImage: "lightbulb",
+                                   description: Text("去过\(province.name)之后，这里会亮起来。"))
+                .presentationDetents([.height(260)])
         }
         .task(id: insights.provinces.count + insights.countries.count) {
             // Start where there's something to see.
@@ -58,11 +60,11 @@ struct LightUpView: View {
         VStack(alignment: .leading, spacing: 18) {
             ProgressHeader(lit: insights.provinces.count, total: Province.all.count,
                            title: "已点亮的省级行政区", tint: .orange)
-            ProvinceTileMap(insights: insights) { selectedProvince = $0 }
+            ProvinceTileMap(insights: insights, linksLitTiles: true) { openProvince = $0 }
             if !litProvinces.isEmpty {
                 VStack(spacing: 0) {
                     ForEach(litProvinces, id: \.province.id) { item in
-                        Button { selectedProvince = item.province } label: {
+                        NavigationLink(value: item.province) {
                             HStack {
                                 Text(item.province.name).font(.body.weight(.semibold))
                                 // Municipalities are their own city; don't say "上海 上海".
@@ -71,6 +73,7 @@ struct LightUpView: View {
                                     .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
                                 Spacer()
                                 Text("\(item.visit.days.count) 天").font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
+                                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
                             }
                             .padding(.horizontal, 16).padding(.vertical, 12)
                             .contentShape(.rect)
@@ -97,7 +100,7 @@ struct LightUpView: View {
                            title: "已点亮的国家和地区", tint: .red,
                            detail: String(localized: "跨越 \(insights.continentsVisited) 个大洲", bundle: .appLanguage))
             ForEach(continents) { continent in
-                FlagWall(continent: continent, visited: insights.countries)
+                FlagWall(continent: continent, visited: insights.countries, countries: summaries.world.countries)
             }
         }
     }
@@ -163,6 +166,8 @@ struct ProvinceTileMap: View {
     let insights: LightUpInsights
     /// Off for the small preview, where names would be too small to read.
     var showsLabels = true
+    /// Lit tiles open the province page; the rest call `onSelect`.
+    var linksLitTiles = false
     var onSelect: (Province) -> Void = { _ in }
 
     var body: some View {
@@ -172,14 +177,19 @@ struct ProvinceTileMap: View {
             ZStack(alignment: .topLeading) {
                 ForEach(Province.all) { province in
                     let visit = insights.provinces[province.id]
-                    Button { onSelect(province) } label: {
-                        Text(showsLabels ? province.tileLabel : "")
-                            .font(.system(size: side * 0.26, weight: .semibold))
-                            .minimumScaleFactor(0.6)
-                            .lineLimit(1)
-                            .foregroundStyle(visit == nil ? Color.secondary : .white)
-                            .frame(width: side, height: side)
-                            .background(RoundedRectangle(cornerRadius: side * 0.22, style: .continuous).fill(fill(for: visit)))
+                    let tile = Text(showsLabels ? province.tileLabel : "")
+                        .font(.system(size: side * 0.26, weight: .semibold))
+                        .minimumScaleFactor(0.6)
+                        .lineLimit(1)
+                        .foregroundStyle(visit == nil ? Color.secondary : .white)
+                        .frame(width: side, height: side)
+                        .background(RoundedRectangle(cornerRadius: side * 0.22, style: .continuous).fill(fill(for: visit)))
+                    Group {
+                        if linksLitTiles && visit != nil {
+                            NavigationLink(value: province) { tile }
+                        } else {
+                            Button { onSelect(province) } label: { tile }
+                        }
                     }
                     .buttonStyle(PressableStyle())
                     .accessibilityLabel(province.name)
@@ -203,6 +213,7 @@ struct ProvinceTileMap: View {
 private struct FlagWall: View {
     let continent: Continent
     let visited: Set<String>
+    let countries: [CountrySummary]
 
     private var litCount: Int { continent.regions.filter(visited.contains).count }
 
@@ -218,10 +229,17 @@ private struct FlagWall: View {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 34), spacing: 6)], spacing: 6) {
                 ForEach(continent.regions, id: \.self) { code in
                     let lit = visited.contains(code)
-                    Text(String.flag(for: code))
+                    let flag = Text(String.flag(for: code))
                         .font(.system(size: 26))
                         .grayscale(lit ? 0 : 1)
                         .opacity(lit ? 1 : 0.22)
+                    Group {
+                        if let country = countries.first(where: { $0.code == code }) {
+                            NavigationLink(value: country) { flag }.buttonStyle(PressableStyle())
+                        } else {
+                            flag
+                        }
+                    }
                         .accessibilityLabel(appLocale.localizedString(forRegionCode: code) ?? code)
                         .accessibilityValue(lit ? String(localized: "去过", bundle: .appLanguage) : String(localized: "还没去过", bundle: .appLanguage))
                 }
@@ -229,34 +247,6 @@ private struct FlagWall: View {
         }
         .padding(16)
         .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
-    }
-}
-
-private struct ProvinceSheet: View {
-    let province: Province
-    let visit: LightUpInsights.Visit?
-
-    var body: some View {
-        NavigationStack {
-            List {
-                if let visit {
-                    Section {
-                        LabeledContent("去过的天数", value: "\(visit.days.count)")
-                        LabeledContent("第一次", value: visit.firstVisit.formatted(.dateTime.year().month().day().locale(appLocale)))
-                    }
-                    if !visit.cities.isEmpty {
-                        Section("城市") {
-                            ForEach(visit.topCities, id: \.self) { Text($0) }
-                        }
-                    }
-                } else {
-                    ContentUnavailableView("还没点亮", systemImage: "lightbulb",
-                                           description: Text("去过\(province.name)之后，这里会亮起来。"))
-                }
-            }
-            .navigationTitle(province.name)
-            .navigationBarTitleDisplayMode(.inline)
-        }
     }
 }
 

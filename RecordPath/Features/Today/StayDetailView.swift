@@ -3,7 +3,8 @@ import SwiftData
 import MapKit
 import Photos
 
-/// Details for one stay, where the user can name the place (applies to every visit
+/// One stay, to look at first: where and when, the photos and words, the day's route. Naming
+/// the place, its type, privacy and deleting sit behind Edit. Where the user can name the place (applies to every visit
 /// nearby), mark it as home/school/work or a sight, post photos and words, open it in Maps or delete it.
 struct StayDetailView: View {
     @Bindable var stay: Stay
@@ -22,6 +23,8 @@ struct StayDetailView: View {
     @State private var pagerStart: TripPhoto?
     @State private var confirmingDelete = false
     @State private var photos: [PHAsset] = []
+    @State private var isEditing = false
+    @State private var viewingAsset: AssetPagerStart?
 
     enum PlaceKind: String, CaseIterable, Identifiable {
         case none, home, school, work, sight
@@ -111,6 +114,9 @@ struct StayDetailView: View {
                     .listRowInsets(EdgeInsets())
                 }
 
+                if !isEditing { overview }
+
+                if isEditing {
                 Section {
                     TextField(stay.placeName ?? stay.street ?? String(localized: "给这个地方起个名字", bundle: .appLanguage), text: $name)
                         .submitLabel(.done)
@@ -124,6 +130,9 @@ struct StayDetailView: View {
                 } footer: {
                     Text(kindFooter)
                 }
+                }
+
+                if !isEditing && posted.isEmpty && !photos.isEmpty { takenHere }
 
                 postSection
 
@@ -148,15 +157,10 @@ struct StayDetailView: View {
                             tagger?.enqueue()
                         }
                     }
-                    if showsDayLink {
-                        Button("查看这一天的轨迹", systemImage: "calendar") {
-                            dismiss()
-                            navigator.show(day: stay.arrival)
-                        }
-                    }
                     Button("在“地图”中打开", systemImage: "map") { openInMaps() }
                 }
 
+                if isEditing {
                 Section {
                     let hidden = zones.isHidden(stay.coordinate)
                     Toggle(isOn: Binding(
@@ -177,18 +181,33 @@ struct StayDetailView: View {
                 Section {
                     Button("删除这条记录", systemImage: "trash", role: .destructive) { confirmingDelete = true }
                 }
+                }
             }
+            .animation(.smooth, value: isEditing)
+            .fullScreenCover(item: $viewingAsset) { AssetPager(assets: photos, selection: $0.id) }
             .task { photos = DayPhotos.assets(in: DayPhotos.interval(of: stay)) }
             .sheet(isPresented: $composing) { PostComposer(stay: stay) }
             .fullScreenCover(item: $pagerStart) { PhotoPager(photos: posted, selection: $0.id) }
             .navigationTitle(stay.displayName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("取消", systemImage: "xmark") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("完成", systemImage: "checkmark") { save() }
+                if isEditing {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("取消", systemImage: "xmark") {
+                            load()
+                            isEditing = false
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("完成", systemImage: "checkmark") { save() }
+                    }
+                } else {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("关闭", systemImage: "xmark") { dismiss() }
+                    }
+                    ToolbarItem(placement: .primaryAction) {
+                        Button("编辑") { isEditing = true }
+                    }
                 }
             }
             .confirmationDialog("删除这条停留记录？", isPresented: $confirmingDelete, titleVisibility: .visible) {
@@ -204,6 +223,56 @@ struct StayDetailView: View {
             .onAppear(perform: load)
         }
         .presentationDetents([.large])
+    }
+
+    /// What you see first: the place, when you were there, and a way to that day's route.
+    @ViewBuilder
+    private var overview: some View {
+        Section {
+            HStack(spacing: 14) {
+                PlaceThumb(stay: stay, size: 52)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(stay.displayName).font(.title3.bold()).lineLimit(2)
+                    Text([stay.city, stay.country].compactMap { $0 }.joined(separator: " · "))
+                        .font(.subheadline).foregroundStyle(.secondary)
+                    Text(timeLine).font(.subheadline).foregroundStyle(.secondary)
+                }
+            }
+            .padding(.vertical, 4)
+            if showsDayLink {
+                Button {
+                    dismiss()
+                    navigator.show(day: stay.arrival)
+                } label: {
+                    Label("查看这一天的轨迹", systemImage: "point.topright.arrow.triangle.backward.to.point.bottomleft.scurvepath")
+                        .font(.body.weight(.semibold))
+                }
+            }
+        }
+    }
+
+    private var timeLine: String {
+        let day = stay.arrival.formatted(.dateTime.month().day().weekday(.abbreviated).locale(appLocale))
+        let end = stay.departure.map(Format.time) ?? String(localized: "现在", bundle: .appLanguage)
+        return "\(day) \(Format.time(stay.arrival)) – \(end) · \(Format.duration(stay.duration))"
+    }
+
+    /// Photos from the library taken during the stay, before anything is posted.
+    private var takenHere: some View {
+        Section {
+            ScrollView(.horizontal) {
+                HStack(spacing: 6) {
+                    ForEach(photos.prefix(30), id: \.localIdentifier) { asset in
+                        Button { viewingAsset = AssetPagerStart(id: asset.localIdentifier) } label: { AssetThumbnail(asset: asset, side: 84) }
+                            .buttonStyle(PressableStyle())
+                    }
+                }
+            }
+            .scrollIndicators(.hidden)
+            .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
+        } header: {
+            Text("在这里拍的照片 \(photos.count)")
+        }
     }
 
     private var kindFooter: String {
@@ -245,7 +314,7 @@ struct StayDetailView: View {
             if case .clear = change { tagger?.enqueue() }
         }
         try? context.save()
-        dismiss()
+        isEditing = false
     }
 
     private func openInMaps() {

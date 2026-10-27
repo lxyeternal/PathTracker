@@ -2152,6 +2152,28 @@
         }
       }
     },
+    "在这里拍的照片 %lld": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Photo Taken Here"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld Photos Taken Here"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "地图样式": {
       "localizations": {
         "en": {
