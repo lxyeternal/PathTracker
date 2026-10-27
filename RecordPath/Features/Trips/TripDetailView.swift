@@ -49,8 +49,7 @@ struct TripDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 if !libraryPhotos.isEmpty {
-                    Button { showingGallery = true } label: { PhotoCollage(assets: libraryPhotos) }
-                        .buttonStyle(PressableStyle())
+                    PhotoStack(assets: libraryPhotos) { showingGallery = true }
                 }
                 mapCard
                 if trip.isActive { endButton }

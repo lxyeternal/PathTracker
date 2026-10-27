@@ -409,6 +409,28 @@
         }
       }
     },
+    "%lld 座城市": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld city"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld cities"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld 张照片": {
       "localizations": {
         "en": {
@@ -508,6 +530,58 @@
                     "stringUnit": {
                       "state": "translated",
                       "value": "%arg visits"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld 段 · %lld 天": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%#@trips@ · %#@days@"
+          },
+          "substitutions": {
+            "days": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg day"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg days"
+                    }
+                  }
+                }
+              }
+            },
+            "trips": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg trip"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg trips"
                     }
                   }
                 }
@@ -2630,6 +2704,16 @@
         }
       }
     },
+    "展开": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spread"
+          }
+        }
+      }
+    },
     "已关闭": {
       "localizations": {
         "en": {
@@ -3248,6 +3332,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Search places, cities or countries"
+          }
+        }
+      }
+    },
+    "收起": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stack"
           }
         }
       }
