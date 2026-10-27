@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import CoreLocation
+import MapKit
 
 /// The year in footprints as a story: full-screen pages on moving colour, numbers that count
 /// up, the year's routes drawn as art, ending with a poster to share.
@@ -22,6 +23,8 @@ struct YearReportView: View {
         var longestDayRoutes: [RouteImage.Line]
         var photos: [TripPhoto]
         var lightUp: LightUpInsights
+        /// The year's places on a dark map, drawn once the rest has loaded.
+        var cover: UIImage?
     }
 
     var body: some View {
@@ -132,6 +135,13 @@ struct YearReportView: View {
         let story = StoryData(report: report, routes: routes, longestDayRoutes: longest, photos: photos, lightUp: lightUp)
         withAnimation(.smooth) { data = story }
         shareImage = render(story)
+
+        let yearStays = stays.filter { $0.arrival >= start && $0.arrival < end }
+        let cities = CityGlow.glows(for: yearStays)
+        let size = UIScreen.main.bounds.size
+        if let cover = await YearCover.render(cities: cities, routes: routes, size: size), data?.report.year == year {
+            withAnimation(.easeOut(duration: 0.8)) { data?.cover = cover }
+        }
     }
 
     /// The routes around where most of the year was spent, so the cover shows a web of
@@ -314,17 +324,32 @@ private struct CoverPage: View {
     var body: some View {
         ZStack {
             StoryBackground(colors: Palette.night)
-            RouteArt(lines: data.routes, color: .white.opacity(0.85), lineWidth: 1.2, progress: drawn)
-                .padding(.top, 110)
-                .padding(.bottom, 370)
-                .opacity(0.9)
+            if let cover = data.cover {
+                // The year's map, drifting slowly closer, darkened where the words sit.
+                Image(uiImage: cover)
+                    .resizable()
+                    .scaledToFill()
+                    .scaleEffect(isActive ? 1.08 : 1.0)
+                    .animation(.easeInOut(duration: 14), value: isActive)
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+                LinearGradient(stops: [.init(color: .black.opacity(0.35), location: 0), .init(color: .clear, location: 0.25),
+                                       .init(color: .black.opacity(0.2), location: 0.5), .init(color: .black.opacity(0.85), location: 0.85)],
+                               startPoint: .top, endPoint: .bottom)
+                    .ignoresSafeArea()
+            } else if data.routes.flatMap(\.coordinates).count > 200 {
+                RouteArt(lines: data.routes, color: .white.opacity(0.85), lineWidth: 1.2, progress: drawn)
+                    .padding(.top, 110)
+                    .padding(.bottom, 370)
+                    .opacity(0.9)
+            }
             VStack(alignment: .leading, spacing: 6) {
                 Spacer()
                 Text(verbatim: String(data.report.year))
                     .font(.system(size: 96, weight: .black, design: .rounded))
                     .reveal(isActive, after: 0.2)
                 Text("我的年度足迹").font(.system(size: 30, weight: .bold)).reveal(isActive, after: 0.35)
-                Text("这一年记录了 \(data.report.daysRecorded) 天，每一条线都是你走过的路。")
+                Text("这一年去了 \(data.report.cities.count) 座城市，记录了 \(data.report.daysRecorded) 天。")
                     .font(.title3).foregroundStyle(.white.opacity(0.75)).reveal(isActive, after: 0.5)
                 Label("向左滑动", systemImage: "hand.draw.fill")
                     .font(.footnote.weight(.semibold)).foregroundStyle(.white.opacity(0.6))
@@ -634,6 +659,80 @@ private struct YearPoster: View {
         VStack(alignment: .leading, spacing: 1) {
             Text(value).font(.system(.title2, design: .rounded, weight: .heavy)).monospacedDigit()
             Text(label).font(.caption.weight(.semibold)).opacity(0.75)
+        }
+    }
+}
+
+/// The year-report cover: a dark map of the year's places, each city a warm light, the
+/// recorded routes as fine bright lines.
+enum YearCover {
+    @MainActor
+    static func render(cities: [CityGlow], routes: [RouteImage.Line], size: CGSize) async -> UIImage? {
+        guard !cities.isEmpty, size.width > 0 else { return nil }
+        // Frame the part of the world where most of the year was spent: the cities within
+        // reach of the one with the most days, weighed by their days. A trip to the other
+        // side of the world doesn't pull the map out to an empty ocean.
+        let best = cities.max { a, b in
+            func weight(_ c: CityGlow) -> Int {
+                let here = CLLocation(latitude: c.center.latitude, longitude: c.center.longitude)
+                return cities.filter { CLLocation(latitude: $0.center.latitude, longitude: $0.center.longitude).distance(from: here) < 2_500_000 }
+                    .reduce(0) { $0 + $1.days }
+            }
+            return weight(a) < weight(b)
+        }!
+        let anchor = CLLocation(latitude: best.center.latitude, longitude: best.center.longitude)
+        let framed = cities.filter { CLLocation(latitude: $0.center.latitude, longitude: $0.center.longitude).distance(from: anchor) < 2_500_000 }
+        let lats = framed.map(\.center.latitude), lons = framed.map(\.center.longitude)
+        let minLat = lats.min()!, maxLat = lats.max()!, minLon = lons.min()!, maxLon = lons.max()!
+        // Room around the cities, the lower part kept for the words.
+        let latSpan = max((maxLat - minLat) * 1.6, 0.6)
+        let lonSpan = max((maxLon - minLon) * 1.5, latSpan * size.width / size.height)
+        let center = CLLocationCoordinate2D(latitude: (minLat + maxLat) / 2 - latSpan * 0.18, longitude: (minLon + maxLon) / 2)
+
+        let options = MKMapSnapshotter.Options()
+        options.region = MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: min(latSpan * 1.5, 170), longitudeDelta: min(lonSpan, 360)))
+        options.size = size
+        options.traitCollection = UITraitCollection(userInterfaceStyle: .dark)
+        let configuration = MKStandardMapConfiguration(elevationStyle: .flat, emphasisStyle: .muted)
+        configuration.pointOfInterestFilter = .excludingAll
+        options.preferredConfiguration = configuration
+        guard let snapshot = try? await MKMapSnapshotter(options: options).start() else { return nil }
+
+        let maxDays = Double(cities.map(\.days).max() ?? 1)
+        return UIGraphicsImageRenderer(size: size).image { renderer in
+            snapshot.image.draw(at: .zero)
+            let context = renderer.cgContext
+
+            // Routes: a soft glow under a fine line.
+            for line in routes where line.coordinates.count > 1 {
+                let path = UIBezierPath()
+                for (index, coordinate) in line.coordinates.enumerated() {
+                    let point = snapshot.point(for: coordinate.onMap)
+                    index == 0 ? path.move(to: point) : path.addLine(to: point)
+                }
+                path.lineCapStyle = .round
+                path.lineJoinStyle = .round
+                context.saveGState()
+                context.setShadow(offset: .zero, blur: 6, color: UIColor.white.withAlphaComponent(0.6).cgColor)
+                UIColor.white.withAlphaComponent(0.85).setStroke()
+                path.lineWidth = 1.4
+                path.stroke()
+                context.restoreGState()
+            }
+
+            // Cities: brighter and larger with more days there.
+            let colors = [UIColor(red: 1, green: 0.62, blue: 0.25, alpha: 0.85).cgColor,
+                          UIColor(red: 1, green: 0.45, blue: 0.2, alpha: 0).cgColor] as CFArray
+            let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1])!
+            for city in cities.reversed() {
+                let point = snapshot.point(for: city.center)
+                let weight = sqrt(Double(city.days) / maxDays)
+                let radius = CGFloat(14 + 34 * weight)
+                context.drawRadialGradient(gradient, startCenter: point, startRadius: 0, endCenter: point, endRadius: radius, options: [])
+                let core = CGFloat(3 + 3 * weight)
+                UIColor(red: 1, green: 0.93, blue: 0.8, alpha: 1).setFill()
+                UIBezierPath(ovalIn: CGRect(x: point.x - core, y: point.y - core, width: core * 2, height: core * 2)).fill()
+            }
         }
     }
 }
