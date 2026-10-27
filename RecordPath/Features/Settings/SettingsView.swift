@@ -290,6 +290,10 @@ struct SettingsView: View {
                 engine.reloadAfterDataChange(discardPending: true)
                 refreshCounts()
             }
+            Button("生成 6000 个照片地点", systemImage: "photo.stack") {
+                DemoData.photoStress(in: context)
+                refreshCounts()
+            }
             Button("预览庆祝动画", systemImage: "sparkles") {
                 Celebrations.shared.addSamples()
                 dismiss()

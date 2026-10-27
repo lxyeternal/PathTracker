@@ -4,9 +4,10 @@ import MapKit
 
 struct WorldView: View {
     @Binding var showingSettings: Bool
-    @Query(sort: \Stay.arrival, order: .reverse) private var stays: [Stay]
-    @State private var insights = WorldInsights()
-    @State private var lightUp = LightUpInsights()
+    private var summaries = PlaceSummaries.shared
+    private var stays: [Stay] { summaries.stays }
+    private var insights: WorldInsights { summaries.world }
+    private var lightUp: LightUpInsights { summaries.lightUp }
     @State private var importingPhotos = false
     @AppStorage("photoImport.lastRun") private var photoImportRun: Double = 0
     @State private var selectedStay: Stay?
@@ -55,20 +56,14 @@ struct WorldView: View {
                 PlacesListView(list: list)
             }
             .navigationDestination(for: LightUpRoute.self) { _ in
-                LightUpView(stays: stays)
+                LightUpView()
             }
             .navigationDestination(for: GalleryRoute.self) { _ in GalleryView() }
             .sheet(isPresented: $importingPhotos) { PhotoImportSheet() }
             .sheet(item: $selectedStay) { StayDetailView(stay: $0) }
             .fullScreenCover(isPresented: $showingMap) {
-                WorldMapScreen(stays: stays)
+                WorldMapScreen(dots: summaries.dots)
                     .navigationTransition(.zoom(sourceID: "world", in: namespace))
-            }
-            .task(id: stays.map(\.tagStateRaw).reduce(stays.count, +)) {
-                withAnimation(.smooth) {
-                    insights = WorldInsights(stays: stays)
-                    lightUp = LightUpInsights(stays: stays)
-                }
             }
         }
     }
@@ -105,7 +100,7 @@ struct WorldView: View {
 
     private var mapCard: some View {
         Button { showingMap = true } label: {
-            WorldMap(stays: stays, interactive: false)
+            WorldMap(dots: summaries.dots, interactive: false)
                 .allowsHitTesting(false)
                 .frame(height: 240)
                 .clipShape(.rect(cornerRadius: 28, style: .continuous))
@@ -257,30 +252,23 @@ struct PlaceRow: View {
 
 /// One dot per place visited (merged when close together) and flags per country.
 struct WorldMap: View {
-    let stays: [Stay]
+    let dots: [MapDot]
     var interactive = true
     var onSelect: ((Stay) -> Void)?
 
     @State private var position: MapCameraPosition = .automatic
-
-    private var places: [Stay] {
-        var seen = Set<String>()
-        return stays.filter { stay in
-            let key = "\((stay.latitude * 200).rounded())|\((stay.longitude * 200).rounded())"
-            return seen.insert(key).inserted
-        }
-    }
+    @State private var region: MKCoordinateRegion?
+    @State private var shown: [MapDot] = []
 
     var body: some View {
         Map(position: $position, interactionModes: interactive ? .all : []) {
-            ForEach(places) { stay in
-                Annotation(stay.displayName, coordinate: stay.coordinate.onMap, anchor: .center) {
-                    Button { onSelect?(stay) } label: {
+            ForEach(shown) { dot in
+                Annotation("", coordinate: dot.coordinate, anchor: .center) {
+                    Button { if let stay = PlaceSummaries.shared.stay(dot.id) { onSelect?(stay) } } label: {
                         Circle()
-                            .fill((stay.isLandmark ? Color.yellow : Color.accentColor).gradient)
+                            .fill(dot.isLandmark ? Color.yellow : Color.accentColor)
                             .frame(width: interactive ? 14 : 10, height: interactive ? 14 : 10)
                             .overlay(Circle().stroke(.white, lineWidth: 2))
-                            .shadow(radius: 2)
                     }
                     .buttonStyle(.plain)
                     .disabled(onSelect == nil)
@@ -289,18 +277,40 @@ struct WorldMap: View {
             }
         }
         .mapStyle(.standard(elevation: .realistic, emphasis: .muted, pointsOfInterest: .excludingAll))
+        .onMapCameraChange(frequency: .onEnd) { context in
+            guard interactive else { return }
+            region = context.region
+            updateShown()
+        }
+        .onAppear(perform: updateShown)
+        .onChange(of: dots.count) { updateShown() }
+    }
+
+    /// A few hundred dots at most: the ones in view, spread out at a spacing that suits the
+    /// zoom. Thousands of annotations at once make the map crawl.
+    private func updateShown() {
+        guard let region else {
+            shown = MapDot.thinned(dots, cell: 0.05, limit: interactive ? 300 : 150)
+            return
+        }
+        let span = region.span
+        let visible = dots.filter {
+            abs($0.coordinate.latitude - region.center.latitude) <= span.latitudeDelta * 0.75
+                && abs(($0.coordinate.longitude - region.center.longitude).remainder(dividingBy: 360)) <= span.longitudeDelta * 0.75
+        }
+        shown = MapDot.thinned(visible, cell: max(span.latitudeDelta / 30, 0.002), limit: 300)
     }
 }
 
 private struct WorldMapScreen: View {
-    let stays: [Stay]
+    let dots: [MapDot]
     @Environment(\.dismiss) private var dismiss
     @Environment(AppNavigator.self) private var navigator
     @State private var selected: Stay?
 
     var body: some View {
         NavigationStack {
-            WorldMap(stays: stays, interactive: true, onSelect: { selected = $0 })
+            WorldMap(dots: dots, interactive: true, onSelect: { selected = $0 })
                 .ignoresSafeArea()
                 .navigationTitle("全部足迹")
                 .navigationBarTitleDisplayMode(.inline)

@@ -5,8 +5,8 @@ struct LightUpRoute: Hashable {}
 /// "点亮": China's provinces as a tile map and the world's countries as a wall of flags, lit up
 /// as you visit them. No borders are drawn, so there's nothing to get wrong on a map.
 struct LightUpView: View {
-    let stays: [Stay]
-    @State private var insights = LightUpInsights()
+    private var summaries = PlaceSummaries.shared
+    private var insights: LightUpInsights { summaries.lightUp }
     @State private var scope = Scope.china
     @State private var selectedProvince: Province?
     @State private var shareImage: Image?
@@ -45,8 +45,7 @@ struct LightUpView: View {
             ProvinceSheet(province: province, visit: insights.provinces[province.id])
                 .presentationDetents([.medium])
         }
-        .task(id: stays.count) {
-            insights = LightUpInsights(stays: stays)
+        .task(id: insights.provinces.count + insights.countries.count) {
             // Start where there's something to see.
             if insights.provinces.isEmpty, !insights.countries.isEmpty { scope = .world }
             renderShareImage()

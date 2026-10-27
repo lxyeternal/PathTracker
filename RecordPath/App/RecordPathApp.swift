@@ -30,6 +30,7 @@ struct RecordPathApp: App {
                 services.tagger.enqueue()
                 services.liveRecording.refreshNow()
                 services.notifier.checkPeriodically()
+                PlaceSummaries.shared.setNeedsRefresh()
                 Task {
                     await services.activity.refreshToday()
                     await services.notifier.refreshAuthorization()
@@ -72,6 +73,7 @@ final class AppServices {
         liveRecording = LiveRecording(context: container.mainContext, engine: engine)
         liveRecording.activate()
         notifier = Notifier(context: container.mainContext, activity: activity)
+        PlaceSummaries.shared.attach(container.mainContext)
         tagger.onTagged = { [notifier] stay in
             notifier.placeTagged(stay)
             notifier.checkPeriodically()

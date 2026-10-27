@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 import CoreLocation
 
 // MARK: - Day timeline
@@ -133,18 +134,55 @@ struct WorldInsights {
         frequentPlaces = Self.clusters(of: stays)
     }
 
+    /// The same insights pointing at another context's copies of the places.
+    func rehomed(in context: ModelContext) -> WorldInsights {
+        var copy = self
+        copy.landmarks = landmarks.compactMap { context.model(for: $0.persistentModelID) as? Stay }
+        copy.frequentPlaces = frequentPlaces.compactMap { place in
+            (context.model(for: place.representative.persistentModelID) as? Stay).map {
+                FrequentPlace(representative: $0, visits: place.visits, totalTime: place.totalTime)
+            }
+        }
+        return copy
+    }
+
     static func countryName(code: String, fallback: String?) -> String {
         appLocale.localizedString(forRegionCode: code) ?? fallback ?? code
     }
 
-    /// Groups stays within 150 m of each other; places visited at least three times.
+    /// Groups stays within 150 m of each other; places visited at least three times. Cluster
+    /// centres sit in a grid of 150 m cells, so each stay only looks at the cells around it.
     private static func clusters(of stays: [Stay]) -> [FrequentPlace] {
-        var clusters: [(center: Stay, members: [Stay])] = []
-        for stay in stays.sorted(by: { $0.duration > $1.duration }) {
-            if let index = clusters.firstIndex(where: { $0.center.location.distance(from: stay.location) <= KnownPlaces.radius }) {
-                clusters[index].members.append(stay)
+        var clusters: [(center: Stay, location: CLLocation, members: [Stay])] = []
+        var grid: [Int64: [Int]] = [:]
+        let cell = KnownPlaces.radius
+        func coordinates(_ stay: Stay) -> (Int64, Int64) {
+            // Metres east and north, near enough for picking neighbouring cells.
+            let y = stay.latitude * 111_320
+            let x = stay.longitude * 111_320 * cos(stay.latitude * .pi / 180)
+            return (Int64((x / cell).rounded(.down)), Int64((y / cell).rounded(.down)))
+        }
+        func key(_ x: Int64, _ y: Int64) -> Int64 { x &* 1_000_003 &+ y }
+        let durations = stays.map(\.duration)
+        for index in stays.indices.sorted(by: { durations[$0] > durations[$1] }) {
+            let stay = stays[index]
+            let location = stay.location
+            let (x, y) = coordinates(stay)
+            var found: Int?
+            search: for dx in -1...1 {
+                for dy in -1...1 {
+                    for candidate in grid[key(x + Int64(dx), y + Int64(dy))] ?? []
+                    where clusters[candidate].location.distance(from: location) <= KnownPlaces.radius {
+                        found = candidate
+                        break search
+                    }
+                }
+            }
+            if let found {
+                clusters[found].members.append(stay)
             } else {
-                clusters.append((stay, [stay]))
+                grid[key(x, y), default: []].append(clusters.count)
+                clusters.append((stay, location, [stay]))
             }
         }
         return clusters
@@ -183,14 +221,19 @@ enum CityNames {
             names[key] = entry
         }
         let keys = Array(names.keys)
-        func center(_ n: Name) -> CLLocation { CLLocation(latitude: n.lat / Double(n.count), longitude: n.lon / Double(n.count)) }
+        let centers = keys.map { key in
+            let n = names[key]!
+            return (country: n.country, location: CLLocation(latitude: n.lat / Double(n.count), longitude: n.lon / Double(n.count)))
+        }
 
         // Union names that are the same city.
         var parent = Dictionary(uniqueKeysWithValues: keys.map { ($0, $0) })
         func root(_ k: String) -> String { var k = k; while let p = parent[k], p != k { k = p }; return k }
-        for (i, a) in keys.enumerated() {
-            for b in keys[(i + 1)...] where names[a]!.country == names[b]!.country {
-                if center(names[a]!).distance(from: center(names[b]!)) < 25_000 { parent[root(b)] = root(a) }
+        for i in keys.indices {
+            for j in (i + 1)..<keys.count where centers[i].country == centers[j].country {
+                // Cheap check first: 25 km is well under 0.3° of latitude.
+                guard abs(centers[i].location.coordinate.latitude - centers[j].location.coordinate.latitude) < 0.3 else { continue }
+                if centers[i].location.distance(from: centers[j].location) < 25_000 { parent[root(keys[j])] = root(keys[i]) }
             }
         }
 

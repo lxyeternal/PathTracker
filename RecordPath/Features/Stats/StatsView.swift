@@ -5,7 +5,7 @@ import Charts
 struct StatsView: View {
     @Binding var showingSettings: Bool
     @Environment(ActivityProvider.self) private var activityProvider
-    @Query(sort: \Stay.arrival) private var stays: [Stay]
+    private var summaries = PlaceSummaries.shared
 
     enum Period: String, CaseIterable, Identifiable {
         case week, month, year
@@ -34,9 +34,9 @@ struct StatsView: View {
     @State private var modeAngle: Double?
     @State private var selectedMode: MovementMode?
     @State private var isLoading = true
-    @State private var lifetime = WorldInsights()
+    private var lifetime: WorldInsights { summaries.world }
     @State private var showingYearReport = false
-    @State private var milestones = MilestoneProgress()
+    private var milestones: MilestoneProgress { summaries.milestones }
     @Environment(Notifier.self) private var notifier
     @Environment(\.modelContext) private var context
 
@@ -105,10 +105,6 @@ struct StatsView: View {
                 selectedDay = nil
                 distanceSelection = nil
                 await load()
-            }
-            .task(id: stays.count) {
-                lifetime = WorldInsights(stays: stays)
-                milestones = notifier.currentMilestones()
             }
             .fullScreenCover(isPresented: $showingYearReport) { YearReportView() }
             .navigationDestination(for: MilestonesRoute.self) { _ in MilestonesView(progress: milestones) }
@@ -397,7 +393,7 @@ struct StatsView: View {
                 MetricTile(title: "国家与地区", value: "\(insights.countries.count)", symbol: "flag.fill", tint: .red)
                 MetricTile(title: "城市", value: "\(insights.cityCount)", symbol: "building.2.fill", tint: .indigo)
                 MetricTile(title: "记录天数", value: "\(insights.trackedDays)", symbol: "calendar", tint: .teal)
-                MetricTile(title: "到访地点", value: "\(stays.count)", symbol: "mappin.and.ellipse", tint: .pink)
+                MetricTile(title: "到访地点", value: "\(summaries.stays.count)", symbol: "mappin.and.ellipse", tint: .pink)
             }
             if let first = insights.firstDay {
                 Text("从 \(first.formatted(Date.FormatStyle(date: .long, time: .omitted, locale: appLocale))) 开始记录")

@@ -96,6 +96,7 @@ final class PlaceTagger {
         try? context.save()
         onPhotosTagged?()
 
+        var geocoded = 0
         for stay in unnamed {
             if let neighbour = grid.nearest(to: stay, within: 3_000) {
                 // Named by a visit geocoded a moment ago.
@@ -105,7 +106,9 @@ final class PlaceTagger {
             let outcome = await tag(stay, lookForNeighbour: false)
             if outcome == .offline { break }
             if stay.countryCode != nil { grid.add(stay) }
-            try? context.save()
+            geocoded += 1
+            // Every save redraws whatever shows places; a dozen at a time is plenty.
+            if geocoded % 12 == 0 { try? context.save() }
             try? await Task.sleep(for: .milliseconds(1300))
         }
         try? context.save()

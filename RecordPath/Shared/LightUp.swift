@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 /// China's 34 provincial-level divisions, laid out as a tile map: each sits roughly where it is
 /// geographically, without drawing any borders.
@@ -60,7 +61,18 @@ struct Province: Identifiable, Hashable {
     /// Which division a place is in, from what geocoding reported: the region code for Hong Kong,
     /// Macau and Taiwan; otherwise the province named in "杭州市, 浙江省" / "Hangzhou, Zhejiang"
     /// or, for the four municipalities, the city itself.
+    /// Thousands of places share a few dozen names, so answers are remembered.
+    private static let cache = OSAllocatedUnfairLock(initialState: [String: Province?]())
+
     static func containing(countryCode: String?, region: String?, city: String?) -> Province? {
+        let key = "\(countryCode ?? "")|\(region ?? "")|\(city ?? "")"
+        if let known = cache.withLock({ $0[key] }) { return known }
+        let found = lookUp(countryCode: countryCode, region: region, city: city)
+        cache.withLock { $0[key] = .some(found) }
+        return found
+    }
+
+    private static func lookUp(countryCode: String?, region: String?, city: String?) -> Province? {
         if let code = countryCode, let special = all.first(where: { $0.regionCode == code }) { return special }
         guard countryCode == "CN" else { return nil }
         for text in [region, city].compactMap({ $0?.lowercased() }) {
