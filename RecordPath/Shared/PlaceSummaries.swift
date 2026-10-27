@@ -20,6 +20,8 @@ final class PlaceSummaries {
     private(set) var milestones = MilestoneProgress()
     /// One dot per ~500 m area, for the maps.
     private(set) var dots: [MapDot] = []
+    /// Trips found in the history, newest first.
+    private(set) var foundTrips: [TripFinder.Found] = []
 
     @ObservationIgnored private var context: ModelContext?
     @ObservationIgnored private var pending: Task<Void, Never>?
@@ -65,6 +67,7 @@ final class PlaceSummaries {
             lightUp = result.lightUp
             milestones = result.milestones
             dots = result.dots
+            foundTrips = result.foundTrips
             #if DEBUG
             Diagnostics.record("summaries background=\(Int(mainStarted.timeIntervalSince(started) * 1000))ms main=\(Int(Date().timeIntervalSince(mainStarted) * 1000))ms")
             #endif
@@ -96,6 +99,7 @@ final class PlaceSummaries {
         var lightUp = LightUpInsights()
         var milestones = MilestoneProgress()
         var dots: [MapDot] = []
+        var foundTrips: [TripFinder.Found] = []
 
         init(container: ModelContainer) {
             let context = ModelContext(container)
@@ -106,6 +110,12 @@ final class PlaceSummaries {
             lightUp = LightUpInsights(stays: all)
             milestones = MilestoneProgress(stays: all, movements: chunks.filter { $0.mode != .flying }.map { ($0.startDate, $0.distance) })
             dots = MapDot.dots(for: all)
+            let cityNames = CityNames.canonical(for: all)
+            foundTrips = TripFinder.find(all.map {
+                TripFinder.Visit(arrival: $0.arrival, departure: $0.departure ?? $0.arrival, latitude: $0.latitude,
+                                 longitude: $0.longitude, city: CityNames.key($0).flatMap { cityNames[$0] } ?? $0.city,
+                                 countryCode: $0.countryCode)
+            })
         }
     }
 }

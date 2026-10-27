@@ -27,6 +27,38 @@
     "%@ · %@": {
       "shouldTranslate": false
     },
+    "%@ · %lld 天": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · %#@days@"
+          },
+          "substitutions": {
+            "days": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg day"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg days"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%@ · 停留 %@": {
       "localizations": {
         "en": {
@@ -614,6 +646,16 @@
         }
       }
     },
+    "一次出行": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A Trip"
+          }
+        }
+      }
+    },
     "一次徒步、跑步或骑行的记录会出现在这里。在“今天”页右上角开始记录，或者在 Apple Watch 上记录。": {
       "localizations": {
         "en": {
@@ -684,6 +726,16 @@
         }
       }
     },
+    "不是旅行": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not a trip"
+          }
+        }
+      }
+    },
     "不用了": {
       "localizations": {
         "en": {
@@ -740,6 +792,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "countries & regions"
+          }
+        }
+      }
+    },
+    "个地点": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "places"
           }
         }
       }
@@ -1172,6 +1234,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "See All"
+          }
+        }
+      }
+    },
+    "全部收下": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep All"
           }
         }
       }
@@ -2138,6 +2210,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Open a place on your timeline to post photos and thoughts. Photos added to trips appear here too."
+          }
+        }
+      }
+    },
+    "在足迹里找到 %lld 段旅行": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Found %lld trip in your history"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Found %lld trips in your history"
+                }
+              }
+            }
           }
         }
       }
@@ -3148,6 +3242,16 @@
         }
       }
     },
+    "收进旅程": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep as Trip"
+          }
+        }
+      }
+    },
     "改为“始终允许”，关掉 App 也能继续记录。": {
       "localizations": {
         "en": {
@@ -3836,6 +3940,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Standard"
+          }
+        }
+      }
+    },
+    "根据你离开常住地的日子整理出来": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From the days you spent away from home"
           }
         }
       }

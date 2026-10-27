@@ -947,3 +947,42 @@ struct CityStintTests {
         #expect(morning.departure == noon.departure)
     }
 }
+
+struct TripFinderTests {
+    private func visit(day: Int, month: Int = 8, hour: Double = 10, lat: Double, lon: Double, city: String, code: String = "CN") -> TripFinder.Visit {
+        let date = Calendar.current.date(from: DateComponents(year: 2020, month: month, day: day))!.addingTimeInterval(hour * 3600)
+        return TripFinder.Visit(arrival: date, departure: date.addingTimeInterval(3600), latitude: lat, longitude: lon, city: city, countryCode: code)
+    }
+
+    private var home: [TripFinder.Visit] {
+        (1...28).map { visit(day: $0, month: 7, lat: 31.23, lon: 121.47, city: "上海") }
+            + [1, 2, 3, 10, 11, 12].map { visit(day: $0, lat: 31.23, lon: 121.47, city: "上海") }
+    }
+
+    @Test func daysAwayBecomeOneTrip() {
+        let trip = [21, 22, 23].map { visit(day: $0, lat: 30.27, lon: 120.15, city: "杭州") }
+        // Hangzhou is ~170 km from Shanghai.
+        let found = TripFinder.find(home + trip)
+        #expect(found.count == 1)
+        #expect(found.first?.days == 3)
+        #expect(found.first?.cities.first == "杭州")
+    }
+
+    @Test func aDayOutNearbyIsNotATrip() {
+        let outing = [visit(day: 15, lat: 30.75, lon: 120.75, city: "嘉兴")]
+        #expect(TripFinder.find(home + outing).isEmpty)
+    }
+
+    @Test func goingHomeSplitsTrips() {
+        let first = [5, 6].map { visit(day: $0, lat: 30.27, lon: 120.15, city: "杭州") }
+        let back = [visit(day: 7, lat: 31.23, lon: 121.47, city: "上海")]
+        let second = [8, 9].map { visit(day: $0, lat: 30.27, lon: 120.15, city: "杭州") }
+        #expect(TripFinder.find(home + first + back + second).count == 2)
+    }
+
+    @Test func aJumpAcrossTheWorldIsAnotherTrip() {
+        let tokyo = [20, 21].map { visit(day: $0, lat: 35.68, lon: 139.76, city: "東京", code: "JP") }
+        let paris = [22, 23].map { visit(day: $0, lat: 48.86, lon: 2.35, city: "Paris", code: "FR") }
+        #expect(TripFinder.find(home + tokyo + paris).count == 2)
+    }
+}

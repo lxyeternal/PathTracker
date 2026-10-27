@@ -38,6 +38,8 @@ struct TripsView: View {
                     .pickerStyle(.segmented)
                     .padding(.top, 4)
 
+                    if list == .trips { FoundTripsSection(trips: all.filter { !$0.isRecording }) }
+
                     let items = list == .trips ? trips : recordings
                     if items.isEmpty {
                         emptyState
