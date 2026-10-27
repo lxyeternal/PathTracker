@@ -67,6 +67,18 @@ private struct StayCard: View {
                             Circle().stroke(stay.category.tint.opacity(0.5), lineWidth: 2).padding(-4)
                         }
                     }
+                    .overlay(alignment: .bottomTrailing) {
+                        if stay.isFromPhotos {
+                            Image(systemName: "photo.fill")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 18, height: 18)
+                                .background(Circle().fill(Color.pink.gradient))
+                                .overlay(Circle().stroke(Color(.secondarySystemBackground), lineWidth: 2))
+                                .offset(x: 3, y: 3)
+                                .accessibilityLabel("来自照片")
+                        }
+                    }
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 5) {
                         Text(stay.displayName)

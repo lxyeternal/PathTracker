@@ -139,6 +139,22 @@ struct InsightsTests {
         KnownPlaces.applyName(to: newVisit, in: context)
         #expect(newVisit.customName == "家")
     }
+
+    @Test func markingASightAppliesToNearbyVisits() throws {
+        let context = try makeContext()
+        let base = Date(timeIntervalSince1970: 1_800_000_000)
+        let first = stay("CN", "苏州", arrival: base, hours: 2, lat: 31.32, lon: 120.63)
+        let again = stay("CN", "苏州", arrival: base.addingTimeInterval(86_400), hours: 1, lat: 31.3205, lon: 120.6302)
+        let elsewhere = stay("CN", "苏州", arrival: base.addingTimeInterval(3 * 3600), hours: 1, lat: 31.35, lon: 120.66)
+        [first, again, elsewhere].forEach(context.insert)
+
+        KnownPlaces.rename(first, to: "平江路", category: .sight, in: context)
+        #expect(again.isLandmark && again.category == .landmark)
+        #expect(!elsewhere.isLandmark)
+
+        KnownPlaces.rename(first, to: nil, category: .clear, in: context)
+        #expect(!again.isLandmark && again.tagState == .pending)
+    }
 }
 
 @MainActor
@@ -739,6 +755,23 @@ struct ArrivalNotificationTests {
     @Test func newCountryWins() {
         let arrival = Notifier.firstArrival(stay(city: "东京", code: "JP", lat: 35.68, lon: 139.69), after: history)
         #expect(arrival?.id == "arrival.JP")
+        #expect(arrival?.kind == .country)
+    }
+
+    @Test func sightsCelebrateOnlyTheFirstVisit() {
+        let garden = stay(city: "苏州", code: "CN", lat: 31.3253, lon: 120.6283)
+        garden.isLandmark = true
+        #expect(Notifier.firstSight(garden, after: history)?.kind == .sight)
+        let earlier = stay(city: "苏州", code: "CN", lat: 31.3255, lon: 120.6285)
+        earlier.isLandmark = true
+        #expect(Notifier.firstSight(garden, after: history + [earlier]) == nil)
+        #expect(Notifier.firstSight(stay(city: "苏州", code: "CN", lat: 31.3, lon: 120.6), after: history) == nil)
+    }
+
+    @Test func celebrationsFindTheirMedal() {
+        let item = Celebrations.Item(id: "milestone.countries.10", kind: .milestone, title: "", subtitle: "")
+        #expect(item.milestone == Milestone(kind: .countries, threshold: 10))
+        #expect(Celebrations.Item(id: "arrival.JP", kind: .country, title: "", subtitle: "").milestone == nil)
     }
 
     @Test func newProvinceWhenTheCountryIsKnown() {
@@ -835,5 +868,39 @@ struct PostTests {
         context.delete(stay)
         try context.save()
         #expect(try context.fetchCount(FetchDescriptor<TripPhoto>()) == 0)
+    }
+}
+
+@MainActor
+struct PhotoFootprintTests {
+    private func shot(_ hour: Double, _ lat: Double, _ lon: Double, day: Int = 1) -> PhotoFootprints.Shot {
+        let date = Calendar.current.date(from: DateComponents(year: 2026, month: 5, day: day))!.addingTimeInterval(hour * 3600)
+        return PhotoFootprints.Shot(date: date, latitude: lat, longitude: lon)
+    }
+
+    @Test func shotsTogetherBecomeOneVisit() {
+        let shots = [shot(10, 31.240, 121.490), shot(10.5, 31.241, 121.491), shot(11, 31.2405, 121.4905),
+                     shot(15, 31.200, 121.440),
+                     shot(10, 31.240, 121.490, day: 2)]
+        let visits = PhotoFootprints.visits(from: shots)
+        #expect(visits.count == 3)
+        #expect(visits[0].shots == 3)
+        #expect(visits[0].end.timeIntervalSince(visits[0].start) == 3600)
+        #expect(visits[2].shots == 1)
+    }
+
+    @Test func recordedPlacesArentAddedAgain() {
+        let visit = PhotoFootprints.visits(from: [shot(10, 31.240, 121.490), shot(11, 31.240, 121.490)])[0]
+        // A long stay that began well before the photos still covers them.
+        let recorded = PhotoFootprints.Known(arrival: visit.start.addingTimeInterval(-5 * 3600), departure: visit.end.addingTimeInterval(600),
+                                             latitude: 31.2402, longitude: 121.4901)
+        let elsewhere = PhotoFootprints.Known(arrival: visit.start, departure: visit.end, latitude: 31.30, longitude: 121.50)
+        let other = PhotoFootprints.Known(arrival: visit.start.addingTimeInterval(-86_400), departure: visit.start.addingTimeInterval(-80_000),
+                                          latitude: 31.24, longitude: 121.49)
+        #expect(PhotoFootprints.newVisits([visit], recorded: [other, recorded, elsewhere], imported: []).skipped == 1)
+        #expect(PhotoFootprints.newVisits([visit], recorded: [other, elsewhere], imported: []).new.count == 1)
+
+        let earlier = PhotoFootprints.Known(arrival: visit.start, departure: visit.end, latitude: visit.latitude, longitude: visit.longitude)
+        #expect(PhotoFootprints.newVisits([visit], recorded: [], imported: [earlier]).new.isEmpty)
     }
 }

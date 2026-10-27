@@ -4,7 +4,11 @@ struct RootView: View {
     @AppStorage("onboarding.completed") private var onboardingCompleted = false
     @State private var navigator = AppNavigator()
     @State private var showingSettings = false
+    @State private var ceremony: [Celebrations.Item] = []
+    @State private var showingCeremony = false
+    @Environment(\.scenePhase) private var scenePhase
     private var language = LanguageSettings.shared
+    private var celebrations = Celebrations.shared
 
     var body: some View {
         ZStack {
@@ -24,8 +28,33 @@ struct RootView: View {
             SettingsView()
                 .id(language.language)
         }
+        .fullScreenCover(isPresented: $showingCeremony) {
+            CeremonyView(items: ceremony)
+                .environment(\.locale, language.locale)
+        }
+        .overlay(alignment: .top) {
+            if onboardingCompleted, !showingCeremony, !showingSettings, scenePhase == .active,
+               celebrations.ceremonies.isEmpty, let sight = celebrations.nextSight {
+                SightBanner(item: sight) { celebrations.finish(sight) }
+                    .id(sight.id)
+            }
+        }
+        .onChange(of: scenePhase, initial: true) { presentCeremonyIfDue() }
+        .onChange(of: celebrations.ceremonies.count) { presentCeremonyIfDue() }
+        .onChange(of: showingSettings) { presentCeremonyIfDue() }
         .environment(navigator)
         .environment(\.locale, language.locale)
+    }
+
+    /// Firsts play once, the next time the app is in front with nothing else on top.
+    private func presentCeremonyIfDue() {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.8))
+            let items = celebrations.ceremonies
+            guard onboardingCompleted, scenePhase == .active, !showingSettings, !showingCeremony, !items.isEmpty else { return }
+            ceremony = items
+            showingCeremony = true
+        }
     }
 }
 

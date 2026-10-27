@@ -337,14 +337,13 @@ struct StatsView: View {
                         .font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
                     Image(systemName: "chevron.forward").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
                 }
-                HStack(alignment: .top, spacing: -8) {
-                    ForEach(Array(milestones.reached.prefix(5).enumerated()), id: \.element.id) { index, item in
+                HStack(alignment: .top, spacing: 6) {
+                    ForEach(milestones.reached.prefix(4), id: \.id) { item in
                         MilestoneBadge(milestone: item.milestone, size: 58)
-                            .zIndex(Double(10 - index))
                     }
                     if let next = milestones.next.first {
                         MilestoneBadge(milestone: next.milestone, isReached: false, progress: next.fraction, size: 58)
-                            .padding(.leading, milestones.reached.isEmpty ? 0 : 18)
+                            .padding(.leading, milestones.reached.isEmpty ? 0 : 10)
                     }
                     Spacer(minLength: 0)
                 }

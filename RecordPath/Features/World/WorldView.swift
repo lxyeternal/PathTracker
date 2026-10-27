@@ -7,6 +7,8 @@ struct WorldView: View {
     @Query(sort: \Stay.arrival, order: .reverse) private var stays: [Stay]
     @State private var insights = WorldInsights()
     @State private var lightUp = LightUpInsights()
+    @State private var importingPhotos = false
+    @AppStorage("photoImport.lastRun") private var photoImportRun: Double = 0
     @State private var selectedStay: Stay?
     @State private var showingMap = false
     @State private var search = ""
@@ -21,11 +23,13 @@ struct WorldView: View {
                                                systemImage: "globe.asia.australia",
                                                description: Text("去过的国家、城市和景点会被自动整理出来。"))
                             .padding(.top, 60)
+                        PhotoImportCard { importingPhotos = true }
                     } else if !search.isEmpty {
                         PlaceSearchResults(query: search, stays: stays, countries: insights.countries)
                     } else {
                         summaryGrid
                         lightUpCard
+                        if photoImportRun == 0 { PhotoImportCard { importingPhotos = true } }
                         mapCard
                         GalleryPreview()
                         if !insights.countries.isEmpty { countries }
@@ -54,6 +58,7 @@ struct WorldView: View {
                 LightUpView(stays: stays)
             }
             .navigationDestination(for: GalleryRoute.self) { _ in GalleryView() }
+            .sheet(isPresented: $importingPhotos) { PhotoImportSheet() }
             .sheet(item: $selectedStay) { StayDetailView(stay: $0) }
             .fullScreenCover(isPresented: $showingMap) {
                 WorldMapScreen(stays: stays)
