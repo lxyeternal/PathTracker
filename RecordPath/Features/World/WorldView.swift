@@ -18,7 +18,9 @@ struct WorldView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                // Lazy: sections further down are built when they come into view, so the tab
+                // opens at once however many places there are.
+                LazyVStack(alignment: .leading, spacing: 16) {
                     if stays.isEmpty {
                         ContentUnavailableView("足迹会在这里出现",
                                                systemImage: "globe.asia.australia",
@@ -44,6 +46,11 @@ struct WorldView: View {
             .navigationTitle("足迹")
             .searchable(text: $search, prompt: "搜索地点、城市或国家")
             .navigationDestination(for: PlaceVisits.self) { PlaceVisitsView(place: $0) }
+            .navigationDestination(for: PlaceAround.self) { route in
+                if let stay = summaries.stay(route.id) {
+                    PlaceVisitsView(place: PlaceVisits.around(stay, in: summaries.stays))
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     ProfileToolbarButton(showingSettings: $showingSettings)
@@ -158,7 +165,7 @@ struct WorldView: View {
             ScrollView(.horizontal) {
                 HStack(spacing: 12) {
                     ForEach(insights.frequentPlaces) { place in
-                        NavigationLink(value: PlaceVisits.around(place.representative, in: stays)) {
+                        NavigationLink(value: PlaceAround(place.representative)) {
                             FrequentPlaceCard(place: place)
                         }
                         .buttonStyle(PressableStyle())
@@ -186,7 +193,7 @@ struct WorldView: View {
             ScrollView(.horizontal) {
                 HStack(spacing: 12) {
                     ForEach(insights.landmarks.prefix(10)) { stay in
-                        NavigationLink(value: PlaceVisits.around(stay, in: stays)) { SightCard(stay: stay) }
+                        NavigationLink(value: PlaceAround(stay)) { SightCard(stay: stay) }
                             .buttonStyle(PressableStyle())
                             .scrollTransition(.interactive, axis: .horizontal) { content, phase in
                                 content.scaleEffect(phase.isIdentity ? 1 : 0.94).opacity(phase.isIdentity ? 1 : 0.8)

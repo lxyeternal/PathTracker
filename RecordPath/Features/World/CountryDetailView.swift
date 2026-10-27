@@ -112,7 +112,7 @@ struct PlacesListView: View {
             case .frequent:
                 List {
                     ForEach(insights.frequentPlaces.filter { matches($0.representative) }) { place in
-                        NavigationLink(value: PlaceVisits.around(place.representative, in: stays)) {
+                        NavigationLink(value: PlaceAround(place.representative)) {
                             HStack(spacing: 14) {
                                 PlaceIcon(category: place.representative.category)
                                 VStack(alignment: .leading) {
@@ -128,7 +128,7 @@ struct PlacesListView: View {
                 ScrollView {
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
                         ForEach(insights.landmarks.filter(matches)) { stay in
-                            NavigationLink(value: PlaceVisits.around(stay, in: stays)) { SightCard(stay: stay, width: nil) }
+                            NavigationLink(value: PlaceAround(stay)) { SightCard(stay: stay, width: nil) }
                                 .buttonStyle(PressableStyle())
                         }
                     }

@@ -36,7 +36,9 @@ struct PlacePicture: View {
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
             .task(id: "\(stay.id)-\(colorScheme)-\(Int(proxy.size.width))") {
-                if let first = DayPhotos.assets(in: DayPhotos.interval(of: stay)).first {
+                // The library search runs off the main thread so scrolling stays smooth.
+                let interval = DayPhotos.interval(of: stay)
+                if let first = await Task.detached(priority: .userInitiated, operation: { DayPhotos.assets(in: interval).first }).value {
                     asset = first
                 } else if (stay.photos ?? []).isEmpty {
                     let image = await Self.snapshot(of: stay, size: proxy.size, dark: colorScheme == .dark)
