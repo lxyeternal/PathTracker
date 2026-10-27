@@ -3286,6 +3286,16 @@
         }
       }
     },
+    "找到的旅行": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Found Trips"
+          }
+        }
+      }
+    },
     "按住点亮": {
       "localizations": {
         "en": {
@@ -3302,6 +3312,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "By Place"
+          }
+        }
+      }
+    },
+    "按年份查看": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browse by year"
           }
         }
       }
@@ -3332,6 +3352,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Search places, cities or countries"
+          }
+        }
+      }
+    },
+    "收下这一年": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep This Year"
           }
         }
       }
@@ -4014,6 +4044,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "From Photos"
+          }
+        }
+      }
+    },
+    "查看全部": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See All"
           }
         }
       }
@@ -5628,6 +5668,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "And %@"
+          }
+        }
+      }
+    },
+    "还有 %lld 段": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld more"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld more"
+                }
+              }
+            }
           }
         }
       }

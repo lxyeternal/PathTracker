@@ -32,14 +32,30 @@ struct FoundTripsSection: View {
                         Text("根据你离开常住地的日子整理出来").font(.subheadline).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Button("全部收下") { keepAll(offered) }
-                        .font(.subheadline.weight(.semibold))
+                    Button(offered.count > Self.shown ? "查看全部" : "全部收下") {
+                        if offered.count > Self.shown { showingAll = true } else { keepAll(offered) }
+                    }
+                    .font(.subheadline.weight(.semibold))
                 }
+                // The newest few here; all of them, by year, a tap away.
                 ScrollView(.horizontal) {
                     LazyHStack(spacing: 12) {
-                        ForEach(offered) { found in
+                        ForEach(offered.prefix(Self.shown)) { found in
                             FoundTripCard(found: found, keep: { keep(found) }, dismiss: { dismiss(found) })
                                 .transition(.scale(scale: 0.85).combined(with: .opacity))
+                        }
+                        if offered.count > Self.shown {
+                            Button { showingAll = true } label: {
+                                VStack(spacing: 10) {
+                                    Image(systemName: "square.stack.3d.up.fill").font(.system(size: 34))
+                                    Text("还有 \(offered.count - Self.shown) 段").font(.headline)
+                                    Text("按年份查看").font(.subheadline).foregroundStyle(.secondary)
+                                }
+                                .foregroundStyle(.tint)
+                                .frame(width: 160, height: 290)
+                                .background(.background.secondary, in: .rect(cornerRadius: 22, style: .continuous))
+                            }
+                            .buttonStyle(PressableStyle())
                         }
                     }
                     .scrollTargetLayout()
@@ -49,8 +65,14 @@ struct FoundTripsSection: View {
                 .scrollClipDisabled()
             }
             .padding(.vertical, 4)
+            .sheet(isPresented: $showingAll) {
+                AllFoundTrips(offered: offered, keep: keep, dismiss: dismiss, keepAll: keepAll)
+            }
         }
     }
+
+    private static let shown = 6
+    @State private var showingAll = false
 
     private func keep(_ found: TripFinder.Found) {
         withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
@@ -142,5 +164,70 @@ private struct FoundTripCard: View {
             ? found.start.formatted(.dateTime.year().month().day().locale(appLocale))
             : (found.start..<last).formatted(.interval.year().month().day().locale(appLocale))
         return String(localized: "\(range) · \(found.days) 天", bundle: .appLanguage)
+    }
+}
+
+/// Every trip found, by year: keep or dismiss each, or keep a whole year at once.
+private struct AllFoundTrips: View {
+    let offered: [TripFinder.Found]
+    let keep: (TripFinder.Found) -> Void
+    let dismiss: (TripFinder.Found) -> Void
+    let keepAll: ([TripFinder.Found]) -> Void
+    @Environment(\.dismiss) private var close
+
+    private var byYear: [(year: Int, trips: [TripFinder.Found])] {
+        Dictionary(grouping: offered) { Calendar.current.component(.year, from: $0.start) }
+            .map { ($0.key, $0.value.sorted { $0.start > $1.start }) }
+            .sorted { $0.year > $1.year }
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(byYear, id: \.year) { group in
+                    Section {
+                        ForEach(group.trips) { found in
+                            HStack(spacing: 12) {
+                                Text(found.countryCode.map { String.flag(for: $0) } ?? "🧳")
+                                    .font(.title2)
+                                    .frame(width: 44, height: 44)
+                                    .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 12, style: .continuous))
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(found.title).font(.body.weight(.semibold)).lineLimit(1)
+                                    Text(found.start.formatted(.dateTime.month().day().locale(appLocale)) + " · "
+                                         + String(localized: "\(found.days) 天", bundle: .appLanguage) + " · "
+                                         + found.cities.prefix(3).joined(separator: "、"))
+                                        .font(.footnote).foregroundStyle(.secondary).lineLimit(1)
+                                }
+                                Spacer(minLength: 0)
+                                Button { withAnimation { keep(found) } } label: {
+                                    Image(systemName: "plus.circle.fill").font(.title2)
+                                }
+                                .buttonStyle(.borderless)
+                                .accessibilityLabel("收进旅程")
+                            }
+                            .swipeActions {
+                                Button("不是旅行", role: .destructive) { withAnimation { dismiss(found) } }
+                            }
+                        }
+                    } header: {
+                        HStack {
+                            Text(verbatim: String(group.year)).font(.title3.bold()).foregroundStyle(.primary)
+                            Spacer()
+                            Button("收下这一年") { withAnimation { keepAll(group.trips) } }
+                                .font(.subheadline.weight(.semibold))
+                                .textCase(nil)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("找到的旅行")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("关闭", systemImage: "xmark") { close() }
+                }
+            }
+        }
     }
 }
