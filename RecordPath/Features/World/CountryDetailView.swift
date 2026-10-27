@@ -12,7 +12,10 @@ struct CountryDetailView: View {
         _stays = Query(filter: #Predicate<Stay> { $0.countryCode == code }, sort: \Stay.arrival, order: .reverse)
     }
 
-    private var cities: [(name: String, visits: Int, days: Int)] {
+    @State private var cities: [(name: String, visits: Int, days: Int)] = []
+
+    /// Counted once per change, not on every redraw: a country can hold thousands of visits.
+    private func countCities() -> [(name: String, visits: Int, days: Int)] {
         Dictionary(grouping: stays.filter { $0.city != nil }, by: { $0.city! })
             .map { name, stays in
                 let days = Set(stays.flatMap { Calendar.current.days(in: DateInterval(start: $0.arrival, end: max($0.departure ?? Date(), $0.arrival))) })
@@ -27,9 +30,13 @@ struct CountryDetailView: View {
     }
 
     var body: some View {
+        content.task(id: stays.count) { cities = countCities() }
+    }
+
+    private var content: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                WorldMap(stays: stays, interactive: true, onSelect: { selected = $0 })
+                WorldMap(dots: PlaceSummaries.shared.dots.filter { $0.countryCode == country.code }, interactive: true, onSelect: { selected = $0 })
                     .frame(height: 260)
                     .clipShape(.rect(cornerRadius: 28, style: .continuous))
 
@@ -94,12 +101,13 @@ enum PlacesList: Hashable { case frequent, landmarks }
 /// Full lists behind the "全部" buttons, searchable.
 struct PlacesListView: View {
     let list: PlacesList
-    @Query(sort: \Stay.arrival, order: .reverse) private var stays: [Stay]
+    private var summaries = PlaceSummaries.shared
     @State private var search = ""
     @State private var selected: Stay?
 
     var body: some View {
-        let insights = WorldInsights(stays: stays)
+        let insights = summaries.world
+        let stays = summaries.stays
         Group {
             switch list {
             case .frequent:

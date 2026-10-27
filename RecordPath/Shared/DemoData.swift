@@ -273,3 +273,40 @@ private extension CLLocationCoordinate2D {
     }
 }
 #endif
+
+#if DEBUG
+extension DemoData {
+    /// Thousands of named photo visits over ten years and dozens of cities, like a big library
+    /// after import, for checking the app stays smooth.
+    @MainActor
+    static func photoStress(in context: ModelContext, count: Int = 6000) {
+        let cities: [(String, String, String, Double, Double)] = [
+            ("CN", "上海", "中国上海", 31.23, 121.47), ("CN", "杭州", "中国浙江杭州", 30.27, 120.15),
+            ("CN", "北京", "中国北京", 39.90, 116.40), ("CN", "成都", "中国四川成都", 30.66, 104.06),
+            ("CN", "西安", "中国陕西西安", 34.34, 108.94), ("CN", "广州", "中国广东广州", 23.13, 113.26),
+            ("CN", "厦门", "中国福建厦门", 24.48, 118.09), ("CN", "昆明", "中国云南昆明", 25.04, 102.71),
+            ("JP", "東京", "東京都", 35.68, 139.76), ("JP", "京都", "京都府京都市", 35.01, 135.77),
+            ("TH", "Bangkok", "Bangkok", 13.75, 100.50), ("FR", "Paris", "Paris", 48.86, 2.35),
+            ("US", "San Francisco", "San Francisco, CA", 37.77, -122.42), ("SG", "Singapore", "Singapore", 1.29, 103.85),
+        ]
+        var generator = SystemRandomNumberGenerator()
+        let now = Date()
+        for i in 0..<count {
+            let city = cities[Int.random(in: 0..<cities.count, using: &generator)]
+            let lat = city.3 + Double.random(in: -0.15...0.15, using: &generator)
+            let lon = city.4 + Double.random(in: -0.15...0.15, using: &generator)
+            let arrival = now.addingTimeInterval(-Double(i) * 52_000 - Double.random(in: 0...20_000, using: &generator))
+            let stay = Stay(arrival: arrival, coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon))
+            stay.departure = arrival.addingTimeInterval(Double.random(in: 300...7200, using: &generator))
+            stay.sourceRaw = PhotoFootprints.source
+            stay.countryCode = city.0
+            stay.country = city.0
+            stay.city = city.1
+            stay.region = city.2
+            stay.tagState = .tagged
+            context.insert(stay)
+        }
+        try? context.save()
+    }
+}
+#endif
