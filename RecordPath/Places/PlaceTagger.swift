@@ -128,6 +128,31 @@ final class PlaceTagger {
 
     private enum Outcome { case done, offline }
 
+    /// Places that came only from photos carry just their city's name, so several frequent
+    /// spots in one city would all read "新加坡". The few shown as frequent places get a real
+    /// name: the point of interest there, else the street. Each is looked up once.
+    func nameFrequentPlaces(_ stays: [Stay]) {
+        let unnamed = stays.filter { $0.customName == nil && $0.placeName == nil && $0.street == nil }
+        guard !unnamed.isEmpty, !isNamingFrequent else { return }
+        isNamingFrequent = true
+        Task {
+            defer { isNamingFrequent = false }
+            for stay in unnamed {
+                if let item = await nearestPointOfInterest(around: stay.location, radius: 150, filter: .includingAll,
+                                                           excluding: PlaceCategory.utilityCategories) {
+                    stay.placeName = item.name
+                    if stay.categoryRaw == nil { stay.categoryRaw = item.pointOfInterestCategory?.rawValue }
+                } else if await tag(stay, lookForNeighbour: false) == .offline {
+                    return
+                }
+                try? context.save()
+                try? await Task.sleep(for: .milliseconds(1500))
+            }
+        }
+    }
+
+    private var isNamingFrequent = false
+
     private func tag(_ stay: Stay, lookForNeighbour: Bool = true) async -> Outcome {
         let location = stay.location
         // Photo visits can number in the thousands: take the city from a named place close by

@@ -120,6 +120,7 @@ struct CityStintView: View {
     let stint: CityStint
     @State private var photos: [PHAsset] = []
     @State private var viewing: PHAsset?
+    @State private var showingGallery = false
     @State private var selected: Stay?
 
     private var byDay: [(day: Date, stays: [Stay])] {
@@ -142,16 +143,9 @@ struct CityStintView: View {
                 }
 
                 if !photos.isEmpty {
-                    SectionHeader(title: "照片", trailing: "\(photos.count)")
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 3), spacing: 4) {
-                        ForEach(photos, id: \.localIdentifier) { asset in
-                            Button { viewing = asset } label: {
-                                GeometryReader { geo in AssetThumbnail(asset: asset, side: geo.size.width) }
-                                    .aspectRatio(1, contentMode: .fit)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
+                    // A collage, folded: the days below stay in reach. Tap for all of them.
+                    Button { showingGallery = true } label: { PhotoCollage(assets: photos) }
+                        .buttonStyle(PressableStyle())
                 } else if !DayPhotos.canRead {
                     Label("允许访问照片后，这里会显示你在这段时间拍的照片。", systemImage: "photo.on.rectangle.angled")
                         .font(.footnote).foregroundStyle(.secondary)
@@ -185,6 +179,9 @@ struct CityStintView: View {
         .navigationTitle("\(stint.countryCode.map { String.flag(for: $0) } ?? "") \(stint.city)")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $selected) { StayDetailView(stay: $0) }
+        .sheet(isPresented: $showingGallery) {
+            PhotoGallerySheet(title: stint.city, subtitle: CityStintRow.dates(stint), assets: photos)
+        }
         .fullScreenCover(item: Binding(get: { viewing.map { AssetPagerStart(id: $0.localIdentifier) } }, set: { viewing = $0 == nil ? nil : viewing })) {
             AssetPager(assets: photos, selection: $0.id)
         }
@@ -250,5 +247,112 @@ private struct TrailingIconLabelStyle: LabelStyle {
             configuration.icon.font(.caption.weight(.bold))
         }
         .foregroundStyle(.tint)
+    }
+}
+
+/// Five photos as one picture: a large one and four small, the last saying how many more.
+struct PhotoCollage: View {
+    let assets: [PHAsset]
+
+    var body: some View {
+        let shown = Array(assets.prefix(5))
+        GeometryReader { geo in
+            let gap: CGFloat = 4
+            let big = shown.count >= 3 ? (geo.size.width - gap) * 0.58 : geo.size.width
+            let small = (geo.size.height - gap) / 2
+            let rest = geo.size.width - big - gap
+            HStack(spacing: gap) {
+                if let first = shown.first {
+                    AssetThumbnail(asset: first, side: max(big, geo.size.height))
+                        .frame(width: big, height: geo.size.height)
+                        .clipped()
+                }
+                if shown.count >= 3 {
+                    let tiles = Array(shown.dropFirst())
+                    let columns = tiles.count >= 4 ? 2 : 1
+                    let width = (rest - gap * CGFloat(columns - 1)) / CGFloat(columns)
+                    LazyVGrid(columns: Array(repeating: GridItem(.fixed(width), spacing: gap), count: columns), spacing: gap) {
+                        ForEach(Array(tiles.prefix(columns * 2).enumerated()), id: \.element.localIdentifier) { index, asset in
+                            AssetThumbnail(asset: asset, side: max(width, small))
+                                .frame(width: width, height: small)
+                                .clipped()
+                                .overlay {
+                                    if index == min(tiles.count, columns * 2) - 1, assets.count > 5 {
+                                        ZStack {
+                                            Color.black.opacity(0.45)
+                                            Text("+\(assets.count - 5)").font(.title2.bold()).foregroundStyle(.white)
+                                        }
+                                    }
+                                }
+                        }
+                    }
+                    .frame(width: rest)
+                }
+            }
+        }
+        .frame(height: 220)
+        .clipShape(.rect(cornerRadius: 22, style: .continuous))
+        .overlay(alignment: .bottomLeading) {
+            Label("\(assets.count) 张照片", systemImage: "photo.on.rectangle.angled")
+                .font(.footnote.weight(.semibold))
+                .padding(.horizontal, 12).padding(.vertical, 7)
+                .glassEffect(.regular, in: .capsule)
+                .padding(10)
+        }
+    }
+}
+
+/// All the photos of a stretch of time, a grid that opens each one full screen.
+struct PhotoGallerySheet: View {
+    let title: String
+    let subtitle: String
+    let assets: [PHAsset]
+    @Environment(\.dismiss) private var dismiss
+    @State private var viewing: AssetPagerStart?
+
+    private var byDay: [(day: Date, assets: [PHAsset])] {
+        Dictionary(grouping: assets) { Calendar.current.startOfDay(for: $0.creationDate ?? .distantPast) }
+            .map { ($0.key, $0.value) }
+            .sorted { $0.day < $1.day }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 4, pinnedViews: .sectionHeaders) {
+                    ForEach(byDay, id: \.day) { day in
+                        Section {
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 3), count: 3), spacing: 3) {
+                                ForEach(day.assets, id: \.localIdentifier) { asset in
+                                    Button { viewing = AssetPagerStart(id: asset.localIdentifier) } label: {
+                                        GeometryReader { geo in AssetThumbnail(asset: asset, side: geo.size.width) }
+                                            .aspectRatio(1, contentMode: .fit)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        } header: {
+                            HStack {
+                                Text(day.day.formatted(.dateTime.month().day().weekday(.wide).locale(appLocale)))
+                                    .font(.headline)
+                                Spacer()
+                                Text("\(day.assets.count)").font(.subheadline).foregroundStyle(.secondary)
+                            }
+                            .padding(.horizontal, 16).padding(.vertical, 10)
+                            .background(.bar)
+                        }
+                    }
+                }
+            }
+            .navigationTitle(title)
+            .navigationSubtitle(subtitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("关闭", systemImage: "xmark") { dismiss() }
+                }
+            }
+            .fullScreenCover(item: $viewing) { AssetPager(assets: assets, selection: $0.id) }
+        }
     }
 }

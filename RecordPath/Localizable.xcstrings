@@ -706,6 +706,16 @@
         }
       }
     },
+    "上次 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last synced %@"
+          }
+        }
+      }
+    },
     "下一个": {
       "localizations": {
         "en": {
@@ -4614,6 +4624,16 @@
         }
       }
     },
+    "立即同步": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync Now"
+          }
+        }
+      }
+    },
     "第 %lld 天": {
       "localizations": {
         "en": {
@@ -4940,6 +4960,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Contact Us"
+          }
+        }
+      }
+    },
+    "自动同步": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Syncing Automatically"
           }
         }
       }
@@ -5962,6 +5992,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Milestones"
+          }
+        }
+      }
+    },
+    "重新显示引导": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Welcome Again"
           }
         }
       }
