@@ -219,7 +219,7 @@ struct DayContentView: View {
                         .padding(12)
                 }
             }
-            .frame(height: 320)
+            .frame(height: 250)
             .clipShape(.rect(cornerRadius: 28, style: .continuous))
             .contentShape(.rect(cornerRadius: 28))
         }
@@ -228,16 +228,22 @@ struct DayContentView: View {
         .accessibilityLabel("打开当天的地图")
     }
 
+    /// The day in one line: steps, how far, how many places. Distance is the recorded total
+    /// when there's a track, else what the phone counted on foot, so the two never contradict.
     private var metrics: some View {
-        MetricGrid {
-            MetricTile(title: "步数", value: activity.map { Format.steps($0.steps) } ?? "—",
-                       symbol: "shoeprints.fill", tint: .orange)
-            MetricTile(title: "步行距离", value: activity.map { Format.distance($0.walkingDistance) } ?? "—",
-                       symbol: "figure.walk", tint: .green)
-            MetricTile(title: "移动总距离", value: Format.distance(trackedDistance),
-                       symbol: "point.topright.arrow.triangle.backward.to.point.bottomleft.scurvepath", tint: .blue)
-            MetricTile(title: "去过的地点", value: "\(stays.count)", symbol: "mappin.and.ellipse", tint: .pink)
+        let walking = activity?.walkingDistance ?? 0
+        let moved = trackedDistance > 0
+        return HStack(spacing: 0) {
+            DayFigure(value: activity.map { Format.steps($0.steps) } ?? "—", label: "步", symbol: "shoeprints.fill", tint: .orange)
+            Divider().frame(height: 34)
+            DayFigure(value: Format.distance(moved ? trackedDistance : walking), label: moved ? "移动" : "步行",
+                      symbol: moved ? "point.topright.arrow.triangle.backward.to.point.bottomleft.scurvepath" : "figure.walk",
+                      tint: moved ? .blue : .green)
+            Divider().frame(height: 34)
+            DayFigure(value: "\(stays.count)", label: "个地点", symbol: "mappin.and.ellipse", tint: .pink)
         }
+        .padding(.vertical, 12)
+        .background(.background.secondary, in: .rect(cornerRadius: 22, style: .continuous))
         .animation(.smooth, value: activity)
     }
 
@@ -287,5 +293,37 @@ struct PressableStyle: ButtonStyle {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.spring(duration: 0.3, bounce: 0.3), value: configuration.isPressed)
+    }
+}
+
+private struct DayFigure: View {
+    let value: String
+    let label: LocalizedStringKey
+    let symbol: String
+    let tint: Color
+
+    var body: some View {
+        VStack(spacing: 3) {
+            Text(value)
+                .font(.system(.title3, design: .rounded, weight: .bold))
+                .monospacedDigit()
+                .contentTransition(.numericText())
+                .lineLimit(1).minimumScaleFactor(0.7)
+            Label(label, systemImage: symbol)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
+                .labelStyle(TintedIconLabel(tint: tint))
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private struct TintedIconLabel: LabelStyle {
+        let tint: Color
+        func makeBody(configuration: Configuration) -> some View {
+            HStack(spacing: 3) {
+                configuration.icon.foregroundStyle(tint)
+                configuration.title
+            }
+        }
     }
 }
