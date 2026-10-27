@@ -41,6 +41,16 @@
         }
       }
     },
+    "NSHealthUpdateUsageDescription": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lets the hikes, runs and rides you record on Apple Watch be saved as workouts in Fitness. Waytrace never changes your other health data."
+          }
+        }
+      }
+    },
     "NSLocationAlwaysAndWhenInUseUsageDescription": {
       "localizations": {
         "en": {
