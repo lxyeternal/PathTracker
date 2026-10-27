@@ -229,6 +229,28 @@
         }
       }
     },
+    "%lld 处": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld place"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld places"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld 天": {
       "localizations": {
         "en": {
@@ -1110,6 +1132,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Allow Access to Your Location"
+          }
+        }
+      }
+    },
+    "允许访问照片后，这里会显示你在这段时间拍的照片。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow access to Photos to see the photos you took during this time."
           }
         }
       }
@@ -3692,6 +3724,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Not Set"
+          }
+        }
+      }
+    },
+    "未识别的地方": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unidentified Places"
           }
         }
       }

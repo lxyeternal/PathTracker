@@ -80,6 +80,15 @@ final class PlaceSummaries {
 
     func stay(_ id: PersistentIdentifier) -> Stay? { context?.model(for: id) as? Stay }
 
+    /// Drops places about to be deleted, so no screen touches them before the next refresh.
+    func forget(_ ids: Set<PersistentIdentifier>) {
+        stays.removeAll { ids.contains($0.persistentModelID) }
+        world.landmarks.removeAll { ids.contains($0.persistentModelID) }
+        world.frequentPlaces.removeAll { ids.contains($0.representative.persistentModelID) }
+        dots.removeAll { ids.contains($0.id) }
+        setNeedsRefresh()
+    }
+
     /// The background half: its own context, its own copies of the places.
     private struct Computed: @unchecked Sendable {
         var ids: [PersistentIdentifier] = []

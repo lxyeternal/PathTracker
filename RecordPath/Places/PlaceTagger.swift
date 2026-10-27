@@ -75,7 +75,15 @@ final class PlaceTagger {
         let pending = TagState.pending.rawValue, tagged = TagState.tagged.rawValue
         let waiting = (try? context.fetch(FetchDescriptor<Stay>(predicate: #Predicate { $0.tagStateRaw == pending && $0.sourceRaw != nil },
                                                                  sortBy: [SortDescriptor(\.arrival, order: .reverse)]))) ?? []
-        guard !waiting.isEmpty else { return }
+        let consolidatedKey = "photoImport.consolidated.v1"
+        guard !waiting.isEmpty else {
+            // Libraries imported before same-day visits were merged get merged once.
+            if !UserDefaults.standard.bool(forKey: consolidatedKey) {
+                _ = await PhotoFootprints.consolidate(in: context)
+                UserDefaults.standard.set(true, forKey: consolidatedKey)
+            }
+            return
+        }
         let named = (try? context.fetch(FetchDescriptor<Stay>(predicate: #Predicate { $0.tagStateRaw == tagged && $0.countryCode != nil }))) ?? []
         var grid = PhotoGrid()
         named.forEach { grid.add($0) }
@@ -112,6 +120,8 @@ final class PlaceTagger {
             try? await Task.sleep(for: .milliseconds(1300))
         }
         try? context.save()
+        _ = await PhotoFootprints.consolidate(in: context)
+        UserDefaults.standard.set(true, forKey: consolidatedKey)
         onPhotosTagged?()
         Diagnostics.record("photoTag named=\(waiting.count - unnamed.count) geocoded=\(unnamed.count)")
     }

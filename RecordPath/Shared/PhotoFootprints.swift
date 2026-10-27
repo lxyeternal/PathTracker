@@ -99,6 +99,8 @@ enum PhotoFootprints {
         let longest = byArrival.map { $0.departure.timeIntervalSince($0.arrival) }.max() ?? 0
         var importedStarts: [Int: [Known]] = [:]
         for known in imported { importedStarts[Int(known.arrival.timeIntervalSince1970), default: []].append(known) }
+        let calendar = Calendar.current
+        let importedByDay = Dictionary(grouping: imported) { calendar.startOfDay(for: $0.arrival) }
 
         var fresh: [Visit] = []
         var skipped = 0
@@ -129,9 +131,44 @@ enum PhotoFootprints {
             let seen = (second - 1...second + 1).contains { key in
                 importedStarts[key]?.contains { CLLocation(latitude: $0.latitude, longitude: $0.longitude).distance(from: place) < 50 } ?? false
             }
-            if !seen { fresh.append(visit) }
+            // Or folded into a day's visit to that city since.
+            let merged = !seen && importedByDay[calendar.startOfDay(for: visit.start)]?.contains { known in
+                known.arrival.addingTimeInterval(-60) <= visit.start && visit.start <= known.departure.addingTimeInterval(60)
+                    && CLLocation(latitude: known.latitude, longitude: known.longitude).distance(from: place) < 40_000
+            } == true
+            if !seen && !merged { fresh.append(visit) }
         }
         return (fresh, skipped)
+    }
+
+    /// Once named, a day's photo visits in one city become a single visit: the timeline and
+    /// lists read "嘉兴" once a day, not a dozen spots a few hundred metres apart. Visits the
+    /// user named, wrote about or posted photos to are left alone. Returns how many were folded in.
+    @MainActor
+    static func consolidate(in context: ModelContext) async -> Int {
+        let source = Self.source, tagged = TagState.tagged.rawValue
+        let stays = (try? context.fetch(FetchDescriptor<Stay>(predicate: #Predicate { $0.sourceRaw == source && $0.tagStateRaw == tagged },
+                                                              sortBy: [SortDescriptor(\.arrival)]))) ?? []
+        let calendar = Calendar.current
+        let editable = stays.filter { $0.customName == nil && ($0.note ?? "").isEmpty && ($0.photos ?? []).isEmpty && $0.city != nil }
+        let groups = Dictionary(grouping: editable) { "\(calendar.startOfDay(for: $0.arrival).timeIntervalSince1970)|\($0.countryCode ?? "")|\($0.city ?? "")" }
+        var removed: [Stay] = []
+        for members in groups.values where members.count > 1 {
+            let sorted = members.sorted { $0.arrival < $1.arrival }
+            let keep = sorted[0]
+            keep.departure = sorted.compactMap(\.departure).max() ?? keep.departure
+            keep.sampleCount = sorted.reduce(0) { $0 + max($1.sampleCount, 1) }
+            removed.append(contentsOf: sorted.dropFirst())
+        }
+        guard !removed.isEmpty else { return 0 }
+        PlaceSummaries.shared.forget(Set(removed.map(\.persistentModelID)))
+        for (index, stay) in removed.enumerated() {
+            context.delete(stay)
+            if index % 500 == 499 { await Task.yield() }
+        }
+        try? context.save()
+        Diagnostics.record("photoConsolidate merged=\(removed.count) groups=\(groups.count)")
+        return removed.count
     }
 
     /// Adds the library's visits as stays and returns what happened. Re-running only adds
