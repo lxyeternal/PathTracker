@@ -1,100 +1,146 @@
-# 漫迹 · Waytrace
+<p align="center">
+  <img src="docs/images/icon.png" width="120" alt="漫迹 Waytrace 图标">
+</p>
 
-全天自动记录足迹的 iOS App（Bundle ID `com.honywen.waytrace`）：在后台记录你走过的每一条路，自动识别停留的地点、城市、国家和知名景点，并统计每天的步数和移动距离。数据只保存在用户自己的设备和 iCloud 中。
+<h1 align="center">漫迹 · Waytrace</h1>
 
-## 功能
+<p align="center">
+  <b>不用打开，不用记得按开始。你走过的路，它都替你记着。</b><br>
+  全天自动记录足迹的 iPhone 和 Apple Watch App：轨迹、停留的地点、去过的城市和国家，一年一年攒成你自己的地图。
+</p>
 
-- **今天**：当天轨迹地图（按步行、骑行、乘车、飞行着色，可全屏放大、切换卫星图、生成分享图片），步数、步行距离、移动距离，以及“停留 → 路上 → 停留”的时间线。左右滑动或用带记录标记的日历切换日期。
-  - 点一段“路上”：起终点、用时、速度，改正出行方式，删除 GPS 乱线，并列出同一条路线的所有历史记录（平均用时、最快一次）。
-  - 点一个地点：改名，标为家、学校、公司或景点（自动应用到附近所有到访；景点和店铺本来就会自动识别，没认出来的可以手动标），备注、设为隐私区域、跳到那一天。
-  - 记录状态：暂停 1 小时 / 3 小时 / 到明天早上；在外地时提示“要把这次出行记成一段旅程吗？”。
-  - 右上角一键手动开始记录，和全天自动记录互不影响。
-- **记录**：一次徒步、步行、跑步或骑行，单独用高精度记录（可以让 Apple Watch 一起记录）；详情显示距离、用时、配速（骑行为均速）和爬升。
-- **足迹**：去过的国家和地区（停留天数、城市、景点）、城市数、景点、常去的地方、全部足迹地图；全局搜索地点、城市、国家；每个地点都有完整的到访历史。
-  - **点亮地图**：中国 34 个省级行政区（方块地图，按去过的天数由浅到深）和世界各大洲的国家，显示进度，可以分享成图片。
-- **旅程**：出游或出差的几天，全天记录的轨迹和地点自动收进来；也可以为过去的日期补建；照片、备注、分享图片、导出 GPX。“旅程”和“记录”分成两个列表。
-- **统计**：周、月、年的步数和移动距离（点柱子看某一天），出行方式占比，累计国家、城市、记录天数。
-  - **年度足迹**：全屏故事页，流动的渐变色、数字滚动：封面是这一年的路线画成的发光线条，然后是移动距离（绕赤道进度环）、步数（相当于几个马拉松）、去过的国家城市省份（省份方块地图、国旗）、移动最远的一天和那天的路线、最常去的地方、这一年的照片，最后一页是可分享的海报。
-  - **里程碑**：23 枚插画奖牌：花边金属外圈按铜、银、金、铂金分级，中间是一幅小画（公路、地球和航线、群山、夜晚的城市、日出），档次越高天色越晚，数字写在缎带上，星星表示档次；未达成的是灰色的画和进度环；点开看大图，可以用手指转动。
-  - **图表**：步数和距离可以用手指在图上滑动，查看某一天；距离按出行方式分颜色并列出各方式的公里数；出行方式的环形图和列表都可以点，突出显示一种方式的占比。
-- **通知**（可分别关闭）：第一次到达新的国家、省份、城市；达成里程碑；每周一早上回顾上周。
-- **点亮仪式**：第一次到新的国家、省份，或者拿到新奖牌，下次打开 App 时全屏播放：地图是灰的，按住地点或奖牌，颜色从中间扩散开、国旗落下、奖牌翻转发光、撒下彩纸，可以分享。新城市自动点亮；新景点在顶部轻轻提示一下。
-- **动态和相册**：在任意地点发布照片和一段话（在那里拍的照片排在最前面），会出现在时间线、地点详情、同时段的旅程里；足迹页的“相册”按月份或地点浏览全部照片，全屏左右滑动、双击放大。
-- **照片**（可选）：没发布动态时，时间线上也会显示在那里拍的照片。照片只在手机上读取。
-- **从相册点亮**：扫描相册里照片和视频的拍摄地点，补上以前去过的地方，点亮城市、省份和国家，并放进那一天的时间线（带“来自照片”角标）；已经记录过的到访会跳过，可以重复扫描。上万张照片的相册也不会卡：读取和比对在后台进行，城市和国家先从附近已识别的地点沿用，每片区域只向地图服务查询一次。
-- **个人资料**：设置和更换头像（从相册选取，自动裁成方形）、名字、邮箱、一句话简介；Apple 登录可选，退出登录不会丢失资料。
-- **语言**：App 内可在“跟随系统 / 简体中文 / English”之间切换，立即生效；系统权限弹窗在下次打开时切换。
-- **Apple Watch**：像地图和徒步 App 一样，打开就是地图：你现在的位置、今天走过的路线和所在地点名。
-  - 一键开始记录（徒步 / 步行 / 跑步 / 骑行），不带手机也能记录。实时显示路线、用时、距离、配速和心率，可暂停、结束；结束后存为“健身”App 里的体能训练，并自动同步到 iPhone 的“旅程”。
-  - “今天”里可以看步数、距离、地点，并在手表上暂停或恢复 iPhone 的全天记录。
-  - 表盘复杂功能：今天的距离、现在所在的地点，轻点直接打开 App。
-  - 跟随 iPhone App 里选的语言。
-- **iPhone 和手表联动**：在 iPhone 上开始手动记录时，
-  - 锁屏、灵动岛显示实时活动（名称、用时、距离），iOS 会自动把它放进手表的智能叠放，抬腕就能看到；
-  - 打开“在 Apple Watch 上同时记录”（徒步、步行这类默认打开，开车、坐飞机、坐火车默认关闭），手表上的漫迹会自动打开并一起记录（心率、体能训练）；在任一设备上结束，两边一起结束，手表的记录并入同一段旅程。
-- **设置**：全天记录开关、记录精度（省电 / 均衡 / 精细）、权限与 iCloud 状态、隐私区域、导入和导出 GPX、删除所有数据、隐私政策。
+<p align="center">
+  <img alt="iOS 26+" src="https://img.shields.io/badge/iOS-26%2B-black?logo=apple">
+  <img alt="watchOS 26+" src="https://img.shields.io/badge/watchOS-26%2B-black?logo=apple">
+  <img alt="Swift" src="https://img.shields.io/badge/Swift-SwiftUI%20%C2%B7%20SwiftData-F05138?logo=swift&logoColor=white">
+  <img alt="No third-party dependencies" src="https://img.shields.io/badge/依赖-零第三方库-34C759">
+  <img alt="License" src="https://img.shields.io/badge/许可-非商业使用-orange">
+</p>
 
-迭代过程和每一轮的实测记录见 [PRODUCT_REVIEW.md](PRODUCT_REVIEW.md)。
+<p align="center">
+  简体中文 · <a href="README_en.md">English</a>
+</p>
 
-## 技术架构
+<p align="center">
+  <img src="docs/images/today.jpg" width="200" alt="今天">
+  <img src="docs/images/country.jpg" width="200" alt="国家页">
+  <img src="docs/images/year.jpg" width="200" alt="年度足迹">
+  <img src="docs/images/milestones.jpg" width="200" alt="里程碑">
+</p>
 
-| 层 | 实现 |
+---
+
+## 它能做什么
+
+### 🗺️ 自动记录，什么都不用管
+- **全天后台记录**：口袋里的手机就够了。走路、骑车、开车、坐飞机，自动分辨出行方式，用不同颜色画在地图上。
+- **自动认出地点**：在一个地方停留几分钟，就记成一次“停留”，并认出它是哪家店、哪个景点、哪座城市、哪个国家。
+- **时间线**：一天按“停留 → 路上 → 停留”排开，每个地点带上你在那里拍的照片；点照片直接看大图，点地点先看再改。
+- **省电**：三档精度可选，静止时自动降频，在国内地图上自动纠正坐标偏移。
+
+### 📸 一键从相册点亮过去
+- 扫描相册里上万张照片和视频的拍摄地点，**补上 App 出现之前你去过的所有地方**，点亮城市、省份和国家。
+- 同一天同一座城市的照片合成一次到访；已经记录过的不会重复。
+- 所有读取都在手机上完成，照片不会被上传或复制。
+
+### 🌏 你去过的世界
+- **点亮地图**：中国 34 个省级行政区的方块地图，世界各大洲的国旗墙；点进去就是那个省或国家的全部足迹。
+- **国家页**：描出国境的地图（中国大陆、港澳台不由 App 绘制边界），每座去过的城市一团光，标着天数。
+- **一段段行程**：成百上千条到访按“同一城市的连续几天”自动归成一段，按年份排开；每段有地图、照片拼贴和每一天的轨迹。
+
+<p align="center">
+  <img src="docs/images/places.jpg" width="200" alt="足迹">
+  <img src="docs/images/lightup.jpg" width="200" alt="点亮地图">
+  <img src="docs/images/country.jpg" width="200" alt="国家页">
+</p>
+
+### 🧳 旅程，自动整理
+- 从足迹里**自动找出过去的旅行**：离开常住地 80 公里以上的连续日子，一键收进旅程。
+- 旅程汇总这几天的路线、地点和照片，可以写备注、导出 GPX、生成分享图。
+- 徒步、跑步、骑行可以单独用高精度记录，Apple Watch 一起记录心率并存为体能训练。
+
+### ✨ 有仪式感的时刻
+- **点亮仪式**：第一次到新的国家或省份，地图从灰色亮起来，国旗落下，撒下彩纸；按住才会点亮。
+- **插画奖牌**：23 枚里程碑，每一枚是一幅小画，铜、银、金、铂金分级。
+- **年度足迹**：故事一样一页页翻：发光的城市地图、转动的点阵地球、走过的脚印、落在地图上的国旗、最远那天的路线、一墙拍立得照片，最后是一张可以分享的海报。
+
+<p align="center">
+  <img src="docs/images/year.jpg" width="200" alt="年度足迹封面">
+  <img src="docs/images/globe.jpg" width="200" alt="移动距离">
+  <img src="docs/images/milestones.jpg" width="200" alt="里程碑">
+</p>
+
+### ⌚ Apple Watch
+- 打开就是地图：你的位置、今天的路线、所在的地点。
+- 不带手机也能记录徒步、跑步、骑行；在 iPhone 上开始记录时，手表自动跟着一起记录。
+- 表盘复杂功能：今天走了多远、现在在哪。
+
+---
+
+## 隐私
+
+漫迹**没有自己的服务器**。轨迹、地点、旅程和照片只存在你的设备和你自己的 iCloud 里，开发者看不到。地点名称通过 Apple 地图服务识别；照片只在手机上读取。详见 [PRIVACY.md](PRIVACY.md)。
+
+## 技术
+
+| | |
 |---|---|
-| 存储与同步 | SwiftData + CloudKit 私有数据库（无需服务器） |
-| 后台定位 | `CLLocationUpdate.liveUpdates` + `CLBackgroundActivitySession`，并用显著位置变化在被系统终止后重新唤醒 |
-| 停留识别 | 自研停留检测：在 120 米范围内停留超过 5 分钟（或系统判定静止），即记为一次停留 |
-| 中国大陆地图偏移 | 记录的数据始终是 GPS 坐标（WGS-84）；在中国大陆画到 Apple 地图上时转换为 GCJ-02（`Common/ChinaCoordinates.swift`，港澳台和境外不转换） |
-| 地点标注 | `MKReverseGeocodingRequest`（国家、城市）+ `MKLocalPointsOfInterestRequest`（地点名称、景点） |
-| 出行方式 | CoreMotion 运动识别，无法获取时按速度推断 |
-| 步数 | HealthKit 每日统计，“健康”不可用时退回 CMPedometer |
-| 登录与资料 | Sign in with Apple（可选）；名字、简介和头像（≤400px JPEG）存放在 iCloud 键值存储 |
-| 多语言 | String Catalog（`Localizable.xcstrings`、`InfoPlist.xcstrings`），源语言简体中文，另有英文；App 内切换通过 `AppLanguage.swift` |
-| UI | SwiftUI、MapKit、Swift Charts，iOS 26 Liquid Glass |
-| 实时活动 | ActivityKit（`WaytraceLiveActivity`），带手表智能叠放的小尺寸布局 |
-| Apple Watch | watchOS 26 SwiftUI App + WidgetKit 复杂功能；`HKHealthStore.startWatchApp` 从 iPhone 打开手表 App；`HKWorkoutSession` 让记录在抬腕之外也持续进行；WatchConnectivity 同步 |
+| 界面 | SwiftUI、MapKit、Swift Charts，iOS 26 Liquid Glass |
+| 存储与同步 | SwiftData + CloudKit 私有数据库，自动同步 |
+| 后台定位 | `CLLocationUpdate.liveUpdates` + `CLBackgroundActivitySession`，被系统终止后由显著位置变化唤醒 |
+| 地点 | `MKReverseGeocodingRequest`、`MKLocalPointsOfInterestRequest`；国内地图 WGS-84 → GCJ-02 转换 |
+| 运动与健康 | CoreMotion 识别出行方式，HealthKit 步数 |
+| Apple Watch | watchOS SwiftUI App、WidgetKit 复杂功能、`HKWorkoutSession`、WatchConnectivity |
+| 实时活动 | ActivityKit：锁屏、灵动岛、手表智能叠放 |
+| 多语言 | String Catalog，简体中文和英文，App 内切换 |
 
-轨迹点按段压缩成 `TrackChunk`（每段最多约 400 个点，用 LZFSE 压缩），一天只有几十条 CloudKit 记录，同步快，也节省用户的 iCloud 空间。
+轨迹点按段压缩（LZFSE）成 `TrackChunk`，一天只有几十条 CloudKit 记录。所有汇总（国家、城市、点亮地图、里程碑、旅程发现）在后台线程计算，几千个地点也不卡。没有任何第三方依赖。
+
+<details>
+<summary>项目结构</summary>
 
 ```
 RecordPath/
 ├── App/            入口、Tab 结构
-├── Persistence/    SwiftData 模型、轨迹编码、容器
+├── Persistence/    SwiftData 模型、轨迹编码、iCloud 同步
 ├── Location/       后台定位引擎、出行方式识别
-├── Places/         地点标注、常去地点
+├── Places/         地点识别、常去地点
 ├── Health/         步数
 ├── Account/        Apple 登录
-├── Features/       今天 / 足迹 / 旅程 / 统计 / 设置 / 引导
-├── Watch/          和手表的同步（WatchBridge）、导入手表记录
-└── Shared/         通用组件、地图、统计计算、GPX 导出、演示数据
-Common/             iPhone、手表、复杂功能共用：轨迹编码、格式化、语言、同步消息
-WaytraceWatch/      Apple Watch App：地图首页、记录（体能训练 + GPS）、今天
+├── Features/       今天 / 足迹 / 旅程 / 统计 / 庆祝 / 设置 / 引导
+├── Watch/          和手表的同步
+└── Shared/         地图、统计、相册导入、旅程发现、GPX
+Common/             iPhone、手表、复杂功能共用的代码
+WaytraceWatch/      Apple Watch App
 WaytraceWidgets/    表盘复杂功能
-WaytraceLiveActivity/  iPhone 实时活动（锁屏、灵动岛、手表智能叠放）
+WaytraceLiveActivity/  实时活动
 ```
+</details>
 
-### iPhone 和手表怎么配合
+## 运行
 
-- iPhone 负责全天记录。手表不做全天 GPS（太耗电），只在你开始记录时用自己的 GPS。
-- iPhone → 手表：今天的路线（抽稀到 600 个点以内）、地点、距离、步数、暂停状态和语言，变化时通过 application context 推送，最多 30 秒一次。
-- 手表 → iPhone：暂停 / 恢复用消息发送（不在附近时排队）；记录用文件传输，iPhone 在附近且记录较小时同时直接发送。
-- 手表上的记录要等 iPhone 确认收到（出现在 `receivedRecordings` 里）才删除，否则会自动重发；iPhone 按记录 ID 去重，重复收到也不会多出一条。
-- 如果 iPhone 同时也在记录，同一段路不会重复：旅程的轨迹取时间范围内已有的记录，只有 iPhone 没录到时才用手表的轨迹。
-
-## 开发
-
-- Xcode 26 或更高版本，iOS 26 及以上（仅 iPhone），watchOS 26 及以上。
-- 直接打开 `RecordPath.xcodeproj` 运行，不依赖任何第三方库。
-- 调试版的“设置 › 开发者”里可以生成演示数据（两周的上下班通勤，加一次东京、京都旅行）。
-- 单元测试：`⌘U`，或者在命令行运行
+- Xcode 26 或更高版本；iOS 26+（iPhone），watchOS 26+。
+- 打开 `RecordPath.xcodeproj`，选择 RecordPath scheme 运行即可，不需要安装任何依赖。
+- 在真机上运行需要把 Signing 里的 Team 换成你自己的。
+- 调试版的“设置 › 开发者”可以生成演示数据，方便在模拟器里看效果。
 
 ```bash
-xcodebuild test -project RecordPath.xcodeproj -scheme RecordPath -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:RecordPathTests
-```
+# 单元测试
+xcodebuild test -project RecordPath.xcodeproj -scheme RecordPath \
+  -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:RecordPathTests
 
-- 在模拟器里测试后台记录：
-
-```bash
+# 在模拟器里模拟一段移动
 xcrun simctl location booted start --speed=12 31.2245,121.4466 31.2310,121.4650 31.2400,121.4900
 ```
 
-上线前需要完成的事项见 [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md)。
+每一轮的设计取舍和实测记录在 [PRODUCT_REVIEW.md](PRODUCT_REVIEW.md)，上架前的事项在 [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md)。
+
+## 许可
+
+本项目采用 **[PolyForm Noncommercial 1.0.0](LICENSE)** 许可。
+
+- ✅ 个人学习、研究、自用、修改，以及非营利组织、教育机构使用：可以。
+- ❌ 任何商业用途（包括上架收费或带广告的 App、用于公司产品或服务）：不可以。
+- 如需商业授权，请通过 GitHub 联系作者。
+
+Copyright © 2026 lxyeternal
