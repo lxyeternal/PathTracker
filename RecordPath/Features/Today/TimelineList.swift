@@ -15,8 +15,11 @@ struct TimelineList: View {
                 switch entry {
                 case .stay(let stay):
                     if index > 0, case .stay = entries[index - 1] { GapConnector() }
-                    Button { onSelect(stay) } label: { StayCard(stay: stay, day: day) }
-                        .buttonStyle(PressableStyle())
+                    // Not a Button: the photos inside the card take their own taps.
+                    StayCard(stay: stay, day: day)
+                        .onTapGesture { onSelect(stay) }
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityAction { onSelect(stay) }
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
                 case .move(let move):
                     Button {
@@ -54,6 +57,8 @@ private struct StayCard: View {
     let day: Date
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var libraryPhotos: [PHAsset] = []
+    @State private var viewingAsset: AssetPagerStart?
+    @State private var viewingPhoto: TripPhoto?
 
     private var isHere: Bool { stay.departure == nil }
     private var posted: [TripPhoto] { (stay.photos ?? []).sorted { $0.takenAt < $1.takenAt } }
@@ -162,14 +167,24 @@ private struct StayCard: View {
         ScrollView(.horizontal) {
             HStack(spacing: 6) {
                 if posted.isEmpty {
-                    ForEach(libraryPhotos.prefix(10), id: \.localIdentifier) { AssetThumbnail(asset: $0, side: 76) }
+                    ForEach(libraryPhotos.prefix(10), id: \.localIdentifier) { asset in
+                        Button { viewingAsset = AssetPagerStart(id: asset.localIdentifier) } label: { AssetThumbnail(asset: asset, side: 76) }
+                            .buttonStyle(PressableStyle())
+                    }
                 } else {
-                    ForEach(posted.prefix(10)) { PhotoThumbnail(photo: $0, cornerRadius: 14).frame(width: 76, height: 76) }
+                    ForEach(posted.prefix(10)) { photo in
+                        Button { viewingPhoto = photo } label: {
+                            PhotoThumbnail(photo: photo, cornerRadius: 14).frame(width: 76, height: 76)
+                        }
+                        .buttonStyle(PressableStyle())
+                    }
                 }
             }
         }
         .scrollIndicators(.hidden)
         .scrollClipDisabled()
+        .fullScreenCover(item: $viewingAsset) { AssetPager(assets: libraryPhotos, selection: $0.id) }
+        .fullScreenCover(item: $viewingPhoto) { PhotoPager(photos: posted, selection: $0.id) }
     }
 }
 

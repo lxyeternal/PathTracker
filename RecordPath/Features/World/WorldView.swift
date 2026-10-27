@@ -230,7 +230,7 @@ struct PlaceRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            PlaceIcon(category: stay.category, isLandmark: stay.isLandmark)
+            PlaceThumb(stay: stay)
             VStack(alignment: .leading, spacing: 2) {
                 Text(stay.displayName).font(.body.weight(.semibold)).lineLimit(1)
                 Text([stay.city, timeOnly ? timeRange : stay.arrival.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: appLocale))].compactMap { $0 }.joined(separator: " · "))
@@ -258,7 +258,17 @@ struct WorldMap: View {
 
     @State private var position: MapCameraPosition = .automatic
     @State private var region: MKCoordinateRegion?
-    @State private var shown: [MapDot] = []
+    @State private var shown: [MapDot]
+
+    init(dots: [MapDot], interactive: Bool = true, onSelect: ((Stay) -> Void)? = nil) {
+        self.dots = dots
+        self.interactive = interactive
+        self.onSelect = onSelect
+        _shown = State(initialValue: Self.overview(dots))
+        // Framed once from the places themselves. An automatic camera re-frames whenever the
+        // dots change, and the dots change when the camera moves: the two would chase each other.
+        _position = State(initialValue: Self.framing(dots))
+    }
 
     var body: some View {
         Map(position: $position, interactionModes: interactive ? .all : []) {
@@ -282,15 +292,46 @@ struct WorldMap: View {
             region = context.region
             updateShown()
         }
-        .onAppear(perform: updateShown)
-        .onChange(of: dots.count) { updateShown() }
+        .onChange(of: dots.count) {
+            region = nil
+            updateShown()
+            position = Self.framing(dots)
+        }
     }
 
     /// A few hundred dots at most: the ones in view, spread out at a spacing that suits the
     /// zoom. Thousands of annotations at once make the map crawl.
+    private static func framing(_ dots: [MapDot]) -> MapCameraPosition {
+        let lats = dots.map(\.coordinate.latitude)
+        guard let minLat = lats.min(), let maxLat = lats.max() else { return .automatic }
+        // Longitudes wrap: San Francisco and Tokyo are close across the Pacific. The places
+        // fill the circle except for its widest empty stretch.
+        let lons = Set(dots.map { ($0.coordinate.longitude * 10).rounded() / 10 }).sorted()
+        var widest = lons.first! + 360 - lons.last!, west = lons.first!
+        for (a, b) in zip(lons, lons.dropFirst()) where b - a > widest {
+            widest = b - a
+            west = b
+        }
+        let lonSpan = 360 - widest
+        var centerLon = west + lonSpan / 2
+        if centerLon > 180 { centerLon -= 360 }
+        let center = CLLocationCoordinate2D(latitude: (minLat + maxLat) / 2, longitude: centerLon)
+        let span = MKCoordinateSpan(latitudeDelta: min(max((maxLat - minLat) * 1.4, 0.02), 150),
+                                    longitudeDelta: min(max(lonSpan * 1.4, 0.02), 340))
+        return .region(MKCoordinateRegion(center: center, span: span))
+    }
+
+    /// Spaced to the area the places cover: a city's worth of dots doesn't become a blot.
+    private static func overview(_ dots: [MapDot]) -> [MapDot] {
+        let lats = dots.map(\.coordinate.latitude), lons = dots.map(\.coordinate.longitude)
+        guard let minLat = lats.min(), let maxLat = lats.max(), let minLon = lons.min(), let maxLon = lons.max() else { return [] }
+        let span = max(maxLat - minLat, maxLon - minLon)
+        return MapDot.thinned(dots, cell: max(span / 18, 0.002), limit: 150)
+    }
+
     private func updateShown() {
         guard let region else {
-            shown = MapDot.thinned(dots, cell: 0.05, limit: interactive ? 300 : 150)
+            shown = Self.overview(dots)
             return
         }
         let span = region.span
@@ -298,7 +339,7 @@ struct WorldMap: View {
             abs($0.coordinate.latitude - region.center.latitude) <= span.latitudeDelta * 0.75
                 && abs(($0.coordinate.longitude - region.center.longitude).remainder(dividingBy: 360)) <= span.longitudeDelta * 0.75
         }
-        shown = MapDot.thinned(visible, cell: max(span.latitudeDelta / 30, 0.002), limit: 300)
+        shown = MapDot.thinned(visible, cell: max(span.latitudeDelta / 22, 0.002), limit: 200)
     }
 }
 

@@ -904,3 +904,46 @@ struct PhotoFootprintTests {
         #expect(PhotoFootprints.newVisits([visit], recorded: [], imported: [earlier]).new.isEmpty)
     }
 }
+
+@MainActor
+struct CityStintTests {
+    private func stay(_ city: String, day: Int, hour: Double = 10, lat: Double = 30.27, lon: Double = 120.15, photos: Bool = false) -> Stay {
+        let date = Calendar.current.date(from: DateComponents(year: 2020, month: 8, day: day))!.addingTimeInterval(hour * 3600)
+        let stay = Stay(arrival: date, coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon))
+        stay.departure = date.addingTimeInterval(3600)
+        stay.city = city
+        stay.countryCode = "CN"
+        stay.tagState = .tagged
+        if photos { stay.sourceRaw = PhotoFootprints.source }
+        return stay
+    }
+
+    @Test func consecutiveDaysInACityBecomeOneStint() {
+        let stays = [stay("杭州", day: 21), stay("杭州", day: 21, hour: 15), stay("杭州", day: 22), stay("杭州", day: 23),
+                     stay("嘉兴", day: 24, lat: 30.75, lon: 120.75), stay("杭州", day: 27)]
+        let stints = CityStint.group(stays)
+        #expect(stints.count == 3)
+        let first = stints.last!
+        #expect(first.city == "杭州" && first.stays.count == 4 && first.days == 3)
+        #expect(stints.first?.city == "杭州" && stints.first?.days == 1)
+    }
+
+    @Test func sameDayPhotoVisitsInACityAreMerged() async throws {
+        let container = try ModelContainer(for: Stay.self, TrackChunk.self, Trip.self, TripPhoto.self,
+                                           configurations: ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none))
+        let context = container.mainContext
+        let morning = stay("嘉兴", day: 7, hour: 9, photos: true)
+        let noon = stay("嘉兴", day: 7, hour: 12, lat: 30.76, photos: true)
+        let named = stay("嘉兴", day: 7, hour: 15, photos: true)
+        named.customName = "南湖"
+        let nextDay = stay("嘉兴", day: 8, photos: true)
+        [morning, noon, named, nextDay].forEach(context.insert)
+        try context.save()
+
+        let merged = await PhotoFootprints.consolidate(in: context)
+        #expect(merged == 1)
+        let left = try context.fetch(FetchDescriptor<Stay>())
+        #expect(left.count == 3)
+        #expect(morning.departure == noon.departure)
+    }
+}

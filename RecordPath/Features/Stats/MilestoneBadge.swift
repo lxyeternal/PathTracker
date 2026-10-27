@@ -126,7 +126,8 @@ struct MilestoneBadge: View {
             .lineLimit(1)
             .minimumScaleFactor(0.5)
             .frame(width: size * 0.62)
-            .offset(y: -size * 0.004)
+            // The scroll's lower edge bows up in the middle; keep the words clear of it.
+            .offset(y: -size * 0.022)
         }
         .frame(width: size * 0.94, height: size * 0.22)
     }
@@ -153,7 +154,7 @@ struct ScrollBanner: Shape {
         path.move(to: CGPoint(x: tail, y: lift))
         path.addQuadCurve(to: CGPoint(x: w - tail, y: lift), control: CGPoint(x: w / 2, y: -lift * 0.6))
         path.addLine(to: CGPoint(x: w - tail, y: h - lift))
-        path.addQuadCurve(to: CGPoint(x: tail, y: h - lift), control: CGPoint(x: w / 2, y: h - lift * 2.6))
+        path.addQuadCurve(to: CGPoint(x: tail, y: h - lift), control: CGPoint(x: w / 2, y: h - lift * 1.9))
         path.closeSubpath()
         // Notched ends tucked behind.
         for side in [0.0, 1.0] {

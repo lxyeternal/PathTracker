@@ -13,6 +13,7 @@ struct CountryDetailView: View {
     }
 
     @State private var cities: [(name: String, visits: Int, days: Int)] = []
+    @State private var stints: [CityStint] = []
 
     /// Counted once per change, not on every redraw: a country can hold thousands of visits.
     private func countCities() -> [(name: String, visits: Int, days: Int)] {
@@ -24,20 +25,31 @@ struct CountryDetailView: View {
             .sorted { $0.days > $1.days }
     }
 
+    private var stintsByYear: [(year: Int, stints: [CityStint])] {
+        Dictionary(grouping: stints) { Calendar.current.component(.year, from: $0.start) }
+            .map { ($0.key, $0.value) }
+            .sorted { $0.year > $1.year }
+    }
+
     private var landmarks: [Stay] {
         var names = Set<String>()
         return stays.filter { $0.isLandmark && names.insert($0.displayName).inserted }
     }
 
     var body: some View {
-        content.task(id: stays.count) { cities = countCities() }
+        content
+            .task(id: stays.count) {
+                cities = countCities()
+                stints = CityStint.group(stays)
+            }
+            .navigationDestination(for: CityStint.self) { CityStintView(stint: $0) }
     }
 
     private var content: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                WorldMap(dots: PlaceSummaries.shared.dots.filter { $0.countryCode == country.code }, interactive: true, onSelect: { selected = $0 })
-                    .frame(height: 260)
+                CountryMap(code: country.code, stays: stays, onSelect: { selected = $0 })
+                    .frame(height: 320)
                     .clipShape(.rect(cornerRadius: 28, style: .continuous))
 
                 MetricGrid {
@@ -78,14 +90,17 @@ struct CountryDetailView: View {
                     .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
                 }
 
-                SectionHeader(title: "所有停留", trailing: "\(stays.count)")
-                VStack(spacing: 0) {
-                    ForEach(stays.prefix(100)) { stay in
-                        Button { selected = stay } label: { PlaceRow(stay: stay) }.buttonStyle(.plain)
+                // Every visit, as runs of days in one city, year by year.
+                ForEach(stintsByYear, id: \.year) { group in
+                    SectionHeader(title: LocalizedStringKey(String(group.year)), trailing: "\(group.stints.count) 次")
+                    LazyVStack(spacing: 0) {
+                        ForEach(group.stints) { stint in
+                            NavigationLink(value: stint) { CityStintRow(stint: stint) }.buttonStyle(.plain)
+                        }
                     }
+                    .padding(.vertical, 6)
+                    .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
                 }
-                .padding(.vertical, 6)
-                .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
             }
             .padding(.horizontal)
             .padding(.bottom, 24)

@@ -49,6 +49,69 @@ struct AssetThumbnail: View {
     }
 }
 
+struct AssetPagerStart: Identifiable {
+    let id: String
+}
+
+/// Photos from the library full screen, swiping between them.
+struct AssetPager: View {
+    let assets: [PHAsset]
+    @State var selection: String
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                TabView(selection: $selection) {
+                    ForEach(assets, id: \.localIdentifier) { asset in
+                        AssetPage(asset: asset).tag(asset.localIdentifier)
+                    }
+                }
+                .tabViewStyle(.page(indexDisplayMode: assets.count > 1 ? .automatic : .never))
+                .ignoresSafeArea()
+            }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("关闭", systemImage: "xmark") { dismiss() }
+                }
+                if let date = assets.first(where: { $0.localIdentifier == selection })?.creationDate {
+                    ToolbarItem(placement: .principal) {
+                        Text(date.formatted(.dateTime.month().day().hour().minute().locale(appLocale)))
+                            .font(.subheadline.weight(.semibold)).foregroundStyle(.white)
+                    }
+                }
+            }
+            .toolbarBackground(.hidden, for: .navigationBar)
+        }
+        .preferredColorScheme(.dark)
+    }
+}
+
+private struct AssetPage: View {
+    let asset: PHAsset
+    @State private var image: UIImage?
+    @State private var zoom: CGFloat = 1
+
+    var body: some View {
+        Group {
+            if let image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .scaleEffect(zoom)
+                    .gesture(MagnifyGesture().onChanged { zoom = max(1, $0.magnification) }.onEnded { _ in
+                        withAnimation(.smooth) { zoom = 1 }
+                    })
+            } else {
+                ProgressView().tint(.white)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .task { image = await AssetLoader.image(for: asset, size: CGSize(width: 2400, height: 2400), exact: false) }
+    }
+}
+
 /// A photo full screen, pinch to zoom.
 struct AssetViewer: View {
     let asset: PHAsset
