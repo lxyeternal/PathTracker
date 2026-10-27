@@ -97,8 +97,11 @@ struct TripCard: View {
     private func placedTags(map: MapBackdrop, size: CGSize) -> [(name: String, point: CGPoint)] {
         var placed: [(name: String, point: CGPoint)] = []
         for (city, unit) in zip(cities, map.pins) {
-            let point = CGPoint(x: unit.x * size.width, y: unit.y * size.height)
-            guard point.x > 20, point.x < size.width - 20, point.y > 30, point.y < size.height - 6 else { continue }
+            let pin = CGPoint(x: unit.x * size.width, y: unit.y * size.height)
+            guard pin.x > 4, pin.x < size.width - 4, pin.y > 30, pin.y < size.height - 6 else { continue }
+            // The tag slides inward rather than running off the card; the dot moves with it.
+            let half = CGFloat(city.name.count) * (city.name.unicodeScalars.first.map { $0.value > 0x2E80 } == true ? 7.5 : 4.2) + 14
+            let point = CGPoint(x: min(max(pin.x, half + 6), size.width - half - 6), y: pin.y)
             let underBadge = point.x < 100 && point.y < 120
             let crowded = placed.contains { abs($0.point.x - point.x) < 70 && abs($0.point.y - point.y) < 34 }
             if !underBadge && !crowded { placed.append((city.name, point)) }
@@ -149,7 +152,7 @@ struct TripCard: View {
             west = b
         }
         let covered = 360 - widest
-        let lonSpan = max(covered * (covered > 60 ? 1.35 : 2.0), 0.35)
+        let lonSpan = max(covered * (covered > 60 ? 1.6 : 2.0), 0.35)
         let latSpan = max((maxLat - minLat) * 2.4, lonSpan * 0.45)
         // Shifted right and down so the date badge in the top left covers nothing.
         var centerLon = west + covered / 2 - lonSpan * 0.1
