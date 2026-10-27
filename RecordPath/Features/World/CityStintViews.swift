@@ -158,7 +158,18 @@ struct CityStintView: View {
                 }
 
                 ForEach(byDay, id: \.day) { day in
-                    SectionHeader(title: LocalizedStringKey(day.day.formatted(.dateTime.month().day().weekday(.wide).locale(appLocale))))
+                    NavigationLink(value: DayRoute(day: day.day)) {
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(day.day.formatted(.dateTime.month().day().weekday(.wide).locale(appLocale)))
+                                .font(.title3.bold()).foregroundStyle(.primary)
+                            Spacer()
+                            Label("当天轨迹", systemImage: "chevron.right")
+                                .labelStyle(TrailingIconLabelStyle())
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        .padding(.top, 8)
+                    }
+                    .buttonStyle(.plain)
                     LazyVStack(spacing: 0) {
                         ForEach(day.stays) { stay in
                             Button { selected = stay } label: { PlaceRow(stay: stay, timeOnly: true) }.buttonStyle(.plain)
@@ -213,5 +224,31 @@ struct Monogram: View {
         var hash: UInt64 = 5381
         for byte in key.utf8 { hash = (hash &* 33) &+ UInt64(byte) }
         return Double(hash % 360) / 360
+    }
+}
+
+/// A day opened from Places: its map, numbers and timeline, the same as on the Today tab.
+struct DayRoute: Hashable {
+    let day: Date
+}
+
+struct DayPage: View {
+    let day: Date
+
+    var body: some View {
+        DayContentView(day: day)
+            .navigationTitle(Format.dayTitle(day))
+            .navigationSubtitle(Format.daySubtitle(day))
+            .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct TrailingIconLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 3) {
+            configuration.title
+            configuration.icon.font(.caption.weight(.bold))
+        }
+        .foregroundStyle(.tint)
     }
 }

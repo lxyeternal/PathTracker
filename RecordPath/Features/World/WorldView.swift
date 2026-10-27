@@ -59,6 +59,9 @@ struct WorldView: View {
                 LightUpView()
             }
             .navigationDestination(for: GalleryRoute.self) { _ in GalleryView() }
+            .navigationDestination(for: Province.self) { ProvinceDetailView(province: $0) }
+            .navigationDestination(for: CityStint.self) { CityStintView(stint: $0) }
+            .navigationDestination(for: DayRoute.self) { DayPage(day: $0.day) }
             .sheet(isPresented: $importingPhotos) { PhotoImportSheet() }
             .sheet(item: $selectedStay) { StayDetailView(stay: $0) }
             .fullScreenCover(isPresented: $showingMap) {

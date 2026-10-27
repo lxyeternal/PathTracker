@@ -25,12 +25,6 @@ struct CountryDetailView: View {
             .sorted { $0.days > $1.days }
     }
 
-    private var stintsByYear: [(year: Int, stints: [CityStint])] {
-        Dictionary(grouping: stints) { Calendar.current.component(.year, from: $0.start) }
-            .map { ($0.key, $0.value) }
-            .sorted { $0.year > $1.year }
-    }
-
     private var landmarks: [Stay] {
         var names = Set<String>()
         return stays.filter { $0.isLandmark && names.insert($0.displayName).inserted }
@@ -42,7 +36,6 @@ struct CountryDetailView: View {
                 cities = countCities()
                 stints = CityStint.group(stays)
             }
-            .navigationDestination(for: CityStint.self) { CityStintView(stint: $0) }
     }
 
     private var content: some View {
@@ -91,16 +84,7 @@ struct CountryDetailView: View {
                 }
 
                 // Every visit, as runs of days in one city, year by year.
-                ForEach(stintsByYear, id: \.year) { group in
-                    SectionHeader(title: LocalizedStringKey(String(group.year)), trailing: "\(group.stints.count) 次")
-                    LazyVStack(spacing: 0) {
-                        ForEach(group.stints) { stint in
-                            NavigationLink(value: stint) { CityStintRow(stint: stint) }.buttonStyle(.plain)
-                        }
-                    }
-                    .padding(.vertical, 6)
-                    .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
-                }
+                StintsByYear(stints: stints)
             }
             .padding(.horizontal)
             .padding(.bottom, 24)
