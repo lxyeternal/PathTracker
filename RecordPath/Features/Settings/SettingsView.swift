@@ -20,6 +20,7 @@ struct SettingsView: View {
     @State private var stats: (chunks: Int, stays: Int, trips: Int) = (0, 0, 0)
     @State private var retagged = false
     @State private var importing = false
+    @State private var importingPhotos = false
     @State private var importMessage: String?
     private var zones = PrivacyZones.shared
 
@@ -49,6 +50,7 @@ struct SettingsView: View {
                 syncStatus = await SyncStatus.current()
                 refreshCounts()
             }
+            .sheet(isPresented: $importingPhotos) { PhotoImportSheet() }
             .fileImporter(isPresented: $importing, allowedContentTypes: [.gpx, .xml], allowsMultipleSelection: true) { result in
                 guard case .success(let urls) = result else { return }
                 var tracks = 0, places = 0, duplicates = 0
@@ -231,6 +233,7 @@ struct SettingsView: View {
             }
             .disabled(stats.chunks == 0)
             Button("导入 GPX 文件", systemImage: "square.and.arrow.down") { importing = true }
+            Button("从相册点亮足迹", systemImage: "photo.stack") { importingPhotos = true }
             Button(retagged ? "已开始重新识别" : "重新识别未命名的地点", systemImage: "arrow.clockwise") {
                 tagger?.retryFailed()
                 withAnimation { retagged = true }
@@ -264,6 +267,9 @@ struct SettingsView: View {
 
     private var aboutSection: some View {
         Section("关于") {
+            ShareLink(item: Diagnostics.fileURL, preview: SharePreview("Waytrace-diagnostics.log")) {
+                Label("导出诊断日志", systemImage: "doc.text.magnifyingglass")
+            }
             NavigationLink {
                 PrivacyPolicyView()
             } label: {
@@ -283,6 +289,10 @@ struct SettingsView: View {
                 DemoData.generate(in: context)
                 engine.reloadAfterDataChange(discardPending: true)
                 refreshCounts()
+            }
+            Button("预览庆祝动画", systemImage: "sparkles") {
+                Celebrations.shared.addSamples()
+                dismiss()
             }
             Button("重新显示引导", systemImage: "arrow.uturn.backward") {
                 UserDefaults.standard.set(false, forKey: "onboarding.completed")

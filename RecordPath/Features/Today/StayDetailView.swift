@@ -4,7 +4,7 @@ import MapKit
 import Photos
 
 /// Details for one stay, where the user can name the place (applies to every visit
-/// nearby), mark it as home/school/work, post photos and words, open it in Maps or delete it.
+/// nearby), mark it as home/school/work or a sight, post photos and words, open it in Maps or delete it.
 struct StayDetailView: View {
     @Bindable var stay: Stay
     /// Hidden when the sheet is already shown from that day.
@@ -24,14 +24,15 @@ struct StayDetailView: View {
     @State private var photos: [PHAsset] = []
 
     enum PlaceKind: String, CaseIterable, Identifiable {
-        case none, home, school, work
+        case none, home, school, work, sight
         var id: String { rawValue }
-        var title: LocalizedStringKey {
+        var title: String {
             switch self {
-            case .none: "无"
-            case .home: "家"
-            case .school: "学校"
-            case .work: "公司"
+            case .none: String(localized: "自动识别", bundle: .appLanguage)
+            case .sight: String(localized: "place.kind.sight", defaultValue: "景点", bundle: .appLanguage)
+            case .home: String(localized: "家", bundle: .appLanguage)
+            case .school: String(localized: "学校", bundle: .appLanguage)
+            case .work: String(localized: "公司", bundle: .appLanguage)
             }
         }
         var name: String {
@@ -40,11 +41,13 @@ struct StayDetailView: View {
             case .home: String(localized: "家", bundle: .appLanguage)
             case .school: String(localized: "学校", bundle: .appLanguage)
             case .work: String(localized: "公司", bundle: .appLanguage)
+            case .sight: ""
             }
         }
         var symbol: String {
             switch self {
-            case .none: "mappin"
+            case .none: "sparkle.magnifyingglass"
+            case .sight: "binoculars.fill"
             case .home: "house.fill"
             case .school: "graduationcap.fill"
             case .work: "briefcase.fill"
@@ -119,7 +122,7 @@ struct StayDetailView: View {
                 } header: {
                     Text("名称")
                 } footer: {
-                    Text("名称会应用到附近 150 米内的所有到访记录，比如把这里叫作“家”。")
+                    Text(kindFooter)
                 }
 
                 postSection
@@ -203,20 +206,42 @@ struct StayDetailView: View {
         .presentationDetents([.large])
     }
 
+    private var kindFooter: String {
+        switch kind {
+        case .none where stay.isLandmark:
+            String(localized: "已自动识别为景点。名称和类型会应用到附近 150 米内的所有到访记录。", bundle: .appLanguage)
+        case .none:
+            String(localized: "漫迹会自动识别景点和店铺。没认出来的景点，可以在这里选“景点”。名称和类型会应用到附近 150 米内的所有到访记录。", bundle: .appLanguage)
+        case .sight:
+            String(localized: "这里会算作景点，出现在旅程和年度足迹里。名称和类型会应用到附近 150 米内的所有到访记录。", bundle: .appLanguage)
+        default:
+            String(localized: "名称和类型会应用到附近 150 米内的所有到访记录。", bundle: .appLanguage)
+        }
+    }
+
+    private static func kind(of stay: Stay) -> PlaceKind {
+        if let personal = PlaceKind(rawValue: stay.categoryRaw ?? ""), personal != .sight { return personal }
+        return stay.isLandmark && UserMarkedSights.contains(stay) ? .sight : .none
+    }
+
     private func load() {
         name = stay.customName ?? ""
-        kind = PlaceKind(rawValue: stay.categoryRaw ?? "") ?? .none
+        kind = Self.kind(of: stay)
     }
 
     private func save() {
         let newName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let previousKind = PlaceKind(rawValue: stay.categoryRaw ?? "") ?? .none
+        let previousKind = Self.kind(of: stay)
         if newName != (stay.customName ?? "") || kind != previousKind {
-            let change: KnownPlaces.CategoryChange =
-                kind != .none ? .set(kind.rawValue) : previousKind != .none ? .clear : .keep
-            KnownPlaces.rename(stay, to: newName.isEmpty && kind != .none ? kind.name : newName,
-                               category: change, in: context)
-            // Without a home/school/work kind, look the place up again for its real category.
+            let change: KnownPlaces.CategoryChange = switch kind {
+            case .sight: .sight
+            case .none: previousKind != .none ? .clear : .keep
+            default: .set(kind.rawValue)
+            }
+            let personal = kind != .none && kind != .sight
+            KnownPlaces.rename(stay, to: newName.isEmpty && personal ? kind.name : newName, category: change, in: context)
+            if kind == .sight { UserMarkedSights.add(stay) } else if previousKind == .sight { UserMarkedSights.remove(stay) }
+            // Back to automatic: look the place up again for its real category.
             if case .clear = change { tagger?.enqueue() }
         }
         try? context.save()
@@ -227,5 +252,33 @@ struct StayDetailView: View {
         let item = MKMapItem(location: stay.location, address: nil)
         item.name = stay.displayName
         item.openInMaps()
+    }
+}
+
+/// Places the user marked as sights by hand, so the picker shows "景点" for them rather than
+/// "自动识别". Kept as coordinates in iCloud key-value storage, like privacy zones.
+enum UserMarkedSights {
+    private static let key = "places.userSights"
+    private static var store: NSUbiquitousKeyValueStore { .default }
+
+    private static var all: [[Double]] {
+        get { (store.array(forKey: key) as? [[Double]]) ?? (UserDefaults.standard.array(forKey: key) as? [[Double]]) ?? [] }
+        set {
+            store.set(newValue, forKey: key)
+            UserDefaults.standard.set(newValue, forKey: key)
+        }
+    }
+
+    static func contains(_ stay: Stay) -> Bool {
+        all.contains { CLLocation(latitude: $0[0], longitude: $0[1]).distance(from: stay.location) <= KnownPlaces.radius }
+    }
+
+    static func add(_ stay: Stay) {
+        guard !contains(stay) else { return }
+        all.append([stay.latitude, stay.longitude])
+    }
+
+    static func remove(_ stay: Stay) {
+        all.removeAll { CLLocation(latitude: $0[0], longitude: $0[1]).distance(from: stay.location) <= KnownPlaces.radius }
     }
 }

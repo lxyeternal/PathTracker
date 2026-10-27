@@ -22,8 +22,10 @@ struct RecordPathApp: App {
         .onChange(of: scenePhase, initial: true) { _, phase in
             switch phase {
             case .background:
+                Diagnostics.record("phase background")
                 services.engine.persistNow()
             case .active:
+                Diagnostics.record("phase active \(Diagnostics.battery)")
                 services.engine.refreshState()
                 services.tagger.enqueue()
                 services.liveRecording.refreshNow()
@@ -58,6 +60,7 @@ final class AppServices {
     private init() {
         // Before anything builds a string, so even background launches use the chosen language.
         _ = LanguageSettings.shared
+        Diagnostics.launched()
         let inMemory = ProcessInfo.processInfo.arguments.contains("-uiTesting")
         container = PersistenceController.makeContainer(inMemory: inMemory)
         tagger = PlaceTagger(context: container.mainContext)
@@ -73,6 +76,7 @@ final class AppServices {
             notifier.placeTagged(stay)
             notifier.checkPeriodically()
         }
+        tagger.onPhotosTagged = { [notifier] in notifier.checkMilestones() }
         UNUserNotificationCenter.current().delegate = notificationPresenter
     }
 }

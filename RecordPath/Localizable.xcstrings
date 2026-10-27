@@ -14,6 +14,16 @@
     "%@ %@": {
       "shouldTranslate": false
     },
+    "%@ / %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ / %2$@"
+          }
+        }
+      }
+    },
     "%@ · %@": {
       "shouldTranslate": false
     },
@@ -345,6 +355,28 @@
         }
       }
     },
+    "%lld 张照片": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld photo"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld photos"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld 次": {
       "localizations": {
         "en": {
@@ -501,12 +533,31 @@
         }
       }
     },
+    "Waytrace-diagnostics.log": {
+      "shouldTranslate": false
+    },
     "iCloud 同步": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "iCloud Sync"
+          }
+        }
+      }
+    },
+    "place.kind.sight": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sight"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "景点"
           }
         }
       }
@@ -841,6 +892,16 @@
         }
       }
     },
+    "从相册点亮足迹": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Light Up from Photos"
+          }
+        }
+      }
+    },
     "从相册选择": {
       "localizations": {
         "en": {
@@ -919,6 +980,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Looks like you're in %@"
+          }
+        }
+      }
+    },
+    "你拍过的照片和视频里记着当时的地点。漫迹会找出这些地方，点亮去过的城市、省份和国家，并放进那一天的时间线。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your photos and videos remember where they were taken. Waytrace finds those places, lights up the cities, provinces and countries you have been to, and adds them to that day's timeline."
           }
         }
       }
@@ -1159,6 +1230,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "One More Step: Always Allow"
+          }
+        }
+      }
+    },
+    "再次扫描相册": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan Again"
           }
         }
       }
@@ -1709,6 +1790,16 @@
         }
       }
     },
+    "只读取时间和地点，照片不会被上传或复制": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only the time and place are read. Photos are never uploaded or copied."
+          }
+        }
+      }
+    },
     "可不填": {
       "localizations": {
         "en": {
@@ -1765,6 +1856,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "The name applies to every visit within 150 m, so you can call this place “Home”, for example."
+          }
+        }
+      }
+    },
+    "名称和类型会应用到附近 150 米内的所有到访记录。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The name and type apply to every visit within 150 m."
           }
         }
       }
@@ -1925,6 +2026,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Turn On Notifications in Settings"
+          }
+        }
+      }
+    },
+    "在“设置”里允许漫迹访问“所有照片”，才能从照片的拍摄地点点亮足迹。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow Waytrace to access All Photos in Settings to light up places from where your photos were taken."
           }
         }
       }
@@ -2095,6 +2206,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cities"
+          }
+        }
+      }
+    },
+    "城市和国家正在后台识别，几分钟内会陆续点亮。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cities and countries are being identified in the background and will light up over the next few minutes."
+          }
+        }
+      }
+    },
+    "处已经记录过": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "already recorded"
           }
         }
       }
@@ -2321,6 +2452,16 @@
         }
       }
     },
+    "导出诊断日志": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export Diagnostics Log"
+          }
+        }
+      }
+    },
     "已关闭": {
       "localizations": {
         "en": {
@@ -2417,6 +2558,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "In the Past"
+          }
+        }
+      }
+    },
+    "已自动识别为景点。名称和类型会应用到附近 150 米内的所有到访记录。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recognized as a sight automatically. The name and type apply to every visit within 150 m."
           }
         }
       }
@@ -2601,6 +2752,16 @@
         }
       }
     },
+    "开始扫描": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start Scanning"
+          }
+        }
+      }
+    },
     "开始旅程": {
       "localizations": {
         "en": {
@@ -2617,6 +2778,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Start Recording"
+          }
+        }
+      }
+    },
+    "张带有地点": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "with a location"
+          }
+        }
+      }
+    },
+    "张照片和视频": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "photos & videos"
           }
         }
       }
@@ -2821,6 +3002,38 @@
         }
       }
     },
+    "找到了 %lld 个去过的地方": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Found %lld place you've been"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Found %lld places you've been"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "按住点亮": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Press and Hold to Light Up"
+          }
+        }
+      }
+    },
     "按地点": {
       "localizations": {
         "en": {
@@ -2937,6 +3150,68 @@
           "stringUnit": {
             "state": "translated",
             "value": "New Trip"
+          }
+        }
+      }
+    },
+    "新景点 · 你去过的第 %lld 个景点": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "New sight · your %lldst sight"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "New sight · sight number %lld for you"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "新的国家和地区": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Country or Region"
+          }
+        }
+      }
+    },
+    "新的城市": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New City"
+          }
+        }
+      }
+    },
+    "新的奖牌": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Medal"
+          }
+        }
+      }
+    },
+    "新的省份": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Province"
           }
         }
       }
@@ -3431,6 +3706,16 @@
         }
       }
     },
+    "来自照片": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From Photos"
+          }
+        }
+      }
+    },
     "查看地图": {
       "localizations": {
         "en": {
@@ -3471,12 +3756,32 @@
         }
       }
     },
+    "正在加入时间线…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adding to Your Timeline…"
+          }
+        }
+      }
+    },
     "正在启动定位…": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Starting location…"
+          }
+        }
+      }
+    },
+    "正在查看照片…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Looking Through Photos…"
           }
         }
       }
@@ -3537,6 +3842,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Identifying place…"
+          }
+        }
+      }
+    },
+    "步": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "steps"
           }
         }
       }
@@ -3651,6 +3966,16 @@
         }
       }
     },
+    "没有找到新的地方": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No New Places Found"
+          }
+        }
+      }
+    },
     "没有步数数据": {
       "localizations": {
         "en": {
@@ -3721,6 +4046,16 @@
         }
       }
     },
+    "漫迹会自动识别景点和店铺。没认出来的景点，可以在这里选“景点”。名称和类型会应用到附近 150 米内的所有到访记录。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waytrace recognizes sights and shops automatically. If a sight wasn't recognized, choose Sight here. The name and type apply to every visit within 150 m."
+          }
+        }
+      }
+    },
     "漫迹在后台安静地记录你每天的轨迹，自动整理去过的地方、城市和国家。": {
       "localizations": {
         "en": {
@@ -3751,12 +4086,32 @@
         }
       }
     },
+    "点“更改”，在“位置”里选“始终”，锁屏或关掉 App 时也能继续记录。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap Change, then choose Always under Location, so recording continues while your iPhone is locked or the app is closed."
+          }
+        }
+      }
+    },
     "点一次到访，查看那一天的完整轨迹。": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Tap a visit to see that day's full tracks."
+          }
+        }
+      }
+    },
+    "点亮": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Light Up"
           }
         }
       }
@@ -3857,6 +4212,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Time"
+          }
+        }
+      }
+    },
+    "用照片的拍摄地点，补上以前去过的地方": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fill in places you've been from where your photos were taken"
           }
         }
       }
@@ -4367,6 +4732,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Recording Is Off"
+          }
+        }
+      }
+    },
+    "自动识别": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatic"
           }
         }
       }
@@ -5015,6 +5390,16 @@
         }
       }
     },
+    "这一年留下的画面": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moments from Your Year"
+          }
+        }
+      }
+    },
     "这一年记录了 %lld 天": {
       "localizations": {
         "en": {
@@ -5030,6 +5415,28 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%lld days recorded this year"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "这一年记录了 %lld 天，每一条线都是你走过的路。": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld day recorded this year. Every line is a road you took."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld days recorded this year. Every line is a road you took."
                 }
               }
             }
@@ -5115,6 +5522,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "No tracks during this time"
+          }
+        }
+      }
+    },
+    "这里会算作景点，出现在旅程和年度足迹里。名称和类型会应用到附近 150 米内的所有到访记录。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This place counts as a sight in your trips and Year in Footprints. The name and type apply to every visit within 150 m."
           }
         }
       }
@@ -5325,6 +5742,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Location Access Needed"
+          }
+        }
+      }
+    },
+    "需要访问照片": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo Access Needed"
           }
         }
       }

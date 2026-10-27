@@ -45,19 +45,37 @@ final class Notifier {
     // MARK: Arrivals
 
     /// Called once a place has been named. Only live arrivals count: places named later
-    /// (imports, iCloud sync, catching up after being offline) never notify.
+    /// (imports, iCloud sync, catching up after being offline) never notify or celebrate.
     func placeTagged(_ stay: Stay) {
-        guard Setting.arrivals.isOn, Date().timeIntervalSince(stay.arrival) < 6 * 3600 else { return }
+        guard Date().timeIntervalSince(stay.arrival) < 6 * 3600, !stay.isFromPhotos else { return }
         let id = stay.id
         let others = ((try? context.fetch(FetchDescriptor<Stay>(predicate: #Predicate { $0.id != id }))) ?? [])
             .filter { $0.tagState == .tagged }
-        if let arrival = Self.firstArrival(stay, after: others) { post(id: arrival.id, title: arrival.title, body: arrival.body) }
+        if let arrival = Self.firstArrival(stay, after: others) {
+            Celebrations.shared.add(Celebrations.Item(id: arrival.id, kind: arrival.kind, title: arrival.title, subtitle: arrival.body,
+                                                      countryCode: stay.countryCode, latitude: stay.latitude, longitude: stay.longitude))
+            if Setting.arrivals.isOn { post(id: arrival.id, title: arrival.title, body: arrival.body) }
+        } else if let sight = Self.firstSight(stay, after: others) {
+            Celebrations.shared.add(Celebrations.Item(id: sight.id, kind: .sight, title: sight.title, subtitle: sight.body,
+                                                      countryCode: stay.countryCode, latitude: stay.latitude, longitude: stay.longitude))
+        }
     }
 
     struct Arrival: Equatable {
         let id: String
+        var kind: Celebrations.Item.Kind = .city
         let title: String
         let body: String
+    }
+
+    /// A sight the user hasn't been to before, for a quiet banner.
+    static func firstSight(_ stay: Stay, after others: [Stay]) -> Arrival? {
+        guard stay.isLandmark, !others.isEmpty else { return nil }
+        let seen = others.contains { $0.isLandmark && $0.location.distance(from: stay.location) < 300 }
+        guard !seen else { return nil }
+        let sights = Set(others.filter(\.isLandmark).map(\.displayName)).count + 1
+        return Arrival(id: "sight.\(stay.id.uuidString)", kind: .sight, title: stay.displayName,
+                       body: String(localized: "新景点 · 你去过的第 \(sights) 个景点", bundle: .appLanguage))
     }
 
     /// What's new about this place compared with everywhere before it: a country, else a
@@ -67,13 +85,13 @@ final class Notifier {
         if !others.contains(where: { $0.countryCode == code }) {
             let name = WorldInsights.countryName(code: code, fallback: stay.country)
             let count = Set(others.compactMap(\.countryCode)).count + 1
-            return Arrival(id: "arrival.\(code)", title: String(localized: "欢迎来到\(name) \(String.flag(for: code))", bundle: .appLanguage),
+            return Arrival(id: "arrival.\(code)", kind: .country, title: String(localized: "欢迎来到\(name) \(String.flag(for: code))", bundle: .appLanguage),
                            body: String(localized: "这是你去过的第 \(count) 个国家和地区。", bundle: .appLanguage))
         }
         func provinceOf(_ s: Stay) -> Province? { Province.containing(countryCode: s.countryCode, region: s.region, city: s.city) }
         if let province = provinceOf(stay), !others.contains(where: { provinceOf($0) == province }) {
             let lit = Set(others.compactMap { provinceOf($0)?.id }).count + 1
-            return Arrival(id: "arrival.\(province.id)", title: String(localized: "第一次来\(province.name)", bundle: .appLanguage),
+            return Arrival(id: "arrival.\(province.id)", kind: .province, title: String(localized: "第一次来\(province.name)", bundle: .appLanguage),
                            body: String(localized: "点亮了第 \(lit) 个省级行政区。", bundle: .appLanguage))
         }
         let names = CityNames.canonical(for: others + [stay])
@@ -107,6 +125,10 @@ final class Notifier {
         }
         let new = progress.reached.filter { !known.contains($0.id) }
         defaults.set(Array(known.union(reached)), forKey: Keys.knownMilestones)
+        for item in new {
+            Celebrations.shared.add(Celebrations.Item(id: "milestone.\(item.id)", kind: .milestone, title: item.milestone.title,
+                                                      subtitle: item.milestone.kind.title, date: item.date))
+        }
         guard Setting.milestones.isOn, let latest = new.first else { return }
         post(id: "milestone.\(latest.id)", title: String(localized: "达成里程碑", bundle: .appLanguage), body: latest.milestone.title)
     }

@@ -69,6 +69,8 @@ final class Stay {
     var customName: String?
     /// The words of a post about this visit.
     var note: String?
+    /// Where this visit came from: nil when recorded, "photos" when found in the photo library.
+    var sourceRaw: String?
     /// Photos posted for this visit.
     @Relationship(deleteRule: .cascade, inverse: \TripPhoto.stay) var photos: [TripPhoto]? = []
 
@@ -102,6 +104,7 @@ final class Stay {
     var duration: TimeInterval { (departure ?? Date()).timeIntervalSince(arrival) }
 
     var category: PlaceCategory { PlaceCategory(rawValue: categoryRaw) }
+    var isFromPhotos: Bool { sourceRaw == PhotoFootprints.source }
 }
 
 enum TagState: Int {

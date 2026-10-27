@@ -122,11 +122,31 @@ final class LocationEngine {
     var hasAnyPermission: Bool { authorization == .authorizedAlways || authorization == .authorizedWhenInUse }
 
     func requestWhenInUse() { manager.requestWhenInUseAuthorization() }
-    func requestAlways() { manager.requestAlwaysAuthorization() }
+    /// Asks for "Always". iOS shows that prompt only once per install; after that the request is
+    /// silently ignored, so later taps open the app's page in Settings instead.
+    func requestAlways() {
+        let key = "location.alwaysRequested"
+        if UserDefaults.standard.bool(forKey: key) {
+            Diagnostics.record("requestAlways -> open Settings")
+            if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+            return
+        }
+        UserDefaults.standard.set(true, forKey: key)
+        Diagnostics.record("requestAlways prompt")
+        manager.requestAlwaysAuthorization()
+        // If iOS shows nothing (it already asked before this version tracked it), go to Settings.
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(1.5))
+            guard let self, self.authorization == .authorizedWhenInUse,
+                  UIApplication.shared.applicationState == .active else { return }
+            if let url = URL(string: UIApplication.openSettingsURLString) { await UIApplication.shared.open(url) }
+        }
+    }
 
     private func authorizationChanged(_ manager: CLLocationManager) {
         authorization = manager.authorizationStatus
         isPreciseLocation = manager.accuracyAuthorization == .fullAccuracy
+        Diagnostics.record("authorization status=\(authorization.rawValue) precise=\(isPreciseLocation)")
         if isRecording, hasAnyPermission, updatesTask == nil { start() }
         if !hasAnyPermission { activity = .unavailable }
     }
@@ -143,6 +163,7 @@ final class LocationEngine {
         }
         updatesTask?.cancel()
         updatesTask = nil
+        Diagnostics.record("start precision=\(precision.rawValue) trip=\(activeTripID != nil) live=\(usesLiveUpdates) \(Diagnostics.battery)")
         // Lets iOS relaunch the app after it was terminated while the user moves on.
         manager.startMonitoringSignificantLocationChanges()
         activity = .starting
@@ -171,11 +192,13 @@ final class LocationEngine {
                 }
             } catch {
                 self?.log.error("Live updates ended: \(error.localizedDescription)")
+                Diagnostics.record("liveUpdates ended error=\(error.localizedDescription)")
             }
         }
     }
 
     private func stop() {
+        Diagnostics.record("stop paused=\(isPaused)")
         updatesTask?.cancel()
         updatesTask = nil
         backgroundSession?.invalidate()
@@ -230,6 +253,7 @@ final class LocationEngine {
     // MARK: Pause
 
     func pause(until date: Date) {
+        Diagnostics.record("pause until=\(date.formatted(.iso8601))")
         pausedUntil = date
         UserDefaults.standard.set(date, forKey: Keys.pausedUntil)
         if activeTripID == nil { stop() }
@@ -237,6 +261,7 @@ final class LocationEngine {
     }
 
     func resume() {
+        Diagnostics.record("resume")
         resumeTask?.cancel()
         pausedUntil = nil
         UserDefaults.standard.removeObject(forKey: Keys.pausedUntil)
@@ -288,10 +313,12 @@ final class LocationEngine {
 
     private func handle(_ update: CLLocationUpdate) {
         if update.authorizationDenied || update.authorizationDeniedGlobally {
+            if activity != .unavailable { Diagnostics.record("update authorizationDenied") }
             activity = .unavailable
             return
         }
         if update.stationary {
+            if activity != .stationary { Diagnostics.record("stationary") }
             activity = .stationary
             if let location = update.location ?? currentLocation { promoteAnchorIfStill(at: location) }
             flushChunk(carryOver: true)
@@ -301,8 +328,14 @@ final class LocationEngine {
         currentLocation = location
         // Any fix ends "starting"; a slow one reads as still until movement is confirmed.
         if activity == .starting { activity = location.speed > 0.5 ? .moving : .stationary }
-        guard location.horizontalAccuracy > 0, location.horizontalAccuracy <= Tuning.maxAccuracy,
-              abs(location.timestamp.timeIntervalSinceNow) < 60, !isJump(location) else { return }
+        Diagnostics.count("fix")
+        guard location.horizontalAccuracy > 0, location.horizontalAccuracy <= Tuning.maxAccuracy else { return Diagnostics.count("inaccurate") }
+        guard abs(location.timestamp.timeIntervalSinceNow) < 60 else { return Diagnostics.count("stale") }
+        guard !isJump(location) else {
+            Diagnostics.record("jump rejected \(Diagnostics.describe(location))")
+            return
+        }
+        Diagnostics.count("accepted")
         activity = location.speed >= 0 && location.speed < 0.5 && openStay != nil ? .stationary : .moving
         record(location)
         detectStay(with: location)
@@ -329,6 +362,7 @@ final class LocationEngine {
 
     /// Significant-change locations: wake-ups while paused, and a rough path in battery mode.
     private func handleCoarse(_ locations: [CLLocation]) {
+        if let last = locations.last { Diagnostics.record("significantChange \(Diagnostics.describe(last))") }
         if pausedUntil != nil, !isPaused { resume() }
         guard !usesLiveUpdates, isRecording else { return }
         for location in locations where location.horizontalAccuracy > 0 && location.horizontalAccuracy <= Tuning.coarseAccuracy {
@@ -351,6 +385,7 @@ final class LocationEngine {
 
     /// System-detected visits: arrival opens a stay, departure closes it.
     private func handleVisit(_ visit: CLVisit) {
+        Diagnostics.record("visit arrival=\(visit.arrivalDate.formatted(.iso8601)) departure=\(visit.departureDate == .distantFuture ? "-" : visit.departureDate.formatted(.iso8601))")
         guard !usesLiveUpdates, isRecording else { return }
         let arrived = visit.arrivalDate != .distantPast ? visit.arrivalDate : Date()
         if visit.departureDate == .distantFuture {
@@ -391,6 +426,7 @@ final class LocationEngine {
         let tripID = activeTripID
         Task {
             let mode = await classifier.mode(from: points[0].timestamp, to: points[points.count - 1].timestamp, points: points)
+            Diagnostics.record("chunk points=\(points.count) distance=\(Int(TrackPoint.distance(of: points)))m mode=\(mode.rawValue)")
             context.insert(TrackChunk(points: points, mode: mode, tripID: tripID))
             try? context.save()
         }
@@ -465,6 +501,7 @@ final class LocationEngine {
             return
         }
 
+        Diagnostics.record(String(format: "stay begin %.3f,%.3f samples=%d", center.latitude, center.longitude, anchor.count))
         let stay = Stay(arrival: anchor.since, coordinate: center)
         stay.sampleCount = anchor.count
         KnownPlaces.applyName(to: stay, in: context)
@@ -483,6 +520,7 @@ final class LocationEngine {
     }
 
     private func close(_ stay: Stay, at date: Date) {
+        Diagnostics.record("stay close duration=\(Int(date.timeIntervalSince(stay.arrival) / 60))min")
         openStay = nil
         if date.timeIntervalSince(stay.arrival) < Tuning.stayMinimumDuration {
             context.delete(stay)
@@ -493,7 +531,8 @@ final class LocationEngine {
     }
 
     private func lastClosedStay() -> Stay? {
-        var descriptor = FetchDescriptor<Stay>(predicate: #Predicate { $0.departure != nil },
+        // Visits found in photos aren't reopened by live recording.
+        var descriptor = FetchDescriptor<Stay>(predicate: #Predicate { $0.departure != nil && $0.sourceRaw == nil },
                                                sortBy: [SortDescriptor(\.arrival, order: .reverse)])
         descriptor.fetchLimit = 1
         return try? context.fetch(descriptor).first

@@ -14,6 +14,8 @@ struct YearReport {
         let detail: String?
         let visits: Int
         let distance: Double
+        /// One visit there, for its picture.
+        var stay: Stay?
     }
 
     let year: Int
@@ -103,12 +105,14 @@ struct YearReport {
             let others = clusters.filter { $0.center !== home.center }
             if let favorite = others.max(by: { ($0.members.count, $0.time) < ($1.members.count, $1.time) }), favorite.members.count >= 2 {
                 report.favoritePlace = Place(name: favorite.name, detail: favorite.center.subtitle, visits: favorite.members.count,
-                                             distance: favorite.center.location.distance(from: home.center.location))
+                                             distance: favorite.center.location.distance(from: home.center.location),
+                                             stay: favorite.center)
             }
             if let farthest = inYear.max(by: { $0.location.distance(from: home.center.location) < $1.location.distance(from: home.center.location) }) {
                 let distance = farthest.location.distance(from: home.center.location)
                 if distance > 50_000 {
-                    report.farthestPlace = Place(name: CityNames.key(farthest).flatMap { cityNames[$0] } ?? farthest.displayName, detail: farthest.country, visits: 1, distance: distance)
+                    report.farthestPlace = Place(name: CityNames.key(farthest).flatMap { cityNames[$0] } ?? farthest.displayName,
+                                                 detail: farthest.country, visits: 1, distance: distance, stay: farthest)
                 }
             }
         }
