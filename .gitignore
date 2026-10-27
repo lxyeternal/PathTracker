@@ -64,3 +64,4 @@ fastlane/test_output
 # Editor and macOS clutter
 .history/
 .DS_Store
+build/

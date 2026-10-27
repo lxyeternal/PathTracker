@@ -1,10 +1,12 @@
 # 上线清单
 
+> 上 TestFlight 的具体步骤见 [AppStore/TESTFLIGHT.md](AppStore/TESTFLIGHT.md)，商店文案和截图在 [AppStore/](AppStore/)。
+
 代码已经可以在模拟器里完整运行。以下事项需要开发者账号或你本人来完成，完成后才能上真机测试和提交 App Store。
 
 ## 1. 账号与标识（需要你来做）
 
-- [ ] 加入 Apple Developer Program（个人，已付款，审核中），通过后记下 **Team ID**。
+- [x] 加入 Apple Developer Program，Team ID `46CMLTF7SR`。
 - [x] **Bundle ID**：`com.honywen.waytrace`（已写入工程；上架后不能再改）。在开发者网站 Identifiers 里注册同名 App ID。
 - [x] **App 名称**：中文“漫迹”，英文“Waytrace”（主屏幕名称随语言切换）。
 - [ ] 在 App Store Connect 中新建 App：主要语言简体中文，名称“漫迹”；再添加英文本地化，名称“Waytrace”。
@@ -46,9 +48,9 @@ Apple Watch（自动签名会一起创建，确认一下即可）：
 
 ## 5. 审核材料
 
-- [ ] **隐私政策网址**：把 `PRIVACY.md` 发布到一个公开网址（GitHub Pages、Notion 公开页都可以），填进 App Store Connect。
+- [x] **隐私政策网址**：https://lxyeternal.github.io/PathTracker/privacy.html（需要在 GitHub 打开 Pages，见 TESTFLIGHT.md 第 1 步）。
 - [x] **客服邮箱**：honywendev@gmail.com（已写入 `AppInfo.supportEmail`，App Store Connect 的“技术支持网址”也可以填这个邮箱所在页面）。
-- [ ] 准备中英文两套商店描述、关键词和截图（App 已支持中英文）。
+- [x] 中英文商店描述、关键词和 iPhone 截图：`AppStore/`。
 - [ ] **App 隐私标签**：位置（精确位置）、健康与健身、照片；全部选择“不用于追踪、不与身份关联”，并勾选数据不会被开发者收集。
 - [ ] **后台定位说明**：审核会询问为什么需要“始终允许”定位。可以这样回答：用于全天自动记录用户的出行轨迹，这是 App 的核心功能；数据只存在用户自己的 iCloud 中。最好附上一段演示视频。
 - [ ] 截图：6.9 英寸和 6.5 英寸 iPhone 截图，另需 Apple Watch 截图（任一尺寸）。可以在调试版里用“生成演示数据”后截图。

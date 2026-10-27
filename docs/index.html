@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>漫迹 Waytrace</title>
+<meta name="description" content="全天自动记录足迹的 iPhone 和 Apple Watch App。An all-day footprint tracker for iPhone and Apple Watch.">
+<link rel="icon" href="images/icon.png">
+<style>
+  :root { --bg:#fbfbfd; --card:#fff; --text:#1d1d1f; --muted:#6e6e73; --accent:#0a7cff; --line:#e5e5ea; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#000; --card:#1c1c1e; --text:#f5f5f7; --muted:#98989d; --accent:#409cff; --line:#2c2c2e; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:17px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 56px 20px 72px; text-align:center; }
+  .icon { width:120px; height:120px; border-radius:27px; box-shadow: 0 12px 30px rgba(0,0,0,.18); }
+  h1 { font-size: 44px; margin: 20px 0 4px; letter-spacing: -0.5px; }
+  .tag { font-size: 21px; color: var(--muted); margin: 0 0 6px; }
+  .tag.en { font-size: 18px; margin-bottom: 36px; }
+  .shots { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin: 0 0 48px; }
+  .shots img { width: 210px; max-width: 44vw; border-radius: 30px; box-shadow: 0 10px 28px rgba(0,0,0,.16); }
+  .cards { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px; text-align:left; margin-bottom: 48px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:22px; padding: 20px 22px; }
+  .card h3 { margin: 0 0 6px; font-size: 19px; }
+  .card p { margin: 0; color: var(--muted); font-size: 15px; }
+  .support { background:var(--card); border:1px solid var(--line); border-radius:22px; padding: 24px; max-width: 620px; margin: 0 auto 28px; }
+  .support h2 { margin: 0 0 8px; font-size: 22px; }
+  a { color: var(--accent); }
+  footer { color: var(--muted); font-size: 14px; }
+  footer a { margin: 0 8px; }
+</style>
+</head>
+<body>
+<main>
+  <img class="icon" src="images/icon.png" alt="漫迹 Waytrace">
+  <h1>漫迹 · Waytrace</h1>
+  <p class="tag">不用打开，不用记得按开始。你走过的路，它都替你记着。</p>
+  <p class="tag en">No need to open it, no need to press start. It remembers every road you take.</p>
+
+  <div class="shots">
+    <img src="images/today.jpg" alt="Today">
+    <img src="images/country.jpg" alt="Country">
+    <img src="images/year.jpg" alt="Year in Footprints">
+    <img src="images/milestones.jpg" alt="Milestones">
+  </div>
+
+  <div class="cards">
+    <div class="card"><h3>🗺️ 全天自动记录</h3><p>轨迹、停留的地点、城市和国家，口袋里的手机就够了。<br>Records your day by itself, in your pocket.</p></div>
+    <div class="card"><h3>📸 从相册点亮过去</h3><p>用照片的拍摄地点，补上以前去过的地方。<br>Lights up past places from your photos.</p></div>
+    <div class="card"><h3>🌏 你去过的世界</h3><p>点亮地图、国家和城市、一段段行程与旅程。<br>Your countries, cities, visits and trips.</p></div>
+    <div class="card"><h3>✨ 年度足迹</h3><p>每年一份可以分享的足迹故事和插画奖牌。<br>A year-in-review story and illustrated medals.</p></div>
+    <div class="card"><h3>⌚ Apple Watch</h3><p>不带手机也能记录徒步、跑步和骑行。<br>Record hikes, runs and rides from your wrist.</p></div>
+    <div class="card"><h3>🔒 只属于你</h3><p>没有服务器，数据只在你的设备和 iCloud。<br>No server. Your data stays in your iCloud.</p></div>
+  </div>
+
+  <div class="support" id="support">
+    <h2>帮助与反馈 · Support</h2>
+    <p>有问题或建议，请发邮件给我们，通常会在两个工作日内回复。<br>Questions or feedback? Email us; we usually reply within two working days.</p>
+    <p><a href="mailto:honywendev@gmail.com">honywendev@gmail.com</a></p>
+  </div>
+
+  <footer>
+    <a href="privacy.html">隐私政策 Privacy Policy</a>·<a href="https://github.com/lxyeternal/PathTracker">GitHub</a>
+  </footer>
+</main>
+</body>
+</html>

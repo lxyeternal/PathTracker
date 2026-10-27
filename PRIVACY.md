@@ -1,6 +1,8 @@
 # 漫迹（Waytrace）隐私政策
 
-更新日期：2026 年 10 月 24 日
+更新日期：2026 年 10 月 28 日
+
+网页版（中英文）：https://lxyeternal.github.io/PathTracker/privacy.html
 
 ## 我们不收集你的数据
 
