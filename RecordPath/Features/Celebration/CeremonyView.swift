@@ -462,20 +462,48 @@ private struct StampCeremony: View {
     let isLast: Bool
     let next: () -> Void
 
+    /// Each kind is pressed the way the real thing would be: a customs officer's rubber stamp,
+    /// a carved stone seal inked from a paste dish, a station's date stamp, and for keepsakes,
+    /// foil that catches the light.
+    enum Motion { case rubber, seal, dater, foil, set }
+
     @Environment(\.modelContext) private var context
     @State private var map: UIImage?
     @State private var route: [CGPoint] = []
     @State private var hold: CGFloat = 0
     @State private var isStamped = false
+    @State private var lifted = false
     @State private var ink: CGFloat = 0
     @State private var squash = false
     @State private var shake: CGFloat = 0
     @State private var splash: Date?
     @State private var appeared = false
     @State private var share: Image?
+    /// Ready for the finger: the seal has been inked, the date has stopped rolling.
+    @State private var ready = false
+    // Seal
+    @State private var sealOverPad = true
+    @State private var dipped = false
+    @State private var sealInked = false
+    @State private var rock: Double = 0
+    // Date stamp
+    @State private var dateShown = ""
+    // Foil and sets
+    @State private var glint: CGFloat = -1
+    @State private var bloom = false
 
-    /// Cities stamp themselves; countries and provinces are stamped by hand.
-    private var isHeld: Bool { stamp.kind != .city }
+    private var motion: Motion {
+        switch stamp.kind {
+        case .entry, .exit: .rubber
+        case .province: .seal
+        case .city: .dater
+        case .special: .foil
+        case .set: .set
+        }
+    }
+
+    /// City stamps press themselves; everything else waits for a finger.
+    private var isHeld: Bool { motion != .dater }
 
     private var paperStyle: StampPaper.Style {
         switch stamp.kind {
@@ -517,10 +545,12 @@ private struct StampCeremony: View {
     private var stampSize: CGSize {
         switch stamp.kind {
         case .province: CGSize(width: 150, height: 150)
-        case .set: CGSize(width: 230, height: 230)
+        case .set: CGSize(width: 200, height: 200)
         default: CGSize(width: 210, height: 190)
         }
     }
+
+    private var pageSize: CGSize { CGSize(width: 300, height: stamp.kind == .province ? 300 : 340) }
 
     private var displayTitle: String {
         guard item.kind == .country, let code = item.countryCode else { return item.title }
@@ -540,8 +570,8 @@ private struct StampCeremony: View {
                 }
                 .frame(width: geo.size.width, height: geo.size.height)
                 .clipped()
-                .overlay(RadialGradient(colors: [inkColor.opacity(isStamped ? 0.35 : 0), .clear], center: .center, startRadius: 40, endRadius: 420))
-                .animation(.easeOut(duration: 1.2), value: isStamped)
+                .overlay(RadialGradient(colors: [inkColor.opacity(isStamped ? 0.32 : 0), .clear], center: .center, startRadius: 40, endRadius: 420))
+                .animation(.easeOut(duration: 1.6), value: isStamped)
             }
             .ignoresSafeArea()
             .allowsHitTesting(false)
@@ -566,7 +596,7 @@ private struct StampCeremony: View {
                 .offset(y: appeared ? 0 : -16)
 
                 page
-                    .scaleEffect(appeared ? 1 : 0.9)
+                    .scaleEffect(appeared ? 1 : 0.94)
                     .opacity(appeared ? 1 : 0)
 
                 Text(item.subtitle)
@@ -575,10 +605,14 @@ private struct StampCeremony: View {
                     .multilineTextAlignment(.center)
                     .opacity(isStamped ? 1 : 0)
                     .offset(y: isStamped ? 0 : 10)
-                    .animation(.smooth(duration: 0.6).delay(0.5), value: isStamped)
+                    .animation(.smooth(duration: 0.8).delay(0.7), value: isStamped)
                 Spacer(minLength: 0)
                 ZStack {
-                    if isHeld { HoldHint(isLit: isStamped, progress: hold, label: "按住盖章") }
+                    if isHeld {
+                        HoldHint(isLit: isStamped, progress: hold, label: "按住盖章")
+                            .opacity(ready ? 1 : 0)
+                            .animation(.smooth, value: ready)
+                    }
                     CeremonyActions(isLit: isStamped, isLast: isLast, share: share, next: next)
                 }
                 .frame(height: 60)
@@ -587,16 +621,21 @@ private struct StampCeremony: View {
             .padding(.horizontal, 28)
         }
         .task {
-            withAnimation(.spring(response: 0.7, dampingFraction: 0.8).delay(0.1)) { appeared = true }
+            withAnimation(.smooth(duration: 0.9).delay(0.1)) { appeared = true }
             if stamp.kind == .city { route = StampRoute.load(stamp, context: context) }
-            map = await PlaceCeremony.snapshot(item)
-            guard !isHeld else { return }
-            try? await Task.sleep(for: .seconds(1.0))
-            withAnimation(.easeIn(duration: 0.45)) { hold = 1 }
-            try? await Task.sleep(for: .seconds(0.45))
-            press()
+            async let snapshot = PlaceCeremony.snapshot(item)
+            switch motion {
+            case .seal: await inkTheSeal()
+            case .dater: await rollTheDate()
+            default:
+                try? await Task.sleep(for: .seconds(0.5))
+                ready = true
+            }
+            map = await snapshot
         }
     }
+
+    // MARK: The page
 
     private var page: some View {
         let tilt = stamp.tilt
@@ -613,16 +652,58 @@ private struct StampCeremony: View {
             .foregroundStyle(StampPaper.line)
             .padding(.vertical, 14)
 
+            if motion == .seal { inkPad }
+
             // Where it will land.
             StampArt(stamp: stamp, route: route, inked: false)
                 .frame(width: stampSize.width, height: stampSize.height)
                 .rotationEffect(.degrees(tilt))
-                .opacity(isStamped ? 0 : 0.7)
+                .opacity(isStamped || motion == .seal ? 0 : 0.25)
 
-            // The print it leaves, the ink spreading out from the middle.
-            StampArt(stamp: stamp, route: route)
-                .frame(width: stampSize.width, height: stampSize.height)
-                .rotationEffect(.degrees(tilt))
+            // A soft light behind a keepsake as it lands.
+            if motion == .foil || motion == .set {
+                Circle()
+                    .fill(RadialGradient(colors: [inkColor.opacity(0.35), .clear], center: .center, startRadius: 0, endRadius: 150))
+                    .frame(width: 300, height: 300)
+                    .scaleEffect(bloom ? 1.2 : 0.4)
+                    .opacity(bloom ? 0 : (isStamped ? 1 : 0))
+            }
+
+            if motion == .set { setMembers }
+
+            impression(tilt: tilt)
+
+            hand(tilt: tilt)
+
+            if motion == .dater && !dateShown.isEmpty {
+                dateWheel
+            }
+
+            if let splash { InkSplash(start: splash, color: inkColor).allowsHitTesting(false) }
+        }
+        .frame(width: pageSize.width, height: pageSize.height)
+        .clipShape(.rect(cornerRadius: 18, style: .continuous))
+        .shadow(color: .black.opacity(0.5), radius: 30, y: 16)
+        .rotationEffect(.degrees(-1.2))
+        .scaleEffect(squash ? 0.985 : 1)
+        .offset(x: shake, y: squash ? 2 : 0)
+        .contentShape(.rect)
+        .holdToLight(isLit: isStamped || !isHeld || !ready, progress: $hold, duration: motion == .seal ? 1.5 : 1.2) { press() }
+        .accessibilityAction(named: Text("盖章")) { if ready { press() } }
+    }
+
+    /// The print left on the paper.
+    @ViewBuilder
+    private func impression(tilt: Double) -> some View {
+        let art = StampArt(stamp: stamp, route: route)
+            .frame(width: stampSize.width, height: stampSize.height)
+            .rotationEffect(.degrees(tilt))
+        switch motion {
+        case .seal:
+            // A seal leaves its whole print at once; it's seen as the stone lifts away.
+            art.opacity(isStamped ? 1 : 0)
+        default:
+            art
                 .mask {
                     Circle()
                         .frame(width: 320, height: 320)
@@ -630,55 +711,236 @@ private struct StampCeremony: View {
                         .blur(radius: 18 * (1 - ink) + 2)
                 }
                 .opacity(isStamped ? 1 : 0)
+                .overlay {
+                    if motion == .foil || motion == .set {
+                        // Light running once across the foil.
+                        LinearGradient(colors: [.clear, .white.opacity(0.85), .clear], startPoint: .leading, endPoint: .trailing)
+                            .frame(width: stampSize.width * 0.5, height: stampSize.height * 1.6)
+                            .rotationEffect(.degrees(24))
+                            .offset(x: glint * stampSize.width)
+                            .mask(art)
+                            .blendMode(.plusLighter)
+                            .allowsHitTesting(false)
+                    }
+                }
+        }
+    }
 
-            // The stamp itself, coming down as you hold.
+    /// The stamp in the hand: hovering, coming down as you hold, lifting away once pressed.
+    private func hand(tilt: Double) -> some View {
+        let overPad = motion == .seal && sealOverPad
+        let rest: CGFloat = motion == .seal ? 1.22 : (motion == .set ? 1.12 : 1.28)
+        return ZStack {
+            if motion == .seal {
+                // The stone's carved face, bare until it's been in the paste.
+                SealStone(id: stamp.provinceID ?? "")
+                    .frame(width: stampSize.width * 0.92, height: stampSize.height * 0.92)
+                    .opacity(sealInked ? 0 : 1)
+            }
             StampArt(stamp: stamp, route: route)
                 .frame(width: stampSize.width, height: stampSize.height)
-                .rotationEffect(.degrees(tilt - 6 * (1 - hold)))
-                .scaleEffect(1.3 - 0.24 * hold)
-                .offset(y: -30 * (1 - hold))
-                .blur(radius: 2.5 * (1 - hold))
-                .opacity(isStamped ? 0 : 0.15 + 0.55 * hold)
-                .shadow(color: .black.opacity(0.4 * (1 - hold) + 0.15), radius: 22 * (1 - hold) + 3, y: 18 * (1 - hold) + 2)
-
-            if let splash { InkSplash(start: splash, color: inkColor).allowsHitTesting(false) }
+                .opacity(motion == .seal && !sealInked ? 0 : 1)
         }
-        .frame(width: 300, height: stamp.kind == .province ? 300 : 340)
-        .clipShape(.rect(cornerRadius: 18, style: .continuous))
-        .shadow(color: .black.opacity(0.5), radius: 30, y: 16)
-        .rotationEffect(.degrees(-1.2))
-        .scaleEffect(squash ? 0.975 : 1)
-        .offset(x: shake, y: squash ? 3 : 0)
-        .contentShape(.rect)
-        .holdToLight(isLit: isStamped || !isHeld, progress: $hold, duration: 1.2) { press() }
-        .accessibilityAction(named: Text("盖章")) { press() }
+        .rotationEffect(.degrees(tilt - (motion == .seal ? 0 : 5) * (1 - hold) + rock))
+        .scaleEffect(lifted ? rest * 0.95 : (overPad ? (dipped ? 0.4 : 0.45) : rest - (rest - 1.03) * hold))
+        .offset(x: overPad ? 78 : 0,
+                y: lifted ? -46 : (overPad ? (dipped ? 92 : 84) : -28 * (1 - hold)))
+        .blur(radius: lifted ? 2 : 0)
+        // A set's own stamp only appears as its cities come together.
+        .opacity(lifted ? 0 : (isStamped ? 0.6 : (motion == .set ? 0.94 * hold : 0.94)))
+        // Its shadow says how high above the paper it is.
+        .shadow(color: .black.opacity(0.28 * (1 - hold) + 0.08), radius: 16 * (1 - hold) + 2, x: 6 * (1 - hold), y: 18 * (1 - hold) + 1)
+        .opacity(motion == .seal && !appeared ? 0 : 1)
     }
+
+    // MARK: Seal
+
+    /// A porcelain dish of cinnabar paste in the corner of the page.
+    private var inkPad: some View {
+        ZStack {
+            Circle()
+                .fill(RadialGradient(colors: [.white, Color(red: 0.9, green: 0.88, blue: 0.84)], center: .topLeading, startRadius: 4, endRadius: 60))
+                .shadow(color: .black.opacity(0.18), radius: 6, y: 4)
+            Circle()
+                .inset(by: 9)
+                .fill(RadialGradient(colors: [Ink.cinnabar.color.mix(with: .white, by: 0.08), Ink.cinnabar.color.mix(with: .black, by: 0.25)],
+                                     center: .init(x: 0.4, y: 0.35), startRadius: 2, endRadius: 40))
+                .overlay(Circle().inset(by: 9).fill(.black.opacity(dipped ? 0.12 : 0)).blur(radius: 4))
+        }
+        .frame(width: 78, height: 78)
+        .offset(x: 78, y: 92)
+        .opacity(sealOverPad ? 1 : 0)
+        .scaleEffect(sealOverPad ? 1 : 0.9)
+    }
+
+    /// The seal is taken to the paste, pressed in, and brought over the page.
+    private func inkTheSeal() async {
+        try? await Task.sleep(for: .seconds(0.9))
+        withAnimation(.easeIn(duration: 0.28)) { dipped = true }
+        try? await Task.sleep(for: .seconds(0.28))
+        UIImpactFeedbackGenerator(style: .soft).impactOccurred(intensity: 0.55)
+        withAnimation(.easeOut(duration: 0.4)) { sealInked = true }
+        try? await Task.sleep(for: .seconds(0.35))
+        withAnimation(.easeOut(duration: 0.25)) { dipped = false }
+        try? await Task.sleep(for: .seconds(0.2))
+        withAnimation(.spring(response: 0.8, dampingFraction: 0.9)) { sealOverPad = false }
+        try? await Task.sleep(for: .seconds(0.6))
+        ready = true
+    }
+
+    // MARK: Date stamp
+
+    /// The date wheels of a station stamp, turning to today.
+    private var dateWheel: some View {
+        Text(verbatim: dateShown)
+            .font(.system(size: 15, weight: .semibold, design: .monospaced))
+            .contentTransition(.numericText())
+            .foregroundStyle(inkColor)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Color(red: 0.98, green: 0.97, blue: 0.94), in: .capsule)
+            .overlay(Capsule().stroke(inkColor.opacity(0.35), lineWidth: 0.8))
+            .shadow(color: .black.opacity(0.12), radius: 6, y: 3)
+            .offset(y: pageSize.height / 2 - 42)
+            .opacity(hold > 0.3 || isStamped ? 0 : 1)
+            .animation(.smooth(duration: 0.3), value: hold > 0.3)
+    }
+
+    private func rollTheDate() async {
+        let calendar = Calendar.current
+        var dates = (0..<6).compactMap { _ in calendar.date(byAdding: .day, value: -Int.random(in: 30...3000), to: stamp.date) }
+        dates.append(stamp.date)
+        try? await Task.sleep(for: .seconds(0.6))
+        for (index, date) in dates.enumerated() {
+            withAnimation(.snappy(duration: 0.18)) { dateShown = Self.wheel(date) }
+            UISelectionFeedbackGenerator().selectionChanged()
+            // Slowing down as it nears today.
+            try? await Task.sleep(for: .seconds(0.08 + Double(index) * 0.03))
+        }
+        try? await Task.sleep(for: .seconds(0.45))
+        ready = true
+        withAnimation(.easeIn(duration: 0.24)) { hold = 1 }
+        try? await Task.sleep(for: .seconds(0.24))
+        press()
+    }
+
+    private static func wheel(_ date: Date) -> String {
+        date.formatted(.verbatim("\(year: .defaultDigits) · \(month: .twoDigits) · \(day: .twoDigits)",
+                                 timeZone: .current, calendar: Calendar(identifier: .gregorian)))
+    }
+
+    // MARK: Sets
+
+    /// The set's cities around the page, drawn in as you hold.
+    private var setMembers: some View {
+        let members = StampSet.named(stamp.code)?.members ?? []
+        return ZStack {
+            ForEach(Array(members.enumerated()), id: \.offset) { index, title in
+                let angle = Double(index) / Double(max(members.count, 1)) * 2 * .pi - .pi / 2
+                let radius: CGFloat = 112 * (1 - hold)
+                StampArt(stamp: Self.memberStamp(title, date: stamp.date))
+                    .frame(width: 66, height: 66)
+                    .rotationEffect(.degrees(Double(index) * 23 - 30 + 120 * hold))
+                    .scaleEffect(isStamped ? 0.2 : 1 - 0.45 * hold)
+                    .offset(x: cos(angle) * radius, y: sin(angle) * radius)
+                    .opacity(isStamped ? 0 : (appeared ? 0.95 - 0.5 * hold : 0))
+                    .animation(.smooth(duration: 0.8).delay(appeared && hold == 0 ? 0.3 + Double(index) * 0.08 : 0), value: appeared)
+            }
+        }
+    }
+
+    private static func memberStamp(_ title: String, date: Date) -> Stamp {
+        let entry = CityStampStyle.catalog.first { $0.title == title }
+        return Stamp(id: "member.\(title)", kind: .city, date: date, countryCode: entry?.country, city: entry?.names.first ?? title,
+                     latitude: entry?.latitude ?? 0, longitude: entry?.longitude ?? 0)
+    }
+
+    // MARK: Pressing
 
     private func press() {
         guard !isStamped else { return }
-        UIImpactFeedbackGenerator(style: .heavy).impactOccurred(intensity: 1)
         isStamped = true
-        splash = Date()
-        withAnimation(.easeOut(duration: 0.07)) { squash = true }
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.5).delay(0.07)) { squash = false }
-        withAnimation(.easeOut(duration: 0.7)) { ink = 1 }
-        Task {
-            for offset in [7.0, -5, 3, -1.5, 0] {
-                withAnimation(.easeOut(duration: 0.05)) { shake = offset }
-                try? await Task.sleep(for: .seconds(0.05))
+        switch motion {
+        case .rubber:
+            UIImpactFeedbackGenerator(style: .rigid).impactOccurred(intensity: 1)
+            splash = Date()
+            withAnimation(.easeOut(duration: 0.06)) { squash = true }
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.7).delay(0.06)) { squash = false }
+            withAnimation(.easeOut(duration: 0.75)) { ink = 1 }
+            Task {
+                for offset in [3.0, -2, 1, 0] {
+                    withAnimation(.easeOut(duration: 0.06)) { shake = offset }
+                    try? await Task.sleep(for: .seconds(0.06))
+                }
+                await liftAway(after: 0.05, duration: 0.5)
             }
-            try? await Task.sleep(for: .seconds(0.2))
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        case .seal:
+            // Pressed, rocked side to side so every edge takes the paste, then lifted slowly.
+            UIImpactFeedbackGenerator(style: .heavy).impactOccurred(intensity: 0.75)
+            Task {
+                for angle in [1.6, -1.6, 0.0] {
+                    withAnimation(.easeInOut(duration: 0.22)) { rock = angle }
+                    try? await Task.sleep(for: .seconds(0.22))
+                    if angle != 0 { UIImpactFeedbackGenerator(style: .soft).impactOccurred(intensity: 0.45) }
+                }
+                await liftAway(after: 0.15, duration: 0.9)
+            }
+        case .dater:
+            UIImpactFeedbackGenerator(style: .light).impactOccurred(intensity: 0.9)
+            withAnimation(.easeOut(duration: 0.45)) { ink = 1 }
+            Task { await liftAway(after: 0.04, duration: 0.35) }
+        case .foil, .set:
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred(intensity: 0.9)
+            withAnimation(.easeOut(duration: 0.6)) { ink = 1 }
+            withAnimation(.easeOut(duration: 1.6).delay(0.1)) { bloom = true }
+            Task {
+                await liftAway(after: 0.1, duration: 0.6)
+                withAnimation(.easeInOut(duration: 1.1)) { glint = 1 }
+            }
         }
         share = CeremonyShareCard.render(title: item.title, subtitle: item.subtitle) {
             ZStack {
                 StampPaper(style: paperStyle)
                 StampArt(stamp: stamp, route: route)
-                    .frame(width: stampSize.width, height: stampSize.height)
+                    .frame(width: min(stampSize.width, 210), height: min(stampSize.height, 200))
                     .rotationEffect(.degrees(stamp.tilt))
             }
             .frame(width: 280, height: 240)
             .clipShape(.rect(cornerRadius: 18, style: .continuous))
+        }
+    }
+
+    /// The stamp rises off the page and fades, leaving its print.
+    private func liftAway(after delay: Double, duration: Double) async {
+        try? await Task.sleep(for: .seconds(delay))
+        withAnimation(.easeOut(duration: duration)) { lifted = true }
+        try? await Task.sleep(for: .seconds(duration * 0.6))
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+    }
+}
+
+/// A seal's carved stone face, before it's inked: the character cut into pale stone.
+private struct SealStone: View {
+    let id: String
+
+    var body: some View {
+        GeometryReader { geo in
+            let side = min(geo.size.width, geo.size.height)
+            RoundedRectangle(cornerRadius: side * 0.09, style: .continuous)
+                .fill(LinearGradient(colors: [Color(red: 0.9, green: 0.87, blue: 0.8), Color(red: 0.74, green: 0.7, blue: 0.62)],
+                                     startPoint: .topLeading, endPoint: .bottomTrailing))
+                .overlay {
+                    RoundedRectangle(cornerRadius: side * 0.06, style: .continuous)
+                        .inset(by: side * 0.06)
+                        .stroke(Color(red: 0.6, green: 0.56, blue: 0.48).opacity(0.6), lineWidth: side * 0.02)
+                }
+                .overlay {
+                    // Cut into the stone: dark in the groove, a light edge where the cut catches the light.
+                    Text(ProvinceSeal.character(for: id))
+                        .font(.system(size: side * 0.58, weight: .black))
+                        .foregroundStyle(Color(red: 0.55, green: 0.51, blue: 0.44))
+                        .shadow(color: .white.opacity(0.55), radius: 0, x: side * 0.008, y: side * 0.01)
+                }
         }
     }
 }
@@ -689,8 +951,8 @@ private struct InkSplash: View {
     let color: Color
 
     private struct Drop { let angle: Double, distance: Double, size: Double }
-    private let drops: [Drop] = (0..<16).map { _ in
-        Drop(angle: .random(in: 0...(2 * .pi)), distance: .random(in: 95...150), size: .random(in: 1.5...4))
+    private let drops: [Drop] = (0..<9).map { _ in
+        Drop(angle: .random(in: 0...(2 * .pi)), distance: .random(in: 92...125), size: .random(in: 1.2...2.6))
     }
 
     var body: some View {
@@ -700,7 +962,7 @@ private struct InkSplash: View {
                 guard t < 0.9 else { return }
                 let center = CGPoint(x: size.width / 2, y: size.height / 2)
                 let travel = 1 - pow(1 - min(t / 0.25, 1), 3)
-                context.opacity = max(0, 1 - max(0, t - 0.35) / 0.55)
+                context.opacity = 0.7 * max(0, 1 - max(0, t - 0.3) / 0.5)
                 for drop in drops {
                     let d = drop.distance * travel
                     let point = CGPoint(x: center.x + cos(drop.angle) * d, y: center.y + sin(drop.angle) * d)

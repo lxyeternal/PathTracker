@@ -216,8 +216,8 @@ private struct SpecialStampArt: View {
                 }
                 if stamp.code == "equator" {
                     // The line itself, straight through the middle.
-                    Rectangle().frame(width: 92, height: 1.4).offset(y: 13)
-                    Rectangle().frame(width: 92, height: 0.6).offset(y: 16)
+                    Rectangle().frame(width: 92, height: 1.4).offset(y: 12)
+                    Rectangle().frame(width: 92, height: 0.6).offset(y: 15)
                 }
                 VStack(spacing: 2) {
                     Image(systemName: style.symbol).font(.system(size: isNewYear ? 11 : 13, weight: .bold))
@@ -229,6 +229,8 @@ private struct SpecialStampArt: View {
                             .font(Self.font(city, size: 8))
                             .lineLimit(1).minimumScaleFactor(0.6)
                             .frame(width: 70)
+                            // Below the equator's line.
+                            .padding(.top, stamp.code == "equator" ? 9 : 0)
                     }
                 }
             }
@@ -539,8 +541,10 @@ private struct InkWorn: ViewModifier {
                     var random = SeededRandom(seed &+ 7)
                     context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(.black))
                     context.blendMode = .destinationOut
+                    // Specks stay fine-grained whatever the stamp's size.
+                    let grain = min(size.width, size.height) / 140
                     for _ in 0..<Int(size.width * size.height / 70 * wear) {
-                        let r = 0.3 + random.unit() * 1.0
+                        let r = (0.3 + random.unit() * 0.9) * grain
                         let point = CGPoint(x: random.unit() * size.width, y: random.unit() * size.height)
                         context.fill(Path(ellipseIn: CGRect(x: point.x - r, y: point.y - r, width: r * 2, height: r * 2)), with: .color(.black))
                     }

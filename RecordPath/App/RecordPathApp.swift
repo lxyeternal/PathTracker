@@ -81,6 +81,18 @@ final class AppServices {
         }
         tagger.onPhotosTagged = { [notifier] in notifier.checkMilestones() }
         PlaceSummaries.shared.onStamps = { [notifier] book in notifier.checkStamps(book) }
+        #if DEBUG
+        // Launched with -ceremonySamples: one of each ceremony, for trying them out.
+        // Followed by a kind ("province", "city", ...) for just that one.
+        let arguments = ProcessInfo.processInfo.arguments
+        if let flag = arguments.firstIndex(of: "-ceremonySamples") {
+            Celebrations.shared.pending.forEach(Celebrations.shared.finish)
+            Celebrations.shared.addSamples()
+            if flag + 1 < arguments.count, let kind = Celebrations.Item.Kind(rawValue: arguments[flag + 1]) {
+                Celebrations.shared.pending.filter { $0.kind != kind }.forEach(Celebrations.shared.finish)
+            }
+        }
+        #endif
         UNUserNotificationCenter.current().delegate = notificationPresenter
     }
 }

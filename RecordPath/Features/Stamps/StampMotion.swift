@@ -66,45 +66,101 @@ final class SyncedSet {
     }
 }
 
-/// Lands a stamp the first time it's on screen: lifted and faint, then pressed down hard with
-/// a thump you can feel, the ink settling as it lifts away.
+/// Lands a stamp the first time it's on screen, each kind in its own way: a rubber stamp
+/// comes down hard; a stone seal is pressed and rocked; a city's date stamp is a light tap;
+/// a keepsake settles and a line of light runs across it.
 private struct StampIn: ViewModifier {
     let id: String
+    let kind: Stamp.Kind
     let delay: Double
     let tilt: Double
     @State private var phase: Phase
+    @State private var rock: Double = 0
+    @State private var glint: CGFloat = -1
 
     enum Phase { case resting, raised, pressed }
 
-    init(id: String, delay: Double, tilt: Double) {
+    init(id: String, kind: Stamp.Kind, delay: Double, tilt: Double) {
         self.id = id
+        self.kind = kind
         self.delay = delay
         self.tilt = tilt
         _phase = State(initialValue: SeenStamps.contains(id) ? .resting : .raised)
     }
 
+    private var raisedScale: CGFloat {
+        switch kind {
+        case .entry, .exit: 1.4
+        case .province: 1.22
+        case .city: 1.14
+        case .special, .set: 1.3
+        }
+    }
+
+    private var isKeepsake: Bool { kind == .special || kind == .set }
+
     func body(content: Content) -> some View {
         content
-            .scaleEffect(phase == .raised ? 1.45 : (phase == .pressed ? 0.94 : 1))
+            .scaleEffect(phase == .raised ? raisedScale : (phase == .pressed ? 0.96 : 1))
             .opacity(phase == .raised ? 0 : 1)
-            .rotationEffect(.degrees(tilt + (phase == .raised ? -7 : 0)))
+            .rotationEffect(.degrees(tilt + rock + (phase == .raised ? (kind == .province ? 0 : -6) : 0)))
             .blur(radius: phase == .raised ? 3 : 0)
+            .overlay {
+                if isKeepsake && glint < 1 && glint > -1 {
+                    LinearGradient(colors: [.clear, .white.opacity(0.8), .clear], startPoint: .leading, endPoint: .trailing)
+                        .rotationEffect(.degrees(24))
+                        .scaleEffect(x: 0.5, y: 1.6)
+                        .offset(x: glint * 120)
+                        .mask(content)
+                        .blendMode(.plusLighter)
+                        .allowsHitTesting(false)
+                }
+            }
             .task {
                 guard phase == .raised else { return }
                 guard (try? await Task.sleep(for: .seconds(delay))) != nil else { return }
-                withAnimation(.easeIn(duration: 0.16)) { phase = .pressed }
-                try? await Task.sleep(for: .seconds(0.16))
-                UIImpactFeedbackGenerator(style: .rigid).impactOccurred(intensity: 0.9)
-                withAnimation(.spring(response: 0.32, dampingFraction: 0.55)) { phase = .resting }
+                await land()
                 SeenStamps.insert(id)
             }
+    }
+
+    private func land() async {
+        switch kind {
+        case .entry, .exit:
+            withAnimation(.easeIn(duration: 0.16)) { phase = .pressed }
+            try? await Task.sleep(for: .seconds(0.16))
+            UIImpactFeedbackGenerator(style: .rigid).impactOccurred(intensity: 0.9)
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) { phase = .resting }
+        case .province:
+            withAnimation(.easeIn(duration: 0.3)) { phase = .pressed }
+            try? await Task.sleep(for: .seconds(0.3))
+            UIImpactFeedbackGenerator(style: .heavy).impactOccurred(intensity: 0.6)
+            for angle in [1.3, -1.3, 0.0] {
+                withAnimation(.easeInOut(duration: 0.16)) { rock = angle }
+                try? await Task.sleep(for: .seconds(0.16))
+            }
+            withAnimation(.smooth(duration: 0.5)) { phase = .resting }
+        case .city:
+            withAnimation(.easeIn(duration: 0.12)) { phase = .pressed }
+            try? await Task.sleep(for: .seconds(0.12))
+            UIImpactFeedbackGenerator(style: .light).impactOccurred(intensity: 0.8)
+            withAnimation(.smooth(duration: 0.3)) { phase = .resting }
+        case .special, .set:
+            withAnimation(.easeIn(duration: 0.24)) { phase = .pressed }
+            try? await Task.sleep(for: .seconds(0.24))
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred(intensity: 0.8)
+            withAnimation(.smooth(duration: 0.6)) { phase = .resting }
+            try? await Task.sleep(for: .seconds(0.3))
+            glint = -0.99
+            withAnimation(.easeInOut(duration: 1.0)) { glint = 0.99 }
+        }
     }
 }
 
 extension View {
     /// Tilts the stamp as it lies on the page, landing it first if it hasn't been seen.
     func stampIn(_ stamp: Stamp, delay: Double = 0, tilt: Double? = nil) -> some View {
-        modifier(StampIn(id: stamp.id, delay: delay, tilt: tilt ?? stamp.tilt))
+        modifier(StampIn(id: stamp.id, kind: stamp.kind, delay: delay, tilt: tilt ?? stamp.tilt))
     }
 }
 
