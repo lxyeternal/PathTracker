@@ -2,8 +2,9 @@ import SwiftUI
 import AuthenticationServices
 import CoreLocation
 
-/// Four short steps: what the app does, location (When In Use, then Always), steps, and an
-/// optional Sign in with Apple. Every permission can be skipped and granted later.
+/// Five short steps: what the app does, how to record (all day or only when asked), location
+/// (When In Use, then Always for all-day recording), steps, and an optional Sign in with Apple.
+/// Every permission can be skipped and granted later.
 struct OnboardingView: View {
     var onFinish: () -> Void
 
@@ -11,14 +12,16 @@ struct OnboardingView: View {
     @Environment(ActivityProvider.self) private var activity
     @Environment(AccountManager.self) private var account
 
-    enum Step: Int, CaseIterable { case welcome, location, activity, account }
+    enum Step: Int, CaseIterable { case welcome, mode, location, activity, account }
     @State private var step: Step = .welcome
+    @State private var recordsAllDay = true
 
     var body: some View {
         VStack(spacing: 0) {
             ZStack {
                 switch step {
                 case .welcome: welcome
+                case .mode: mode
                 case .location: location
                 case .activity: activityStep
                 case .account: accountStep
@@ -46,7 +49,7 @@ struct OnboardingView: View {
     }
 
     private func finish() {
-        if engine.hasAnyPermission { engine.isEnabled = true }
+        engine.isEnabled = recordsAllDay && engine.hasAnyPermission
         onFinish()
     }
 
@@ -105,8 +108,8 @@ struct OnboardingView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             VStack(alignment: .leading, spacing: 20) {
-                FeatureRow(symbol: "map.fill", tint: .blue, title: "全天自动记录",
-                           detail: "不用每次手动开始，放大地图就能看到走过的每条街。")
+                FeatureRow(symbol: "map.fill", tint: .blue, title: "每一条路都在地图上",
+                           detail: "全天自动记录，或只在你想记录时记录。放大地图就能看到走过的每条街。")
                 FeatureRow(symbol: "flag.2.crossed.fill", tint: .orange, title: "足迹自动标注",
                            detail: "国家、城市和知名景点会被自动识别。")
                 FeatureRow(symbol: "lock.icloud.fill", tint: .green, title: "只属于你",
@@ -117,19 +120,48 @@ struct OnboardingView: View {
         }
     }
 
+    private var mode: some View {
+        VStack(spacing: 28) {
+            Spacer()
+            VStack(spacing: 10) {
+                Text("你想怎么记录？")
+                    .font(.title.bold())
+                    .multilineTextAlignment(.center)
+                Text("随时可以在“设置”里更改。")
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            VStack(spacing: 12) {
+                ModeChoice(symbol: "infinity", tint: .blue, title: "全天自动记录", badge: "推荐",
+                           detail: "出门就有轨迹，不用操心。手机不动时定位自动休眠，在一个地方待久了会完全关闭 GPS。",
+                           isSelected: recordsAllDay) { recordsAllDay = true }
+                ModeChoice(symbol: "record.circle", tint: .orange, title: "想记录时再记录", badge: nil,
+                           detail: "只在你点“开始记录”时记录，适合旅行、徒步和骑行。其他时间完全不使用位置。",
+                           isSelected: !recordsAllDay) { recordsAllDay = false }
+            }
+            .sensoryFeedback(.selection, trigger: recordsAllDay)
+            Spacer()
+            PrimaryButton(title: "继续", action: advance)
+        }
+    }
+
+    /// Manual recording only needs When In Use: a recording started in the app keeps going in
+    /// the background. Only all-day recording asks for Always.
+    private var needsAlways: Bool { recordsAllDay }
+
     private var location: some View {
         VStack(spacing: 28) {
             Spacer()
             HeroSymbol(systemName: engine.hasAlwaysPermission ? "location.fill.viewfinder" : "location.fill", tint: .blue)
             VStack(spacing: 10) {
-                Text(engine.hasAnyPermission && !engine.hasAlwaysPermission ? "再多一步：始终允许" : "允许访问你的位置")
+                Text(needsAlways && engine.hasAnyPermission && !engine.hasAlwaysPermission ? "再多一步：始终允许" : "允许访问你的位置")
                     .font(.title.bold())
                     .multilineTextAlignment(.center)
                 Text(locationExplanation)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
-            if engine.hasAnyPermission && !engine.hasAlwaysPermission {
+            if needsAlways && engine.hasAnyPermission && !engine.hasAlwaysPermission {
                 PermissionHint(text: "在弹出的对话框里选择“更改为始终允许”。")
             }
             Spacer()
@@ -137,10 +169,10 @@ struct OnboardingView: View {
                 switch engine.authorization {
                 case .notDetermined:
                     PrimaryButton(title: "允许访问位置") { engine.requestWhenInUse() }
-                case .authorizedWhenInUse:
+                case .authorizedWhenInUse where needsAlways:
                     PrimaryButton(title: "改为始终允许") { engine.requestAlways() }
                     SecondaryButton(title: "以后再说", action: advance)
-                case .authorizedAlways:
+                case .authorizedWhenInUse, .authorizedAlways:
                     PrimaryButton(title: "继续", action: advance)
                 default:
                     PrimaryButton(title: "打开设置") { openSettings() }
@@ -149,7 +181,7 @@ struct OnboardingView: View {
             }
         }
         .onChange(of: engine.authorization) { _, status in
-            if status == .authorizedAlways {
+            if status == .authorizedAlways || (!needsAlways && status == .authorizedWhenInUse) {
                 Task {
                     try? await Task.sleep(for: .milliseconds(600))
                     advance()
@@ -160,6 +192,8 @@ struct OnboardingView: View {
 
     private var locationExplanation: LocalizedStringKey {
         switch engine.authorization {
+        case .authorizedWhenInUse where !needsAlways:
+            "可以开始了。在“今天”页右上角点“开始记录”，锁屏后也会继续记录，直到你结束。"
         case .authorizedWhenInUse:
             "选择“始终允许”后，即使你没有打开 App，轨迹也会被记录下来。系统会在手机静止时自动暂停定位，尽量省电。"
         case .denied, .restricted:
@@ -274,6 +308,58 @@ private struct FeatureRow: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+    }
+}
+
+private struct ModeChoice: View {
+    let symbol: String
+    let tint: Color
+    let title: LocalizedStringKey
+    let badge: LocalizedStringKey?
+    let detail: LocalizedStringKey
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(alignment: .top, spacing: 14) {
+                Image(systemName: symbol)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 40, height: 40)
+                    .background(Circle().fill(tint.gradient))
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 6) {
+                        Text(title).font(.headline)
+                        if let badge {
+                            Text(badge)
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(tint)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(tint.opacity(0.15), in: .capsule)
+                        }
+                    }
+                    Text(detail)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundStyle(isSelected ? AnyShapeStyle(tint) : AnyShapeStyle(.tertiary))
+            }
+            .padding(16)
+            .background(.background.secondary, in: .rect(cornerRadius: 22, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .strokeBorder(isSelected ? tint : .clear, lineWidth: 2)
+            }
+            .contentShape(.rect(cornerRadius: 22))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 

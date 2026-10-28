@@ -7,6 +7,7 @@ struct TrackingStatusCard: View {
     @Environment(LocationEngine.self) private var engine
     @Query(filter: #Predicate<Trip> { $0.endDate == nil }) private var openTrips: [Trip]
     @State private var confirmingEnd = false
+    @State private var showingNewRecording = false
 
     private var activeTrip: Trip? {
         openTrips.first { $0.id == engine.activeTripID }
@@ -29,9 +30,7 @@ struct TrackingStatusCard: View {
                         detail: "\(pauseText(until))自动恢复。暂停期间不会记录位置。",
                         action: "恢复") { withAnimation { engine.resume() } }
             } else if !engine.isRecording {
-                problem(symbol: "pause.circle.fill", tint: .orange,
-                        title: "自动记录已关闭", detail: "开启后会全天在后台记录。也可以点右上角的按钮，手动记录一段。",
-                        action: "开启") { enable() }
+                startPrompt
             } else if activeTrip != nil {
                 // The trip row above already shows the recording state.
                 EmptyView()
@@ -57,6 +56,37 @@ struct TrackingStatusCard: View {
         }
         .animation(.smooth, value: engine.activity)
         .animation(.smooth, value: engine.authorization)
+    }
+
+    /// Recording only when asked: one clear way to start, and a quiet hint that all-day exists.
+    private var startPrompt: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 14) {
+                Image(systemName: "record.circle")
+                    .font(.title2)
+                    .foregroundStyle(.orange)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("想记录时再记录").font(.subheadline.weight(.semibold))
+                    Text("现在没有在记录，也不会使用你的位置。").font(.footnote).foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+            }
+            Button { showingNewRecording = true } label: {
+                Label("开始记录", systemImage: "record.circle")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+            }
+            .buttonStyle(.glassProminent)
+            .buttonBorderShape(.capsule)
+            .tint(.orange)
+            Button("改为全天自动记录") { enable() }
+                .font(.footnote.weight(.medium))
+                .frame(maxWidth: .infinity)
+        }
+        .padding(14)
+        .background(.background.secondary, in: .rect(cornerRadius: 20, style: .continuous))
+        .sheet(isPresented: $showingNewRecording) { NewRecordingSheet() }
     }
 
     private func manualRecording(_ trip: Trip) -> some View {
