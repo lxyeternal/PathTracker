@@ -67,7 +67,8 @@ struct CountryDetailView: View {
                 if !borderStamps.isEmpty {
                     SectionHeader(title: "护照上的印章", trailing: "\(borderStamps.filter { $0.kind == .entry }.count) 次入境")
                     ScrollView(.horizontal) {
-                        HStack(spacing: 4) {
+                        // Lazy: someone who crosses a border every week has hundreds of these.
+                        LazyHStack(spacing: 4) {
                             ForEach(borderStamps.reversed()) { stamp in
                                 StampArt(stamp: stamp)
                                     .frame(width: 128, height: 104)

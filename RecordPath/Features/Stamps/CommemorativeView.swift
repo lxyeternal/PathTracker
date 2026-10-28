@@ -130,7 +130,7 @@ struct CommemorativeView: View {
         VStack(alignment: .leading, spacing: 10) {
             header("跨年", detail: "每一年，从哪里开始")
             ScrollView(.horizontal) {
-                HStack(spacing: 14) {
+                LazyHStack(spacing: 14) {
                     ForEach(newYears) { stamp in
                         VStack(spacing: 4) {
                             StampArt(stamp: stamp)
