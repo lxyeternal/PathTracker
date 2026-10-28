@@ -906,6 +906,27 @@ struct PhotoFootprintTests {
 }
 
 @MainActor
+struct MapFocusTests {
+    @Test func focusesOnTheRecentBusyRegionNotTheWholeWorld() {
+        let now = Date()
+        func stays(_ count: Int, _ lat: Double, _ lon: Double, daysAgo: Double) -> [Stay] {
+            (0..<count).map { i in
+                Stay(arrival: now.addingTimeInterval(-(daysAgo + Double(i)) * 86_400),
+                     coordinate: CLLocationCoordinate2D(latitude: lat + Double(i) * 0.01, longitude: lon))
+            }
+        }
+        let singapore = stays(40, 1.30, 103.80, daysAgo: 0)
+        let chengdu = stays(8, 30.60, 104.00, daysAgo: 30)
+        let paris = stays(3, 48.85, 2.35, daysAgo: 60)
+        let newYork = stays(3, 40.70, -74.00, daysAgo: 90)
+        let focus = MapDot.focus(MapDot.dots(for: singapore + chengdu + paris + newYork))
+        let lons = focus.map(\.coordinate.longitude)
+        #expect(focus.count == 48)
+        #expect(lons.allSatisfy { $0 > 90 && $0 < 120 })
+    }
+}
+
+@MainActor
 struct CityStintTests {
     private func stay(_ city: String, day: Int, hour: Double = 10, lat: Double = 30.27, lon: Double = 120.15, photos: Bool = false) -> Stay {
         let date = Calendar.current.date(from: DateComponents(year: 2020, month: 8, day: day))!.addingTimeInterval(hour * 3600)
