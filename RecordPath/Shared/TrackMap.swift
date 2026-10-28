@@ -70,7 +70,8 @@ struct TrackMap: View {
     /// Frames everything with some breathing room, never zooming in closer than a few
     /// streets; with nothing to show it follows the user.
     private var framing: MapCameraPosition {
-        let coordinates = lines.flatMap(\.coordinates) + stays.map(\.coordinate.onMap) + livePoints.map(\.coordinate.onMap)
+        let all = lines.flatMap(\.coordinates) + stays.map(\.coordinate.onMap) + livePoints.map(\.coordinate.onMap)
+        let coordinates = Self.mainRegion(all, stays: stays.map(\.coordinate.onMap))
         guard !coordinates.isEmpty else { return .userLocation(fallback: .automatic) }
         var rect = MKMapRect.null
         for coordinate in coordinates {
@@ -84,6 +85,28 @@ struct TrackMap: View {
             rect = MKMapRect(x: rect.midX - width / 2, y: rect.midY - height / 2, width: width, height: height)
         }
         return .rect(rect)
+    }
+
+    /// A trip to Switzerland that starts and ends at home in Singapore should open on
+    /// Switzerland, not on half the world. Keeps the coordinates near where most places are;
+    /// the far-off ones stay on the map, one pinch away.
+    static func mainRegion(_ coordinates: [CLLocationCoordinate2D], stays: [CLLocationCoordinate2D]) -> [CLLocationCoordinate2D] {
+        let size = 20.0
+        func cell(_ c: CLLocationCoordinate2D) -> Int64 {
+            Int64(floor(c.latitude / size)) * 1_000 + Int64(floor((c.longitude + 180) / size))
+        }
+        // Places say where the time went; a long flight line would outweigh them point for point.
+        let votes = stays.isEmpty ? coordinates : stays
+        var weight: [Int64: Int] = [:]
+        for c in votes { weight[cell(c), default: 0] += 1 }
+        guard weight.count > 1, let busiest = weight.max(by: { $0.value < $1.value }) else { return coordinates }
+        let members = votes.filter { cell($0) == busiest.key }
+        let lat = members.map(\.latitude).reduce(0, +) / Double(members.count)
+        let lon = members.map(\.longitude).reduce(0, +) / Double(members.count)
+        let near = coordinates.filter {
+            abs($0.latitude - lat) <= 25 && abs(($0.longitude - lon).remainder(dividingBy: 360)) <= 35
+        }
+        return near.isEmpty ? coordinates : near
     }
 
     /// Long days are simplified so thousands of points still pan smoothly.
