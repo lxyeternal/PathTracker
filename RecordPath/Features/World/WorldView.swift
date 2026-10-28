@@ -13,6 +13,7 @@ struct WorldView: View {
     @State private var selectedStay: Stay?
     @State private var showingMap = false
     @State private var search = ""
+    @State private var countryContinent = ""
     @Namespace private var namespace
 
     var body: some View {
@@ -59,6 +60,7 @@ struct WorldView: View {
             .navigationDestination(for: CountrySummary.self) { country in
                 CountryDetailView(country: country)
             }
+            .navigationDestination(for: CountriesRoute.self) { CountriesListView(route: $0) }
             .navigationDestination(for: PlacesList.self) { list in
                 PlacesListView(list: list)
             }
@@ -117,34 +119,48 @@ struct WorldView: View {
         .matchedTransitionSource(id: "world", in: namespace)
     }
 
+    /// A handful at a time: the continent chips narrow it, "全部" opens the whole list.
     private var countries: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SectionHeader(title: "国家和地区")
+        let all = insights.countries
+        let shown = all.filter { countryContinent.isEmpty || Continent.of($0.code)?.id == countryContinent }
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                SectionHeader(title: "国家和地区")
+                if all.count > Self.countriesShown {
+                    NavigationLink("全部 \(all.count)", value: CountriesRoute(continent: countryContinent))
+                        .font(.subheadline).padding(.top, 8).padding(.trailing, 4)
+                }
+            }
+            if Continent.options(for: all).count > 2 {
+                FilterChips(options: Continent.options(for: all), selection: $countryContinent)
+            }
             VStack(spacing: 0) {
-                ForEach(insights.countries) { country in
-                    NavigationLink(value: country) {
-                        HStack(spacing: 14) {
-                            Text(country.flag).font(.system(size: 34))
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(country.name).font(.body.weight(.semibold))
-                                Text("\(country.days.count) 天 · \(country.cities.count) 座城市")
-                                    .font(.subheadline).foregroundStyle(.secondary)
-                            }
+                ForEach(shown.prefix(Self.countriesShown)) { country in
+                    NavigationLink(value: country) { CountryRow(country: country) }.buttonStyle(.plain)
+                    if country.id != shown.prefix(Self.countriesShown).last?.id { Divider().padding(.leading, 64) }
+                }
+                if shown.count > Self.countriesShown {
+                    Divider().padding(.leading, 16)
+                    NavigationLink(value: CountriesRoute(continent: countryContinent)) {
+                        HStack {
+                            Text("查看其余 \(shown.count - Self.countriesShown) 个").font(.subheadline.weight(.medium))
                             Spacer()
                             Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
+                        .foregroundStyle(Color.accentColor)
+                        .padding(.horizontal, 16).padding(.vertical, 12)
                         .contentShape(.rect)
                     }
                     .buttonStyle(.plain)
-                    if country.id != insights.countries.last?.id { Divider().padding(.leading, 64) }
                 }
             }
             .padding(.vertical, 6)
             .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
+            .animation(.smooth, value: countryContinent)
         }
     }
+
+    private static let countriesShown = 5
 
     private var frequentPlaces: some View {
         VStack(alignment: .leading, spacing: 10) {

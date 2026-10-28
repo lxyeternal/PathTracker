@@ -481,6 +481,16 @@
         }
       }
     },
+    "%lld 天 · %lld 座城市 · 最近 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld days · %2$lld cities · last %3$@"
+          }
+        }
+      }
+    },
     "%lld 天后，又来到这里": {
       "localizations": {
         "en": {
@@ -683,6 +693,16 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "%lld 次 · %lld 天": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld visits · %2$lld days"
           }
         }
       }
@@ -1666,6 +1686,16 @@
         }
       }
     },
+    "停留最久": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most days"
+          }
+        }
+      }
+    },
     "健康与运动数据": {
       "localizations": {
         "en": {
@@ -1822,6 +1852,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "See All"
+          }
+        }
+      }
+    },
+    "全部 %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All %lld"
           }
         }
       }
@@ -3428,6 +3468,16 @@
         }
       }
     },
+    "展开其余 %lld 次": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show %lld more"
+          }
+        }
+      }
+    },
     "已关闭": {
       "localizations": {
         "en": {
@@ -4150,12 +4200,32 @@
         }
       }
     },
+    "排序": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sort"
+          }
+        }
+      }
+    },
     "推荐": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Recommended"
+          }
+        }
+      }
+    },
+    "搜索国家或地区": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search countries and regions"
           }
         }
       }
@@ -4802,12 +4872,32 @@
         }
       }
     },
+    "最早去过": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Earliest"
+          }
+        }
+      }
+    },
     "最近一次": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Most Recent"
+          }
+        }
+      }
+    },
+    "最近去过": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most recent"
           }
         }
       }
@@ -4988,6 +5078,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "See All"
+          }
+        }
+      }
+    },
+    "查看其余 %lld 个": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See the other %lld"
           }
         }
       }
