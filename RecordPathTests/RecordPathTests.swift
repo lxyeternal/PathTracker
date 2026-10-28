@@ -388,10 +388,10 @@ struct TripDateTests {
         let day = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_800_000_000))
         let trip = Trip(title: "t", startDate: day)
         trip.endDate = calendar.date(byAdding: .day, value: 1, to: day)
-        #expect(trip.dateRangeText == day.formatted(.dateTime.year().month().day()))
+        #expect(trip.dateRangeText == day.formatted(.dateTime.year().month().day().locale(appLocale)))
 
         trip.endDate = calendar.date(byAdding: .day, value: 3, to: day)
-        #expect(trip.dateRangeText != day.formatted(.dateTime.year().month().day()))
+        #expect(trip.dateRangeText != day.formatted(.dateTime.year().month().day().locale(appLocale)))
     }
 }
 
@@ -1193,6 +1193,16 @@ struct StampTests {
         let options = Continent.options(for: countries)
         #expect(options.first?.value == "" && options.first?.count == 3)
         #expect(options.dropFirst().first?.count == 2, "the continent with most countries comes first")
+    }
+
+    @Test func catalogCitiesHaveChineseAndEnglishNames() {
+        for entry in CityStampStyle.catalog {
+            #expect(entry.zh.unicodeScalars.contains { (0x4E00...0x9FFF).contains($0.value) }, "\(entry.title) zh: \(entry.zh)")
+            #expect(!entry.en.isEmpty && entry.en.unicodeScalars.allSatisfy { $0.value < 0x0250 || $0 == "'" }, "\(entry.title) en: \(entry.en)")
+        }
+        let tokyo = CityStampStyle.catalog.first { $0.title == "東京" }
+        #expect(tokyo?.zh == "东京" && tokyo?.en == "Tokyo")
+        #expect(CityStampStyle.catalog.first { $0.title == "ROMA" }?.en == "Rome")
     }
 
     @Test func stampsTiltTheSameWayEveryTime() {

@@ -33,54 +33,87 @@ struct CommemorativeView: View {
 
     // MARK: 四至
 
-    /// North at the top, south at the bottom, west and east either side, as on a map.
+    /// The four corners laid out as a compass, the way an old deed names a field's bounds:
+    /// 东至、西至、南至、北至. The highest point sits beneath on its own.
     private var corners: some View {
         VStack(alignment: .leading, spacing: 10) {
             header("你的四至", detail: "去过的最北、最南、最东、最西，和最高的地方")
-            VStack(spacing: 4) {
-                cornerStamp("record.north")
-                HStack(spacing: 4) {
-                    cornerStamp("record.west")
-                    ZStack {
-                        Circle().stroke(StampPaper.line, lineWidth: 1)
-                        Image(systemName: "location.north.line.fill")
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundStyle(StampPaper.line.mix(with: .black, by: 0.3))
+            VStack(spacing: 0) {
+                ZStack {
+                    CompassRose()
+                        .frame(width: 132, height: 132)
+                    VStack {
+                        corner("north")
+                        Spacer(minLength: 0)
+                        corner("south")
                     }
-                    .frame(width: 56, height: 56)
-                    cornerStamp("record.east")
+                    HStack {
+                        corner("west")
+                        Spacer(minLength: 0)
+                        corner("east")
+                    }
                 }
-                cornerStamp("record.south")
+                .frame(height: 372)
+                .padding(.horizontal, 6)
                 if let highest {
-                    Divider().overlay(StampPaper.line).padding(.vertical, 8)
-                    labelled(highest)
+                    Rectangle().fill(StampPaper.line).frame(height: 0.8).padding(.horizontal, 24).padding(.vertical, 12)
+                    HStack(spacing: 16) {
+                        StampArt(stamp: highest)
+                            .frame(width: 104, height: 96)
+                            .stampIn(highest, delay: 0.3, tilt: highest.tilt * 0.4)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("最高").font(.caption.weight(.bold)).tracking(2).foregroundStyle(Self.printed.opacity(0.6))
+                            Text(verbatim: highest.value ?? "").font(.system(.title2, design: .serif, weight: .bold)).foregroundStyle(Self.printed)
+                            Text(CityStampStyle.displayName(highest)).font(.subheadline).foregroundStyle(Self.printed.opacity(0.75))
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.horizontal, 20)
                 }
             }
-            .padding(.vertical, 16)
+            .padding(.vertical, 18)
             .frame(maxWidth: .infinity)
             .background { StampPaper(style: .book) }
             .clipShape(.rect(cornerRadius: 24, style: .continuous))
         }
     }
 
+    static let printed = Color(red: 0.25, green: 0.22, blue: 0.2)
+
+    /// A direction's seal with "北至 雷克雅未克" and how far that is.
     @ViewBuilder
-    private func cornerStamp(_ code: String) -> some View {
-        if let stamp = special(code) {
-            labelled(stamp).frame(maxWidth: .infinity)
-        } else {
-            Color.clear.frame(height: 40)
+    private func corner(_ direction: String) -> some View {
+        let stamp = special("record.\(direction)")
+        VStack(spacing: 5) {
+            Group {
+                if let stamp {
+                    StampArt(stamp: stamp).stampIn(stamp, delay: 0.2, tilt: stamp.tilt * 0.3)
+                } else {
+                    StampArt(stamp: Stamp(id: "special.record.\(direction)", kind: .special, date: .distantPast, code: "record.\(direction)"),
+                             inked: false)
+                }
+            }
+            .frame(width: 56, height: 56)
+            VStack(spacing: 1) {
+                Text(Self.reach(direction)).font(.caption2.weight(.bold)).tracking(1.5).foregroundStyle(Self.printed.opacity(0.55))
+                Text(stamp.map(CityStampStyle.displayName) ?? "—")
+                    .font(.system(.footnote, design: .serif, weight: .semibold))
+                    .foregroundStyle(Self.printed)
+                    .lineLimit(1)
+                if let value = stamp?.value {
+                    Text(verbatim: value).font(.system(size: 10, design: .monospaced)).foregroundStyle(Self.printed.opacity(0.6))
+                }
+            }
         }
+        .frame(width: 104)
     }
 
-    private func labelled(_ stamp: Stamp) -> some View {
-        VStack(spacing: 4) {
-            StampArt(stamp: stamp)
-                .frame(width: 96, height: 96)
-                .stampIn(stamp, delay: 0.2, tilt: stamp.tilt * 0.6)
-            Text(stamp.city ?? "")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color(red: 0.3, green: 0.27, blue: 0.24))
-                .lineLimit(1)
+    private static func reach(_ direction: String) -> LocalizedStringKey {
+        switch direction {
+        case "north": "北至"
+        case "south": "南至"
+        case "east": "东至"
+        default: "西至"
         }
     }
 
@@ -116,7 +149,7 @@ struct CommemorativeView: View {
                 }
             }
             .frame(height: 104)
-            Text(earned ? (stamp.city ?? "") : (stamp.code == "equator" ? String(localized: "还没跨过赤道", bundle: .appLanguage)
+            Text(earned ? CityStampStyle.displayName(stamp) : (stamp.code == "equator" ? String(localized: "还没跨过赤道", bundle: .appLanguage)
                                                                          : String(localized: "还没越过日期变更线", bundle: .appLanguage)))
                 .font(.caption.weight(earned ? .semibold : .regular))
                 .foregroundStyle(Color(red: 0.3, green: 0.27, blue: 0.24).opacity(earned ? 1 : 0.55))
@@ -136,7 +169,7 @@ struct CommemorativeView: View {
                             StampArt(stamp: stamp)
                                 .frame(width: 104, height: 104)
                                 .stampIn(stamp, delay: 0.2, tilt: stamp.tilt * 0.6)
-                            Text(stamp.city ?? "")
+                            Text(CityStampStyle.displayName(stamp))
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(Color(red: 0.3, green: 0.27, blue: 0.24))
                                 .lineLimit(1)
@@ -188,6 +221,43 @@ struct CommemorativeView: View {
     }
 }
 
+/// A compass rose in fine ink: rings, sixteen ticks, and an eight-pointed star.
+private struct CompassRose: View {
+    var body: some View {
+        Canvas { context, size in
+            let c = CGPoint(x: size.width / 2, y: size.height / 2)
+            let r = min(size.width, size.height) / 2
+            let ink = Color(red: 0.32, green: 0.29, blue: 0.26)
+            for (radius, width) in [(r - 1, 0.9), (r - 6, 0.5), (r * 0.36, 0.6)] {
+                context.stroke(Path(ellipseIn: CGRect(x: c.x - radius, y: c.y - radius, width: radius * 2, height: radius * 2)),
+                               with: .color(ink.opacity(0.7)), lineWidth: width)
+            }
+            for i in 0..<32 {
+                let a = Double(i) / 32 * 2 * .pi
+                let inner = r - (i % 4 == 0 ? 12 : 9)
+                var tick = Path()
+                tick.move(to: CGPoint(x: c.x + inner * sin(a), y: c.y - inner * cos(a)))
+                tick.addLine(to: CGPoint(x: c.x + (r - 6) * sin(a), y: c.y - (r - 6) * cos(a)))
+                context.stroke(tick, with: .color(ink.opacity(0.6)), lineWidth: 0.6)
+            }
+            // Each point is two halves, one filled and one open, as compass roses are engraved.
+            func point(angle: Double, length: CGFloat, width: CGFloat) {
+                let tip = CGPoint(x: c.x + length * sin(angle), y: c.y - length * cos(angle))
+                let left = CGPoint(x: c.x + width * sin(angle - .pi / 2), y: c.y - width * cos(angle - .pi / 2))
+                let right = CGPoint(x: c.x + width * sin(angle + .pi / 2), y: c.y - width * cos(angle + .pi / 2))
+                var dark = Path(); dark.addLines([c, tip, right]); dark.closeSubpath()
+                var light = Path(); light.addLines([c, tip, left]); light.closeSubpath()
+                context.fill(dark, with: .color(ink.opacity(0.85)))
+                context.fill(light, with: .color(StampPaper.color))
+                context.stroke(light, with: .color(ink.opacity(0.85)), lineWidth: 0.6)
+            }
+            for i in 0..<4 { point(angle: Double(i) * .pi / 2 + .pi / 4, length: r * 0.5, width: r * 0.09) }
+            for i in 0..<4 { point(angle: Double(i) * .pi / 2, length: r - 14, width: r * 0.12) }
+            context.fill(Path(ellipseIn: CGRect(x: c.x - 2.5, y: c.y - 2.5, width: 5, height: 5)), with: .color(ink))
+        }
+    }
+}
+
 /// One set: its stamp (faint until complete), the cities in it, and how many are done.
 private struct SetRow: View {
     let progress: StampSet.Progress
@@ -208,7 +278,7 @@ private struct SetRow: View {
             .frame(width: 88, height: 88)
             VStack(alignment: .leading, spacing: 6) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text(verbatim: progress.group.title).font(.headline)
+                    Text(verbatim: progress.group.localizedName).font(.headline)
                     Spacer()
                     Text(verbatim: "\(progress.visited.count) / \(progress.group.members.count)")
                         .font(.subheadline.weight(.semibold)).monospacedDigit()
@@ -227,7 +297,7 @@ private struct SetRow: View {
     private var members: some View {
         progress.group.members.enumerated().reduce(Text(verbatim: "")) { text, item in
             let visited = progress.visited[item.element] != nil
-            let name = Text(verbatim: item.element)
+            let name = Text(verbatim: StampSet.memberName(item.element))
                 .foregroundStyle(visited ? AnyShapeStyle(.primary) : AnyShapeStyle(.tertiary))
                 .fontWeight(visited ? .semibold : .regular)
             return item.offset == 0 ? name : text + Text(verbatim: "  ") + name
