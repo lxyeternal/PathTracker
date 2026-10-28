@@ -6,8 +6,8 @@
 
 <p align="center">
   <b>不用打开，不用记得按开始。你走过的路，它都替你记着。</b><br>
-  全天记录足迹的 iPhone 和 Apple Watch App：轨迹、停留的地点、去过的城市和国家，<br>
-  一枚一枚盖进你自己的护照里。
+  全天记录足迹的 iPhone 和 Apple Watch App：每天走过的路、停留的地点、去过的城市和国家，<br>
+  一年一年攒成你自己的地图。
 </p>
 
 <p align="center">
@@ -28,18 +28,18 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/today.jpg" width="190" alt="今天">
+  <img src="docs/images/day.jpg" width="190" alt="一天的轨迹">
+  <img src="docs/images/timeline.jpg" width="190" alt="时间线">
+  <img src="docs/images/trip.jpg" width="190" alt="旅程">
   <img src="docs/images/passport.jpg" width="190" alt="护照">
-  <img src="docs/images/city-stamps.jpg" width="190" alt="城市章">
-  <img src="docs/images/stamp-ceremony.jpg" width="190" alt="盖章">
 </p>
 
 <p align="center">
   <a href="#-自动记录什么都不用管">记录</a> ·
+  <a href="#-旅程">旅程</a> ·
+  <a href="#-你去过的世界">足迹</a> ·
   <a href="#-护照与印章">护照与印章</a> ·
   <a href="#-那些会让你停一下的时刻">时刻</a> ·
-  <a href="#-你去过的世界">足迹</a> ·
-  <a href="#-旅程">旅程</a> ·
   <a href="#-apple-watch">Apple Watch</a> ·
   <a href="#隐私">隐私</a> ·
   <a href="#技术">技术</a>
@@ -48,6 +48,12 @@
 ---
 
 ## 🗺️ 自动记录，什么都不用管
+
+<p align="center">
+  <img src="docs/images/day.jpg" width="190" alt="一天的轨迹">
+  <img src="docs/images/timeline.jpg" width="190" alt="时间线">
+  <img src="docs/images/stats.jpg" width="190" alt="统计">
+</p>
 
 | | |
 |---|---|
@@ -58,6 +64,32 @@
 | **时间线** | 一天按“停留 → 路上 → 停留”排开，每个地点带上那里拍的照片。 |
 
 **从相册找回过去**：读取照片和视频的拍摄地点，补上 App 出现之前去过的地方。新用户在引导最后一步就能做，护照当场翻开，这些年的印章一枚枚盖上。所有读取都在手机上完成，照片不会上传。
+
+---
+
+## 🧳 旅程
+
+<p align="center">
+  <img src="docs/images/trips.jpg" width="190" alt="找到的旅行">
+  <img src="docs/images/trip.jpg" width="190" alt="旅程详情">
+</p>
+
+- 从足迹里**自动找出过去的旅行**：离开常住地 80 公里以上的连续日子，一键收进旅程。
+- 旅程汇总这几天的路线、地点和照片，可以写备注、导出 GPX、生成分享图和明信片。
+- 徒步、跑步、骑行可以单独用高精度记录，Apple Watch 同时记录心率并存为体能训练。
+
+---
+
+## 🌏 你去过的世界
+
+- **国家和地区**：按大洲筛选（全部 · 亚洲 · 欧洲……），可以搜索，按停留天数、最近去过、最早去过排序；去过的地方再多，也不用一直往下拉。
+- **国家页**：描出国境的地图（中国大陆、港澳台不由 App 绘制边界），每座去过的城市一团光；下面是这个国家的入境章和每座城市的城市章。
+- **每一次到访**：按“同一城市的连续几天”自动归成一段。历史长的话，一次只看一年，上面一排 12 个月的柱状图，点哪个月就跳到哪个月。
+
+<p align="center">
+  <img src="docs/images/places.jpg" width="190" alt="足迹">
+  <img src="docs/images/country.jpg" width="190" alt="国家页">
+</p>
 
 ---
 
@@ -107,26 +139,6 @@
 </p>
 
 ---
-
-## 🌏 你去过的世界
-
-- **国家和地区**：按大洲筛选（全部 · 亚洲 · 欧洲……），可以搜索，按停留天数、最近去过、最早去过排序；去过的地方再多，也不用一直往下拉。
-- **国家页**：描出国境的地图（中国大陆、港澳台不由 App 绘制边界），每座去过的城市一团光；下面是这个国家的入境章和每座城市的城市章。
-- **每一次到访**：按“同一城市的连续几天”自动归成一段。历史长的话，一次只看一年，上面一排 12 个月的柱状图，点哪个月就跳到哪个月。
-
-<p align="center">
-  <img src="docs/images/places.jpg" width="190" alt="足迹">
-  <img src="docs/images/country.jpg" width="190" alt="国家页">
-  <img src="docs/images/sets.jpg" width="190" alt="套章">
-</p>
-
----
-
-## 🧳 旅程
-
-- 从足迹里**自动找出过去的旅行**：离开常住地 80 公里以上的连续日子，一键收进旅程。
-- 旅程汇总这几天的路线、地点和照片，可以写备注、导出 GPX、生成分享图和明信片。
-- 徒步、跑步、骑行可以单独用高精度记录，Apple Watch 同时记录心率并存为体能训练。
 
 ## ⌚ Apple Watch
 
