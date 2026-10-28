@@ -80,6 +80,7 @@ final class AppServices {
             notifier.checkPeriodically()
         }
         tagger.onPhotosTagged = { [notifier] in notifier.checkMilestones() }
+        PlaceSummaries.shared.onStamps = { [notifier] book in notifier.checkStamps(book) }
         UNUserNotificationCenter.current().delegate = notificationPresenter
     }
 }

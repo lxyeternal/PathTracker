@@ -164,6 +164,16 @@
         }
       }
     },
+    "%@套章，%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ set, %2$@"
+          }
+        }
+      }
+    },
     "%@省份印，%@": {
       "localizations": {
         "en": {
@@ -190,6 +200,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ in Progress"
+          }
+        }
+      }
+    },
+    "%@都去过了。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've been to %@."
+          }
+        }
+      }
+    },
+    "%@，新年快乐": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Happy New Year, %@"
           }
         }
       }
@@ -501,6 +531,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$lld yr %2$lld mo"
+          }
+        }
+      }
+    },
+    "%lld 年前的今天": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld year ago today"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld years ago today"
+                }
+              }
+            }
           }
         }
       }
@@ -870,6 +922,26 @@
         }
       }
     },
+    "一年前的你寄来一张明信片": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A postcard from you, a year ago"
+          }
+        }
+      }
+    },
+    "一年后的我": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Me, a year from now"
+          }
+        }
+      }
+    },
     "一次出行": {
       "localizations": {
         "en": {
@@ -896,6 +968,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Step by step, you walked"
+          }
+        }
+      }
+    },
+    "一生可能只有一次": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maybe once in a lifetime"
           }
         }
       }
@@ -1210,6 +1292,16 @@
         }
       }
     },
+    "今年的护照": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This year's passport"
+          }
+        }
+      }
+    },
     "仍在这里": {
       "localizations": {
         "en": {
@@ -1260,6 +1352,16 @@
         }
       }
     },
+    "从相册找回": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find from photos"
+          }
+        }
+      }
+    },
     "从相册点亮足迹": {
       "localizations": {
         "en": {
@@ -1280,12 +1382,42 @@
         }
       }
     },
+    "从这里开始，季节反过来了。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From here, the seasons run the other way."
+          }
+        }
+      }
+    },
     "以后再说": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Maybe Later"
+          }
+        }
+      }
+    },
+    "以后去过的地方，会在你到达时盖上。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From now on, places are stamped when you arrive."
+          }
+        }
+      }
+    },
+    "以后可以在“足迹”页随时从相册找回。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can do this any time from the Places tab."
           }
         }
       }
@@ -1392,6 +1524,66 @@
         }
       }
     },
+    "你的四至": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your four corners"
+          }
+        }
+      }
+    },
+    "你的护照": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your passport"
+          }
+        }
+      }
+    },
+    "你越过了国际日期变更线": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You crossed the International Date Line"
+          }
+        }
+      }
+    },
+    "你跨过了赤道": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You crossed the equator"
+          }
+        }
+      }
+    },
+    "你进入了北极圈": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You crossed the Arctic Circle"
+          }
+        }
+      }
+    },
+    "你进入了南极圈": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You crossed the Antarctic Circle"
+          }
+        }
+      }
+    },
     "使用 Apple 登录来保存你的名字，并在你的所有设备上保持一致。不登录也能使用全部功能。": {
       "localizations": {
         "en": {
@@ -1418,6 +1610,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Save"
+          }
+        }
+      }
+    },
+    "做成一张明信片，分享出去，或寄给一年后的自己。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Make it a postcard to share, or send it to yourself a year from now."
           }
         }
       }
@@ -1560,6 +1762,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "ARRIVAL"
+          }
+        }
+      }
+    },
+    "入境章": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entry stamps"
           }
         }
       }
@@ -1724,6 +1936,26 @@
         }
       }
     },
+    "写几句话": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write a few lines"
+          }
+        }
+      }
+    },
+    "写在背面": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On the back"
+          }
+        }
+      }
+    },
     "写点什么": {
       "localizations": {
         "en": {
@@ -1860,6 +2092,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Share My Year"
+          }
+        }
+      }
+    },
+    "分享明信片": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share postcard"
           }
         }
       }
@@ -2220,6 +2462,16 @@
         }
       }
     },
+    "去过其中任何一座城市，这一套就会出现在这里。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visit any city in a set and it shows up here."
+          }
+        }
+      }
+    },
     "去过的国家、城市和景点会被自动整理出来。": {
       "localizations": {
         "en": {
@@ -2276,6 +2528,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sights Visited"
+          }
+        }
+      }
+    },
+    "去过的最北、最南、最东、最西，和最高的地方": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The farthest north, south, east and west you've been, and the highest"
           }
         }
       }
@@ -2784,6 +3046,16 @@
         }
       }
     },
+    "地点还在陆续识别，几分钟内会全部盖上。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Places are still being named; the rest are stamped within a few minutes."
+          }
+        }
+      }
+    },
     "地面上的路程相当于绕赤道 %@": {
       "localizations": {
         "en": {
@@ -2849,7 +3121,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "CITY STAMPS"
+            "value": "City stamps"
           }
         }
       }
@@ -2870,6 +3142,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Notes"
+          }
+        }
+      }
+    },
+    "夏天这里太阳不落。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In summer the sun never sets here."
           }
         }
       }
@@ -2900,6 +3182,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "days since you were last here"
+          }
+        }
+      }
+    },
+    "套章": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sets"
           }
         }
       }
@@ -3000,6 +3292,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Home"
+          }
+        }
+      }
+    },
+    "寄出于 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent %@"
+          }
+        }
+      }
+    },
+    "寄给一年后的自己": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send to yourself in a year"
           }
         }
       }
@@ -3126,6 +3438,16 @@
         }
       }
     },
+    "已寄出，%@送达": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sent. Arrives %@"
+          }
+        }
+      }
+    },
     "已开启": {
       "localizations": {
         "en": {
@@ -3202,6 +3524,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Signed in as %@"
+          }
+        }
+      }
+    },
+    "已经寄给一年后的自己。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On its way to you, a year from now."
           }
         }
       }
@@ -3486,6 +3818,16 @@
         }
       }
     },
+    "很少有人走到这么远。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Very few people come this far."
+          }
+        }
+      }
+    },
     "徒步": {
       "localizations": {
         "en": {
@@ -3714,6 +4056,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Found Trips"
+          }
+        }
+      }
+    },
+    "找回这些年去过的地方": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find the places you've been"
           }
         }
       }
@@ -4160,6 +4512,16 @@
         }
       }
     },
+    "旅行明信片": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Travel postcard"
+          }
+        }
+      }
+    },
     "旅行者": {
       "localizations": {
         "en": {
@@ -4450,6 +4812,16 @@
         }
       }
     },
+    "最难忘的是%@。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Best of all: %@."
+          }
+        }
+      }
+    },
     "最高速度": {
       "localizations": {
         "en": {
@@ -4570,12 +4942,42 @@
         }
       }
     },
+    "来自“%@”。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From “%@”."
+          }
+        }
+      }
+    },
+    "来自一年前的你": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From you, a year ago"
+          }
+        }
+      }
+    },
     "来自照片": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "From Photos"
+          }
+        }
+      }
+    },
+    "枚印章": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "stamps"
           }
         }
       }
@@ -4660,6 +5062,16 @@
         }
       }
     },
+    "正在查找…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Looking…"
+          }
+        }
+      }
+    },
     "正在查看照片…": {
       "localizations": {
         "en": {
@@ -4676,6 +5088,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Checking…"
+          }
+        }
+      }
+    },
+    "正在翻看相册…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Looking through your photos…"
           }
         }
       }
@@ -4810,6 +5232,16 @@
         }
       }
     },
+    "每一年，从哪里开始": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where each year began"
+          }
+        }
+      }
+    },
     "每一条路都在地图上": {
       "localizations": {
         "en": {
@@ -4860,6 +5292,16 @@
         }
       }
     },
+    "没找到带地点的照片": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No photos with locations"
+          }
+        }
+      }
+    },
     "没有可以分享的内容": {
       "localizations": {
         "en": {
@@ -4886,6 +5328,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "No Step Data"
+          }
+        }
+      }
+    },
+    "没有照片权限": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No access to photos"
           }
         }
       }
@@ -4956,6 +5408,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Waytrace recognizes sights and shops automatically. If a sight wasn't recognized, choose Sight here. The name and type apply to every visit within 150 m."
+          }
+        }
+      }
+    },
+    "漫迹可以从照片的拍摄地点，找出你去过的国家和城市，为它们一一盖上印章。只读取时间和地点，照片不会被上传。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waytrace can find the countries and cities you've been to from where your photos were taken, and stamp each one. Only the time and place are read; photos are never uploaded."
           }
         }
       }
@@ -5100,6 +5562,16 @@
         }
       }
     },
+    "特别的章": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Special stamp"
+          }
+        }
+      }
+    },
     "现在": {
       "localizations": {
         "en": {
@@ -5235,7 +5707,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "PROVINCE SEALS"
+            "value": "Province seals"
           }
         }
       }
@@ -5540,6 +6012,26 @@
         }
       }
     },
+    "纪念": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keepsakes"
+          }
+        }
+      }
+    },
+    "纪念章": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keepsakes"
+          }
+        }
+      }
+    },
     "结束": {
       "localizations": {
         "en": {
@@ -5696,6 +6188,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Edit Caption"
+          }
+        }
+      }
+    },
+    "翻面": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn over"
           }
         }
       }
@@ -5970,6 +6472,16 @@
         }
       }
     },
+    "走过 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Covered %@"
+          }
+        }
+      }
+    },
     "走过次数": {
       "localizations": {
         "en": {
@@ -6060,6 +6572,26 @@
         }
       }
     },
+    "跨年": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Year's Eve"
+          }
+        }
+      }
+    },
+    "跨越": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lines crossed"
+          }
+        }
+      }
+    },
     "跨越 %lld 个大洲": {
       "localizations": {
         "en": {
@@ -6140,6 +6672,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Track Segments"
+          }
+        }
+      }
+    },
+    "轻点翻到背面": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to turn it over"
+          }
+        }
+      }
+    },
+    "轻点翻回正面": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to turn it back"
           }
         }
       }
@@ -6294,6 +6846,28 @@
         }
       }
     },
+    "还有 %lld 套": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld more set"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld more sets"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "还有 %lld 段": {
       "localizations": {
         "en": {
@@ -6396,6 +6970,26 @@
         }
       }
     },
+    "还没越过日期变更线": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date line not crossed yet"
+          }
+        }
+      }
+    },
+    "还没跨过赤道": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Equator not crossed yet"
+          }
+        }
+      }
+    },
     "这一刻，想记下点什么…": {
       "localizations": {
         "en": {
@@ -6432,6 +7026,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "No tracks on this day yet"
+          }
+        }
+      }
+    },
+    "这一天，你多过了一次，或者少过了一次。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You lived this day twice, or skipped it."
           }
         }
       }
@@ -6568,6 +7172,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "How far you went and where, ready to share"
+          }
+        }
+      }
+    },
+    "这一年，从%@开始。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This year began at %@."
           }
         }
       }
@@ -6754,6 +7368,16 @@
         }
       }
     },
+    "那年今日": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On this day"
+          }
+        }
+      }
+    },
     "邮箱": {
       "localizations": {
         "en": {
@@ -6900,6 +7524,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Privacy Policy"
+          }
+        }
+      }
+    },
+    "集齐一组城市，盖一枚联合章": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visit every city in a set to earn its stamp"
+          }
+        }
+      }
+    },
+    "集齐了“%@”": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completed “%@”"
+          }
+        }
+      }
+    },
+    "集齐套章": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set complete"
           }
         }
       }

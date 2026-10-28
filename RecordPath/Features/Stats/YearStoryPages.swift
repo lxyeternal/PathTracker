@@ -637,3 +637,93 @@ private struct Polaroid: View {
         .shadow(color: .black.opacity(0.45), radius: 10, y: 6)
     }
 }
+
+// MARK: - The year's passport: every stamp earned, pressed onto one page
+
+@MainActor
+enum YearStamps {
+    static func count(year: Int) -> Int { StoryPassportPage(year: year, isActive: false).stamps.count }
+}
+
+struct StoryPassportPage: View {
+    let year: Int
+    let isActive: Bool
+
+    var stamps: [Stamp] {
+        let book = PlaceSummaries.shared.stamps
+        let calendar = Calendar.current
+        let inYear = { (stamp: Stamp) in calendar.component(.year, from: stamp.date) == year }
+        return book.passport.filter { $0.kind == .entry && inYear($0) } + book.sets.compactMap(\.stamp).filter(inYear)
+            + book.earnedOnce.filter { $0.kind == .special && inYear($0) } + book.provinces.filter(inYear) + book.cities.filter(inYear)
+    }
+
+    static func hasStamps(year: Int) -> Bool { YearStamps.count(year: year) > 0 }
+
+    /// Where the stamps land, three to a row, nudged off the grid.
+    private static let slots: [CGPoint] = [
+        CGPoint(x: 0.22, y: 0.2), CGPoint(x: 0.55, y: 0.16), CGPoint(x: 0.8, y: 0.27),
+        CGPoint(x: 0.27, y: 0.48), CGPoint(x: 0.6, y: 0.47), CGPoint(x: 0.82, y: 0.6),
+        CGPoint(x: 0.2, y: 0.78), CGPoint(x: 0.5, y: 0.8), CGPoint(x: 0.78, y: 0.86),
+    ]
+
+    var body: some View {
+        let all = stamps
+        let shown = Array(all.prefix(Self.slots.count))
+        ZStack {
+            LinearGradient(colors: [Color(red: 0.24, green: 0.05, blue: 0.08), Color(red: 0.08, green: 0.02, blue: 0.03)],
+                           startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
+            GeometryReader { geo in
+                let width = min(geo.size.width - 64, 330)
+                let height = width * 1.2
+                ZStack {
+                    StampPaper(style: .passport)
+                    ForEach(Array(shown.enumerated()), id: \.element.id) { index, stamp in
+                        StampWithRoute(stamp: stamp)
+                            .frame(width: width * 0.34, height: width * 0.34)
+                            .rotationEffect(.degrees(stamp.tilt))
+                            .scaleEffect(isActive ? 1 : 1.6)
+                            .opacity(isActive ? 1 : 0)
+                            .animation(.spring(response: 0.28, dampingFraction: 0.6).delay(isActive ? 0.5 + Double(index) * 0.32 : 0), value: isActive)
+                            .position(x: Self.slots[index].x * width, y: Self.slots[index].y * height)
+                    }
+                }
+                .frame(width: width, height: height)
+                .clipShape(.rect(cornerRadius: 14, style: .continuous))
+                .rotationEffect(.degrees(-2))
+                .shadow(color: .black.opacity(0.5), radius: 24, y: 12)
+                .position(x: geo.size.width / 2, y: geo.size.height * 0.36)
+            }
+            PageText {
+                Kicker(text: "今年的护照", tint: Color(red: 0.95, green: 0.8, blue: 0.5)).comesIn(isActive, after: 0.2)
+                StoryNumber(value: isActive ? Double(all.count) : 0, unit: String(localized: "枚印章", bundle: .appLanguage), size: 64)
+                    .animation(.easeOut(duration: 1.6).delay(0.4), value: isActive)
+                Text(summary(all))
+                    .font(.title3.weight(.semibold))
+                    .opacity(0.85)
+                    .comesIn(isActive, after: 0.8)
+            }
+        }
+        .task(id: isActive) {
+            // A thump for each stamp as it lands.
+            guard isActive else { return }
+            for index in shown.indices {
+                guard (try? await Task.sleep(for: .seconds(index == 0 ? 0.62 : 0.32))) != nil else { return }
+                UIImpactFeedbackGenerator(style: .rigid).impactOccurred(intensity: 0.8)
+            }
+        }
+    }
+
+    private func summary(_ all: [Stamp]) -> String {
+        let counts: [(Stamp.Kind, String)] = [(.entry, String(localized: "入境章", bundle: .appLanguage)),
+                                              (.province, String(localized: "省份印", bundle: .appLanguage)),
+                                              (.city, String(localized: "城市章", bundle: .appLanguage))]
+        var parts = counts.compactMap { kind, name -> String? in
+            let n = all.filter { $0.kind == kind }.count
+            return n > 0 ? "\(n) \(name)" : nil
+        }
+        let keepsakes = all.filter { $0.kind == .special || $0.kind == .set }.count
+        if keepsakes > 0 { parts.append("\(keepsakes) \(String(localized: "纪念章", bundle: .appLanguage))") }
+        return parts.joined(separator: " · ")
+    }
+}

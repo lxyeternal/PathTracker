@@ -1111,6 +1111,81 @@ struct StampTests {
         #expect(CountryStampStyle.of("JP").native == "日本国")
     }
 
+    @Test func commutingAcrossABorderIsOneVisit() {
+        var stays = [stay("CN", "深圳", day: 0, hours: 300, lat: 22.54, lon: 114.06)]
+        // Shenzhen at night, Hong Kong by day, for a week.
+        for day in 13..<20 {
+            stays.append(stay("HK", "香港", day: Double(day) + 0.4, hours: 9, lat: 22.28, lon: 114.16))
+            stays.append(stay("CN", "深圳", day: Double(day) + 0.8, hours: 10, lat: 22.54, lon: 114.06))
+        }
+        let book = StampBook(stays: stays)
+        #expect(book.passport.filter { $0.kind == .entry }.count == 1)
+        #expect(book.passport.filter { $0.kind == .exit }.count == 1)
+    }
+
+    @Test func crossingTheEquatorAndDateLineOnce() {
+        let stays = [
+            stay("SG", "Singapore", day: 0, hours: 300, lat: 1.29, lon: 103.85),
+            stay("ID", "Jakarta", day: 14, hours: 30, lat: -6.2, lon: 106.8),
+            stay("SG", "Singapore", day: 16, hours: 30, lat: 1.29, lon: 103.85),
+            stay("ID", "Jakarta", day: 18, hours: 30, lat: -6.2, lon: 106.8),
+            stay("US", "Honolulu", day: 20, hours: 30, lat: 21.3, lon: -157.9),
+        ]
+        let codes = StampBook(stays: stays).specials.compactMap(\.code)
+        #expect(codes.filter { $0 == "equator" }.count == 1)
+        #expect(codes.contains("dateline"))
+        #expect(codes.contains("record.north") && codes.contains("record.south"))
+    }
+
+    @Test func newYearIsWhereYouWereAtMidnight() throws {
+        let calendar = Calendar.current
+        let midnight = try #require(calendar.date(from: DateComponents(year: 2026, month: 1, day: 1)))
+        let bund = Stay(arrival: midnight.addingTimeInterval(-3 * 3600), coordinate: CLLocationCoordinate2D(latitude: 31.24, longitude: 121.49))
+        bund.departure = midnight.addingTimeInterval(-600)
+        bund.countryCode = "CN"
+        bund.city = "上海"
+        bund.placeName = "外滩"
+        let specials = StampBook(stays: [bund]).specials
+        let newYear = specials.first { $0.code == "newyear.2026" }
+        #expect(newYear?.value == "2026")
+        #expect(newYear?.city == "外滩")
+    }
+
+    @Test func setsCompleteWhenEveryCityIsVisited() {
+        let stays = [
+            stay("JP", "京都", day: 0, hours: 30, lat: 35.01, lon: 135.77),
+            stay("JP", "大阪市", day: 2, hours: 30, lat: 34.69, lon: 135.50),
+            stay("JP", "奈良", day: 4, hours: 30, lat: 34.68, lon: 135.80),
+        ]
+        let book = StampBook(stays: stays)
+        let kansai = book.sets.first { $0.group.id == "kansai" }
+        #expect(kansai?.isComplete == true)
+        #expect(book.earnedOnce.contains { $0.id == "set.kansai" })
+    }
+
+    @Test func everySetMemberHasAStamp() {
+        let titles = Set(CityStampStyle.catalog.map(\.title))
+        for group in StampSet.all {
+            for member in group.members { #expect(titles.contains(member), "\(group.id): \(member)") }
+        }
+    }
+
+    @MainActor
+    @Test func onThisDayFindsEarlierYears() throws {
+        let today = Date(timeIntervalSince1970: 1_793_000_000)
+        let calendar = Calendar.current
+        let lastYear = try #require(calendar.date(byAdding: .year, value: -1, to: today))
+        let sight = Stay(arrival: calendar.startOfDay(for: lastYear).addingTimeInterval(10 * 3600),
+                         coordinate: CLLocationCoordinate2D(latitude: 35.0, longitude: 135.77))
+        sight.departure = sight.arrival.addingTimeInterval(2 * 3600)
+        sight.city = "京都"
+        sight.placeName = "清水寺"
+        sight.isLandmark = true
+        let memories = OnThisDayCard.find(stays: [sight], today: today, home: nil)
+        #expect(memories.map(\.years) == [1])
+        #expect(memories.first?.stay.placeName == "清水寺")
+    }
+
     @Test func stampsTiltTheSameWayEveryTime() {
         let a = Stamp(id: "entry.JP.1", kind: .entry, date: start)
         let b = Stamp(id: "entry.JP.1", kind: .entry, date: start)

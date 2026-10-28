@@ -29,8 +29,10 @@ struct StampArt: View {
     private var art: some View {
         switch stamp.kind {
         case .entry, .exit: BorderStamp(stamp: stamp).inkWorn(seed: stamp.seed, inked: inked)
-        case .province: ProvinceSealArt(id: stamp.provinceID ?? "").inkWorn(seed: stamp.seed, inked: inked, wear: 1.1)
+        case .province: ProvinceSealArt(id: stamp.provinceID ?? "").inkWorn(seed: stamp.seed, inked: inked, wear: 0.6)
         case .city: CityStampArt(stamp: stamp, route: route).inkWorn(seed: stamp.seed, inked: inked)
+        case .special: SpecialStampArt(stamp: stamp).inkWorn(seed: stamp.seed, inked: inked)
+        case .set: SetStampArt(stamp: stamp).inkWorn(seed: stamp.seed, inked: inked)
         }
     }
 
@@ -39,6 +41,13 @@ struct StampArt: View {
         case .province: CGSize(width: 100, height: 100)
         case .city:
             CGSize(width: 140, height: 140)
+        case .set:
+            CGSize(width: 176, height: 176)
+        case .special:
+            switch SpecialStampStyle.of(stamp.code ?? "").shape {
+            case .ticket, .hexagon: CGSize(width: 172, height: 110)
+            default: CGSize(width: 140, height: 140)
+            }
         case .entry, .exit:
             switch CountryStampStyle.of(stamp.countryCode ?? "").shape {
             case .circle, .octagon, .scalloped: CGSize(width: 140, height: 140)
@@ -55,6 +64,8 @@ struct StampArt: View {
         case .exit: return String(localized: "出境章，\(WorldInsights.countryName(code: stamp.countryCode ?? "", fallback: nil))，\(date)", bundle: .appLanguage)
         case .province: return String(localized: "\(stamp.province?.name ?? "")省份印，\(date)", bundle: .appLanguage)
         case .city: return String(localized: "\(stamp.city ?? "")城市章，\(date)", bundle: .appLanguage)
+        case .special: return "\(SpecialStampStyle.of(stamp.code ?? "").label), \(stamp.value ?? ""), \(stamp.city ?? ""), \(date)"
+        case .set: return String(localized: "\(StampSet.named(stamp.code)?.title ?? "")套章，\(date)", bundle: .appLanguage)
         }
     }
 }
@@ -162,6 +173,106 @@ enum StampDate {
 
     static func year(_ date: Date) -> String {
         date.formatted(.verbatim("\(year: .defaultDigits)", timeZone: .current, calendar: Calendar(identifier: .gregorian)))
+    }
+}
+
+// MARK: - Special stamps
+
+/// Crossing the equator or the date line, the Arctic Circle, a New Year's Eve, the farthest
+/// north you've been: each with its own shape and ink.
+private struct SpecialStampArt: View {
+    let stamp: Stamp
+
+    var body: some View {
+        let style = SpecialStampStyle.of(stamp.code ?? "")
+        let ink = style.ink.color
+        let isNewYear = (stamp.code ?? "").hasPrefix("newyear")
+        ZStack {
+            StampOutline(shape: style.shape).stroke(ink, lineWidth: 2.8)
+            switch style.shape {
+            case .ticket, .hexagon:
+                StampOutline(shape: style.shape, inset: 5.5).stroke(ink, lineWidth: 0.9)
+                VStack(spacing: 3) {
+                    Text(verbatim: style.label)
+                        .font(.custom("AvenirNextCondensed-Heavy", fixedSize: 11)).tracking(1)
+                        .lineLimit(1).minimumScaleFactor(0.5)
+                    Rectangle().frame(height: 0.9).padding(.horizontal, 8)
+                    HStack(spacing: 6) {
+                        Image(systemName: style.symbol).font(.system(size: 15, weight: .bold))
+                        Text(verbatim: stamp.value ?? "").font(.system(size: 24, weight: .heavy, design: .monospaced))
+                    }
+                    Text(verbatim: [stamp.city, stamp.date == .distantPast ? nil : StampDate.long(stamp.date)]
+                            .compactMap { $0 }.joined(separator: " · ").uppercased())
+                        .font(.custom("AvenirNextCondensed-DemiBold", fixedSize: 9))
+                        .lineLimit(1).minimumScaleFactor(0.5)
+                }
+                .padding(.horizontal, style.shape == .hexagon ? 28 : 16)
+            default:
+                Circle().inset(by: 26).stroke(ink, lineWidth: 0.8)
+                ArcText(text: style.label, radius: 56, font: Self.font(style.label, size: 11), color: ink, tracking: 1.2)
+                if stamp.date != .distantPast {
+                    ArcText(text: StampDate.long(stamp.date), radius: 56, font: .custom("AvenirNextCondensed-DemiBold", fixedSize: 9),
+                            color: ink, bottom: true, tracking: 1)
+                }
+                if stamp.code == "equator" {
+                    // The line itself, straight through the middle.
+                    Rectangle().frame(width: 92, height: 1.4).offset(y: 13)
+                    Rectangle().frame(width: 92, height: 0.6).offset(y: 16)
+                }
+                VStack(spacing: 2) {
+                    Image(systemName: style.symbol).font(.system(size: isNewYear ? 11 : 13, weight: .bold))
+                    Text(verbatim: stamp.value ?? "")
+                        .font(isNewYear ? .system(size: 28, weight: .black, design: .rounded) : .system(size: 16, weight: .heavy, design: .monospaced))
+                        .lineLimit(1).minimumScaleFactor(0.6)
+                    if let city = stamp.city {
+                        Text(verbatim: city.uppercased())
+                            .font(Self.font(city, size: 8))
+                            .lineLimit(1).minimumScaleFactor(0.6)
+                            .frame(width: 70)
+                    }
+                }
+            }
+        }
+        .foregroundStyle(ink)
+    }
+
+    static func font(_ text: String, size: CGFloat) -> Font {
+        text.unicodeScalars.allSatisfy { $0.value < 0x0250 || $0.value == 0x00B7 }
+            ? .custom("AvenirNextCondensed-Heavy", fixedSize: size) : .system(size: size, weight: .heavy)
+    }
+}
+
+/// A completed set: the cities running round the rim, the set's name in the middle.
+private struct SetStampArt: View {
+    let stamp: Stamp
+
+    var body: some View {
+        let set = StampSet.named(stamp.code)
+        let ink = (set?.ink ?? .crimson).color
+        let members = (set?.members ?? []).joined(separator: " · ")
+        ZStack {
+            Circle().inset(by: 1.5).stroke(ink, lineWidth: 3)
+            Circle().inset(by: 6).stroke(ink, lineWidth: 0.9)
+            Circle().inset(by: 30).stroke(ink, lineWidth: 1.2)
+            Circle().inset(by: 34).stroke(ink, lineWidth: 0.6)
+            ArcText(text: members + " · ", radius: 70, font: SpecialStampArt.font(members, size: 10), color: ink, tracking: 1.2,
+                    span: 2 * .pi, fillsRing: true)
+            VStack(spacing: 3) {
+                Image(systemName: set?.symbol ?? "seal.fill").font(.system(size: 15, weight: .bold))
+                Text(verbatim: set?.title ?? "")
+                    .font(SpecialStampArt.font(set?.title ?? "", size: 22))
+                    .lineLimit(1).minimumScaleFactor(0.5)
+                    .frame(width: 96)
+                Text(verbatim: set?.motto ?? "")
+                    .font(SpecialStampArt.font(set?.motto ?? "", size: 8.5)).tracking(1)
+                    .lineLimit(1).minimumScaleFactor(0.5)
+                    .frame(width: 90)
+                Text(verbatim: stamp.date == .distantPast ? "★ ★ ★" : "★ \(StampDate.long(stamp.date)) ★")
+                    .font(.system(size: 7.5, weight: .bold, design: .monospaced))
+                    .padding(.top, 2)
+            }
+        }
+        .foregroundStyle(ink)
     }
 }
 
@@ -371,14 +482,23 @@ struct ArcText: View {
     let color: Color
     var bottom = false
     var tracking: CGFloat = 1
+    /// How far round the words may run, in radii: 2.1 is about a third of the circle.
+    var span: CGFloat = 2.1
+    /// Repeats the words until they go all the way round.
+    var fillsRing = false
 
     var body: some View {
         Canvas { context, size in
             let center = CGPoint(x: size.width / 2, y: size.height / 2)
-            let glyphs = text.map { context.resolve(Text(String($0)).font(font).foregroundStyle(color)) }
-            let widths = glyphs.map { $0.measure(in: CGSize(width: 100, height: 100)).width + tracking }
+            var glyphs = text.map { context.resolve(Text(String($0)).font(font).foregroundStyle(color)) }
+            var widths = glyphs.map { $0.measure(in: CGSize(width: 100, height: 100)).width + tracking }
+            if fillsRing, let once = Optional(widths.reduce(0, +)), once > 0 {
+                let times = max(1, Int((radius * span / once).rounded()))
+                glyphs = Array(Array(repeating: glyphs, count: times).joined())
+                widths = Array(Array(repeating: widths, count: times).joined())
+            }
             // Never more than two thirds of the way round.
-            let total = min(widths.reduce(0, +), radius * 2.1)
+            let total = fillsRing ? radius * span : min(widths.reduce(0, +), radius * span)
             let squeeze = total / max(widths.reduce(0, +), 1)
             var arc = -total / 2
             for (glyph, width) in zip(glyphs, widths) {
@@ -424,11 +544,13 @@ private struct InkWorn: ViewModifier {
                         let point = CGPoint(x: random.unit() * size.width, y: random.unit() * size.height)
                         context.fill(Path(ellipseIn: CGRect(x: point.x - r, y: point.y - r, width: r * 2, height: r * 2)), with: .color(.black))
                     }
+                    // Soft-edged, like ink that ran thin there.
                     for _ in 0..<2 {
-                        let r = min(size.width, size.height) * (0.05 + random.unit() * 0.08)
+                        let r = min(size.width, size.height) * (0.06 + random.unit() * 0.08)
                         let point = CGPoint(x: random.unit() * size.width, y: random.unit() * size.height)
                         context.fill(Path(ellipseIn: CGRect(x: point.x - r, y: point.y - r, width: r * 2, height: r * 2)),
-                                     with: .color(.black.opacity(0.22)))
+                                     with: .radialGradient(Gradient(colors: [.black.opacity(0.2), .clear]), center: point,
+                                                           startRadius: 0, endRadius: r))
                     }
                 }
             }

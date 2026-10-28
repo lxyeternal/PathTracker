@@ -1,27 +1,69 @@
 import SwiftUI
 
 /// Which stamps have been seen landing. A stamp shown for the first time is pressed in front
-/// of you; after that it simply sits on its page.
+/// of you; after that it simply sits on its page. Kept in iCloud too, so a new phone doesn't
+/// press them all again.
 @MainActor
 enum SeenStamps {
     private static let key = "stamps.seen"
-    private static var seen: Set<String> = Set(UserDefaults.standard.stringArray(forKey: key) ?? [])
-    private static var pendingSave: Task<Void, Never>?
+    private static let store = SyncedSet(key: key)
 
-    static func contains(_ id: String) -> Bool { seen.contains(id) }
+    static func contains(_ id: String) -> Bool { store.contains(id) }
+    static func insert(_ id: String) { store.insert([id]) }
+    static func insert(_ ids: [String]) { store.insert(ids) }
+}
 
-    static func insert(_ id: String) {
-        guard seen.insert(id).inserted else { return }
-        // A page of stamps lands at once: save once they've all landed.
-        pendingSave?.cancel()
-        pendingSave = Task {
-            try? await Task.sleep(for: .seconds(1))
-            guard !Task.isCancelled else { return }
-            UserDefaults.standard.set(Array(seen), forKey: key)
+/// A set of ids kept in this device's defaults and in iCloud's key-value store, merged both
+/// ways. Saves are gathered up, since a page of stamps lands at once.
+@MainActor
+final class SyncedSet {
+    private let key: String
+    private var values: Set<String>
+    private var pendingSave: Task<Void, Never>?
+    private var observer: NSObjectProtocol?
+    private let cloud = NSUbiquitousKeyValueStore.default
+
+    init(key: String) {
+        self.key = key
+        values = Set(UserDefaults.standard.stringArray(forKey: key) ?? [])
+            .union(NSUbiquitousKeyValueStore.default.array(forKey: key) as? [String] ?? [])
+        observer = NotificationCenter.default.addObserver(forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
+                                                          object: cloud, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.merge() }
         }
     }
 
-    static func insert(_ ids: [String]) { ids.forEach(insert) }
+    /// Nil until anything has been stored, on this device or another.
+    var stored: Set<String>? {
+        UserDefaults.standard.stringArray(forKey: key) == nil && cloud.array(forKey: key) == nil ? nil : values
+    }
+
+    func contains(_ id: String) -> Bool { values.contains(id) }
+
+    func insert(_ ids: [String], now: Bool = false) {
+        let before = values.count
+        values.formUnion(ids)
+        guard values.count != before || stored == nil else { return }
+        pendingSave?.cancel()
+        if now { save(); return }
+        pendingSave = Task {
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled else { return }
+            save()
+        }
+    }
+
+    private func merge() {
+        values.formUnion(cloud.array(forKey: key) as? [String] ?? [])
+        UserDefaults.standard.set(Array(values), forKey: key)
+    }
+
+    private func save() {
+        let list = Array(values)
+        UserDefaults.standard.set(list, forKey: key)
+        // The key-value store holds a megabyte in all; plenty for ids, but stop well short.
+        if list.count < 6000 { cloud.set(list, forKey: key) }
+    }
 }
 
 /// Lands a stamp the first time it's on screen: lifted and faint, then pressed down hard with
