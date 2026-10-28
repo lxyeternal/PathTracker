@@ -283,19 +283,6 @@ private struct StoryBackground: View {
     }
 }
 
-/// Counts from zero to `value` when the page becomes active.
-private struct CountUp: View, Animatable {
-    var value: Double
-    let format: (Double) -> String
-
-    var animatableData: Double {
-        get { value }
-        set { value = newValue }
-    }
-
-    var body: some View { Text(format(value)) }
-}
-
 private struct Reveal: ViewModifier {
     let isActive: Bool
     let delay: Double
@@ -351,41 +338,10 @@ private struct RouteArt: View {
     }
 }
 
-private struct PageLayout<Content: View>: View {
-    let colors: [Color]
-    @ViewBuilder let content: Content
-
-    var body: some View {
-        ZStack {
-            StoryBackground(colors: colors)
-            VStack(alignment: .leading, spacing: 14) {
-                Spacer(minLength: 90)
-                content
-                Spacer(minLength: 60)
-            }
-            .foregroundStyle(.white)
-            .padding(.horizontal, 28)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-}
-
 private enum Palette {
     static let night: [Color] = [.init(red: 0.05, green: 0.06, blue: 0.2), .init(red: 0.2, green: 0.1, blue: 0.4), .init(red: 0.05, green: 0.1, blue: 0.3),
                                  .init(red: 0.35, green: 0.12, blue: 0.5), .init(red: 0.95, green: 0.45, blue: 0.3), .init(red: 0.15, green: 0.1, blue: 0.4),
                                  .init(red: 0.05, green: 0.05, blue: 0.15), .init(red: 0.3, green: 0.1, blue: 0.35), .init(red: 0.08, green: 0.05, blue: 0.2)]
-    static let ocean: [Color] = [.init(red: 0.0, green: 0.15, blue: 0.35), .init(red: 0.0, green: 0.35, blue: 0.6), .init(red: 0.0, green: 0.2, blue: 0.4),
-                                 .init(red: 0.0, green: 0.45, blue: 0.7), .init(red: 0.2, green: 0.8, blue: 0.9), .init(red: 0.0, green: 0.3, blue: 0.55),
-                                 .init(red: 0.0, green: 0.1, blue: 0.25), .init(red: 0.0, green: 0.25, blue: 0.45), .init(red: 0.0, green: 0.12, blue: 0.3)]
-    static let forest: [Color] = [.init(red: 0.02, green: 0.18, blue: 0.12), .init(red: 0.05, green: 0.35, blue: 0.2), .init(red: 0.0, green: 0.2, blue: 0.15),
-                                  .init(red: 0.1, green: 0.5, blue: 0.3), .init(red: 0.6, green: 0.9, blue: 0.4), .init(red: 0.05, green: 0.35, blue: 0.25),
-                                  .init(red: 0.0, green: 0.12, blue: 0.08), .init(red: 0.05, green: 0.3, blue: 0.2), .init(red: 0.02, green: 0.15, blue: 0.1)]
-    static let sunset: [Color] = [.init(red: 0.35, green: 0.05, blue: 0.15), .init(red: 0.7, green: 0.15, blue: 0.25), .init(red: 0.4, green: 0.08, blue: 0.2),
-                                  .init(red: 0.9, green: 0.35, blue: 0.25), .init(red: 1.0, green: 0.75, blue: 0.35), .init(red: 0.8, green: 0.25, blue: 0.3),
-                                  .init(red: 0.25, green: 0.04, blue: 0.12), .init(red: 0.6, green: 0.12, blue: 0.22), .init(red: 0.3, green: 0.05, blue: 0.15)]
-    static let violet: [Color] = [.init(red: 0.15, green: 0.05, blue: 0.3), .init(red: 0.35, green: 0.1, blue: 0.6), .init(red: 0.2, green: 0.05, blue: 0.4),
-                                  .init(red: 0.5, green: 0.2, blue: 0.8), .init(red: 0.9, green: 0.5, blue: 0.95), .init(red: 0.4, green: 0.15, blue: 0.7),
-                                  .init(red: 0.1, green: 0.03, blue: 0.2), .init(red: 0.3, green: 0.08, blue: 0.5), .init(red: 0.15, green: 0.05, blue: 0.3)]
 }
 
 // MARK: - Pages

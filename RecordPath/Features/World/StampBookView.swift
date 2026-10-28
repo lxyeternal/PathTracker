@@ -1,10 +1,10 @@
 import SwiftUI
 
-struct LightUpRoute: Hashable {}
+struct StampBookRoute: Hashable {}
 
 /// The passport and the stamp book: border stamps for countries, seals for China's provinces
 /// and a stamp for every city, each pressed the first time it's seen.
-struct LightUpView: View {
+struct StampBookView: View {
     private var summaries = PlaceSummaries.shared
     private var insights: LightUpInsights { summaries.lightUp }
     private var book: StampBook { summaries.stamps }

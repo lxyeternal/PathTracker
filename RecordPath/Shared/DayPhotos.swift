@@ -114,46 +114,6 @@ private struct AssetPage: View {
     }
 }
 
-/// A photo full screen, pinch to zoom.
-struct AssetViewer: View {
-    let asset: PHAsset
-    @Environment(\.dismiss) private var dismiss
-    @State private var image: UIImage?
-    @State private var zoom: CGFloat = 1
-
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.black.ignoresSafeArea()
-                if let image {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
-                        .scaleEffect(zoom)
-                        .gesture(MagnifyGesture().onChanged { zoom = max(1, $0.magnification) }.onEnded { _ in
-                            withAnimation(.smooth) { zoom = 1 }
-                        })
-                } else {
-                    ProgressView().tint(.white)
-                }
-            }
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("关闭", systemImage: "xmark") { dismiss() }
-                }
-                if let date = asset.creationDate {
-                    ToolbarItem(placement: .principal) {
-                        Text(date.formatted(.dateTime.month().day().hour().minute().locale(appLocale)))
-                            .font(.subheadline.weight(.semibold)).foregroundStyle(.white)
-                    }
-                }
-            }
-            .toolbarBackground(.hidden, for: .navigationBar)
-        }
-        .task { image = await AssetLoader.image(for: asset, size: PHImageManagerMaximumSize, exact: true) }
-    }
-}
-
 enum AssetLoader {
     /// A blurry preview at once, then the full one (from iCloud if need be).
     static func images(for asset: PHAsset, size: CGSize) -> AsyncStream<UIImage> {

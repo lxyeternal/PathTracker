@@ -20,6 +20,10 @@
 </p>
 
 <p align="center">
+  🚀 <b>即将上线 App Store</b>：我们会尽快上架，供大家下载使用。
+</p>
+
+<p align="center">
   简体中文 · <a href="README_en.md">English</a>
 </p>
 

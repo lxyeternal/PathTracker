@@ -32,7 +32,7 @@ struct WorldView: View {
                         PlaceSearchResults(query: search, stays: stays, countries: insights.countries)
                     } else {
                         summaryGrid
-                        lightUpCard
+                        passportCard
                         if photoImportRun == 0 { PhotoImportCard { importingPhotos = true } }
                         mapCard
                         GalleryPreview()
@@ -64,8 +64,8 @@ struct WorldView: View {
             .navigationDestination(for: PlacesList.self) { list in
                 PlacesListView(list: list)
             }
-            .navigationDestination(for: LightUpRoute.self) { _ in
-                LightUpView()
+            .navigationDestination(for: StampBookRoute.self) { _ in
+                StampBookView()
             }
             .navigationDestination(for: GalleryRoute.self) { _ in GalleryView() }
             .navigationDestination(for: Province.self) { ProvinceDetailView(province: $0) }
@@ -93,8 +93,8 @@ struct WorldView: View {
     }
 
     /// The way into the passport and the stamp book.
-    private var lightUpCard: some View {
-        NavigationLink(value: LightUpRoute()) {
+    private var passportCard: some View {
+        NavigationLink(value: StampBookRoute()) {
             PassportCard(book: summaries.stamps)
         }
         .buttonStyle(PressableStyle())

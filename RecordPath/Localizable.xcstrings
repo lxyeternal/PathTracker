@@ -281,58 +281,6 @@
         }
       }
     },
-    "%lld 个省级行政区 · %lld 个国家和地区": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@p@ · %#@c@"
-          },
-          "substitutions": {
-            "c": {
-              "argNum": 2,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "%lld country or region"
-                    }
-                  },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "%lld countries & regions"
-                    }
-                  }
-                }
-              }
-            },
-            "p": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "%lld province"
-                    }
-                  },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "%lld provinces"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "%lld 处": {
       "localizations": {
         "en": {
@@ -370,58 +318,6 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%lld days"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "%lld 天 · %lld 处": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@days@ · %#@places@"
-          },
-          "substitutions": {
-            "days": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "%arg day"
-                    }
-                  },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "%arg days"
-                    }
-                  }
-                }
-              }
-            },
-            "places": {
-              "argNum": 2,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "%arg place"
-                    }
-                  },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "%arg places"
-                    }
-                  }
                 }
               }
             }
@@ -1088,26 +984,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Not Now"
-          }
-        }
-      }
-    },
-    "不用每次手动开始，放大地图就能看到走过的每条街。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No need to press start. Zoom in on the map to see every street you walked."
-          }
-        }
-      }
-    },
-    "世界": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "World"
           }
         }
       }
@@ -1946,26 +1822,6 @@
         }
       }
     },
-    "关闭全天记录后，仍可以在“今天”页右上角手动记录一段。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "With all-day recording off, you can still record a stretch manually from the top right of Today."
-          }
-        }
-      }
-    },
-    "其中飞行 %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ of it by air"
-          }
-        }
-      }
-    },
     "再多一步：始终允许": {
       "localizations": {
         "en": {
@@ -2012,16 +1868,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Write something"
-          }
-        }
-      }
-    },
-    "写点什么…": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Write something…"
           }
         }
       }
@@ -2572,26 +2418,6 @@
         }
       }
     },
-    "去过的地点": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Places"
-          }
-        }
-      }
-    },
-    "去过的天数": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Days There"
-          }
-        }
-      }
-    },
     "去过的景点": {
       "localizations": {
         "en": {
@@ -2748,16 +2574,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Name"
-          }
-        }
-      }
-    },
-    "名称会应用到附近 150 米内的所有到访记录，比如把这里叫作“家”。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The name applies to every visit within 150 m, so you can call this place “Home”, for example."
           }
         }
       }
@@ -3578,26 +3394,6 @@
         }
       }
     },
-    "已点亮的国家和地区": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Countries & regions lit up"
-          }
-        }
-      }
-    },
-    "已点亮的省级行政区": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Provinces lit up"
-          }
-        }
-      }
-    },
     "已登录为 %@": {
       "localizations": {
         "en": {
@@ -3768,16 +3564,6 @@
         }
       }
     },
-    "开启后会全天在后台记录。也可以点右上角的按钮，手动记录一段。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Turn it on to record in the background all day, or use the button at the top right to record a stretch manually."
-          }
-        }
-      }
-    },
     "开启自动记录后，这里会显示每天的移动距离。": {
       "localizations": {
         "en": {
@@ -3918,16 +3704,6 @@
         }
       }
     },
-    "徒步、出游或出差，记录会更精细。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hikes, holidays or business trips, recorded in more detail."
-          }
-        }
-      }
-    },
     "恢复": {
       "localizations": {
         "en": {
@@ -3978,16 +3754,6 @@
         }
       }
     },
-    "我的点亮地图": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "My Light-Up Map"
-          }
-        }
-      }
-    },
     "我的省份印": {
       "localizations": {
         "en": {
@@ -4004,16 +3770,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "City"
-          }
-        }
-      }
-    },
-    "所有停留": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "All Visits"
           }
         }
       }
@@ -4038,16 +3794,6 @@
         }
       }
     },
-    "手动记录使用更高的定位精度，和全天自动记录互不影响，结束后会保存在“旅程”里。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Manual recordings use higher location accuracy, run independently of all-day recording, and are saved to Trips when you stop."
-          }
-        }
-      }
-    },
     "手动记录进行中，使用高精度定位": {
       "localizations": {
         "en": {
@@ -4064,16 +3810,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Waytrace opens on your Watch by itself, records your heart rate and saves a workout. Ending on either device ends both."
-          }
-        }
-      }
-    },
-    "手表上的漫迹会自动打开，记录心率并存为体能训练；在任一设备上结束，两边一起结束。适合徒步、跑步这类几个小时内的活动。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Waytrace opens on your Watch by itself, records your heart rate and saves a workout. Ending on either device ends both. Best for activities of a few hours, like hikes and runs."
           }
         }
       }
@@ -4320,16 +4056,6 @@
         }
       }
     },
-    "改为“始终允许”，关掉 App 也能继续记录。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Switch to “Always” to keep recording when the app is closed."
-          }
-        }
-      }
-    },
     "改为全天自动记录": {
       "localizations": {
         "en": {
@@ -4376,16 +4102,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "The file contains no track points with timestamps."
-          }
-        }
-      }
-    },
-    "新去的城市：%@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New cities: %@"
           }
         }
       }
@@ -4552,16 +4268,6 @@
         }
       }
     },
-    "旅程把一段时间的轨迹、地点和照片收在一起。你也可以为已经过去的日子补建旅程，轨迹会自动归入。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A trip gathers the tracks, places and photos of a stretch of time. You can also create trips for past dates, and their tracks are added automatically."
-          }
-        }
-      }
-    },
     "旅程把几天的轨迹、地点和照片收在一起。也可以为已经过去的日子补建旅程，轨迹会自动归入。": {
       "localizations": {
         "en": {
@@ -4578,16 +4284,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Recording trip"
-          }
-        }
-      }
-    },
-    "旅程记录中 · 停留在": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Recording Trip · At"
           }
         }
       }
@@ -4878,16 +4574,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Busiest month: %1$@, %2$@"
-          }
-        }
-      }
-    },
-    "最常在路上的月份：%@，共 %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Busiest month on the move: %@, %@ in all"
           }
         }
       }
@@ -5262,16 +4948,6 @@
         }
       }
     },
-    "正在记录 · 停留在": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Recording · At"
-          }
-        }
-      }
-    },
     "正在记录 · 移动中": {
       "localizations": {
         "en": {
@@ -5532,16 +5208,6 @@
         }
       }
     },
-    "添加说明": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add a caption"
-          }
-        }
-      }
-    },
     "漫迹": {
       "localizations": {
         "en": {
@@ -5638,26 +5304,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld Provinces Lit Up"
-          }
-        }
-      }
-    },
-    "点亮了第 %lld 个省级行政区。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Province number %lld lit up."
-          }
-        }
-      }
-    },
-    "点亮地图": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Light-Up Map"
           }
         }
       }
@@ -5942,16 +5588,6 @@
         }
       }
     },
-    "移动总距离": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Distance Traveled"
-          }
-        }
-      }
-    },
     "移动最远的一天": {
       "localizations": {
         "en": {
@@ -6058,16 +5694,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "First time"
-          }
-        }
-      }
-    },
-    "第一次去：%@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "First visits: %@"
           }
         }
       }
@@ -6198,16 +5824,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stop “%@”?"
-          }
-        }
-      }
-    },
-    "结束后不再记录位置。记录会保存在“旅程”里。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location recording will stop. The recording is saved to Trips."
           }
         }
       }
@@ -6372,16 +5988,6 @@
         }
       }
     },
-    "自动记录已关闭": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Recording Is Off"
-          }
-        }
-      }
-    },
     "自动识别": {
       "localizations": {
         "en": {
@@ -6428,16 +6034,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Make this outing a trip? Routes, places and photos from these days are added automatically."
-          }
-        }
-      }
-    },
-    "要把这次出行记成一段旅程吗？旅程会用更高的精度记录路线。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Save this outing as a trip? Trips record your route in more detail."
           }
         }
       }
@@ -6856,32 +6452,12 @@
         }
       }
     },
-    "达成时通知我": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notify Me When I Get There"
-          }
-        }
-      }
-    },
     "达成里程碑": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Milestone Reached"
-          }
-        }
-      }
-    },
-    "过去的旅程": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Past Trips"
           }
         }
       }
@@ -7278,50 +6854,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Moments from Your Year"
-          }
-        }
-      }
-    },
-    "这一年记录了 %lld 天": {
-      "localizations": {
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld day recorded this year"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld days recorded this year"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "这一年记录了 %lld 天，每一条线都是你走过的路。": {
-      "localizations": {
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld day recorded this year. Every line is a road you took."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld days recorded this year. Every line is a road you took."
-                }
-              }
-            }
           }
         }
       }
