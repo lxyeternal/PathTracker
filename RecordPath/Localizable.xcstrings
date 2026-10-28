@@ -980,12 +980,42 @@
         }
       }
     },
+    "也可以随时在“今天”页右上角手动记录一段。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can also record a stretch manually anytime from the top right of Today."
+          }
+        }
+      }
+    },
     "仅在使用时记录": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Recording only while in use"
+          }
+        }
+      }
+    },
+    "仅手动": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manual Only"
+          }
+        }
+      }
+    },
+    "仅手动：只在你从“今天”页开始记录时使用位置，结束后完全不定位。不需要“始终允许”位置权限。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manual only: location is used only while a recording you started from Today is running, and not at all after it ends. “Always” location access isn't needed."
           }
         }
       }
@@ -1152,6 +1182,16 @@
         }
       }
     },
+    "你想怎么记录？": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How do you want to record?"
+          }
+        }
+      }
+    },
     "你拍过的照片和视频里记着当时的地点。漫迹会找出这些地方，点亮去过的城市、省份和国家，并放进那一天的时间线。": {
       "localizations": {
         "en": {
@@ -1302,12 +1342,32 @@
         }
       }
     },
+    "全天自动": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All Day"
+          }
+        }
+      }
+    },
     "全天自动记录": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "All-Day Recording"
+          }
+        }
+      }
+    },
+    "全天自动记录，或只在你想记录时记录。放大地图就能看到走过的每条街。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Record all day automatically, or only when you choose. Zoom in to see every street you walked."
           }
         }
       }
@@ -1488,6 +1548,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Travel Mode"
+          }
+        }
+      }
+    },
+    "出门就有轨迹，不用操心。手机不动时定位自动休眠，在一个地方待久了会完全关闭 GPS。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your routes are recorded without a thought. Location rests when your phone is still, and GPS turns off completely once you've settled somewhere."
           }
         }
       }
@@ -1978,6 +2048,16 @@
         }
       }
     },
+    "只在你点“开始记录”时记录，适合旅行、徒步和骑行。其他时间完全不使用位置。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Records only after you tap “Start Recording” — great for trips, hikes and rides. The rest of the time, your location isn't used at all."
+          }
+        }
+      }
+    },
     "只属于你": {
       "localizations": {
         "en": {
@@ -2004,6 +2084,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Optional"
+          }
+        }
+      }
+    },
+    "可以开始了。在“今天”页右上角点“开始记录”，锁屏后也会继续记录，直到你结束。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're all set. Tap “Start Recording” at the top right of Today; it keeps recording with the screen locked until you end it."
           }
         }
       }
@@ -3124,6 +3214,16 @@
         }
       }
     },
+    "想记录时再记录": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only When I Choose"
+          }
+        }
+      }
+    },
     "我们不收集你的数据": {
       "localizations": {
         "en": {
@@ -3336,6 +3436,16 @@
         }
       }
     },
+    "推荐": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recommended"
+          }
+        }
+      }
+    },
     "搜索地点": {
       "localizations": {
         "en": {
@@ -3392,6 +3502,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Switch to “Always” to keep recording when the app is closed."
+          }
+        }
+      }
+    },
+    "改为全天自动记录": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Record All Day Instead"
           }
         }
       }
@@ -3978,6 +4098,16 @@
         }
       }
     },
+    "未在记录": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not Recording"
+          }
+        }
+      }
+    },
     "未开启": {
       "localizations": {
         "en": {
@@ -4278,6 +4408,16 @@
         }
       }
     },
+    "每一条路都在地图上": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every Street on the Map"
+          }
+        }
+      }
+    },
     "每一次到访": {
       "localizations": {
         "en": {
@@ -4554,6 +4694,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "now"
+          }
+        }
+      }
+    },
+    "现在没有在记录，也不会使用你的位置。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing is being recorded, and your location isn't in use."
           }
         }
       }
@@ -5244,6 +5394,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Days Recorded"
+          }
+        }
+      }
+    },
+    "记录方式": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recording"
           }
         }
       }
@@ -6188,6 +6348,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Apart from home, you went most to"
+          }
+        }
+      }
+    },
+    "随时可以在“设置”里更改。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can change this anytime in Settings."
           }
         }
       }

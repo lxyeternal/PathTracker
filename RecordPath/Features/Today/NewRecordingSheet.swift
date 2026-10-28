@@ -79,6 +79,8 @@ struct NewRecordingSheet: View {
         try? context.save()
         lastActivity = activity.rawValue
         LiveRecording.setRecordsOnWatch(hasWatch && recordOnWatch, for: trip.id)
+        // Someone who skipped location in onboarding is asked now; recording starts once allowed.
+        if engine.authorization == .notDetermined { engine.requestWhenInUse() }
         engine.beginTrip(trip)
         dismiss()
     }

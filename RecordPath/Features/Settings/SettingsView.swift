@@ -131,20 +131,25 @@ struct SettingsView: View {
     private var trackingSection: some View {
         Section {
             @Bindable var engine = engine
-            Toggle(isOn: $engine.isEnabled) {
-                Label("全天自动记录", systemImage: "location.fill")
+            Picker(selection: $engine.isEnabled) {
+                Text("全天自动").tag(true)
+                Text("仅手动").tag(false)
+            } label: {
+                Label("记录方式", systemImage: "location.fill")
             }
             LabeledContent {
                 Text(statusText).foregroundStyle(.secondary)
             } label: {
                 Label("当前状态", systemImage: "waveform.path.ecg")
             }
-            Picker(selection: $engine.precision) {
-                Text("省电").tag(LocationEngine.Precision.battery)
-                Text("均衡").tag(LocationEngine.Precision.balanced)
-                Text("精细").tag(LocationEngine.Precision.precise)
-            } label: {
-                Label("记录精度", systemImage: "scope")
+            if engine.isEnabled {
+                Picker(selection: $engine.precision) {
+                    Text("省电").tag(LocationEngine.Precision.battery)
+                    Text("均衡").tag(LocationEngine.Precision.balanced)
+                    Text("精细").tag(LocationEngine.Precision.precise)
+                } label: {
+                    Label("记录精度", systemImage: "scope")
+                }
             }
             if engine.isPaused, let until = engine.pausedUntil {
                 Button("恢复记录（原定 \(Format.time(until))）", systemImage: "play.circle") { engine.resume() }
@@ -182,7 +187,8 @@ struct SettingsView: View {
     private var permissionsSection: some View {
         Section("权限") {
             permissionRow(title: "位置", symbol: "location.circle.fill", tint: .blue,
-                          value: locationText, needsAction: !engine.hasAlwaysPermission || !engine.isPreciseLocation) {
+                          value: locationText,
+                          needsAction: !engine.hasAnyPermission || (engine.isEnabled && !engine.hasAlwaysPermission) || !engine.isPreciseLocation) {
                 switch engine.authorization {
                 case .notDetermined: engine.requestWhenInUse()
                 case .authorizedWhenInUse: engine.requestAlways()
@@ -342,13 +348,16 @@ struct SettingsView: View {
     }
 
     private var precisionFooter: String {
+        guard engine.isEnabled else {
+            return String(localized: "仅手动：只在你从“今天”页开始记录时使用位置，结束后完全不定位。不需要“始终允许”位置权限。", bundle: .appLanguage)
+        }
         let mode: String
         switch engine.precision {
         case .battery: mode = String(localized: "省电：只记录到过的地点和大致路线，几乎不耗电。", bundle: .appLanguage)
         case .balanced: mode = String(localized: "均衡：移动时记录完整路线，静止时自动暂停定位。适合大多数人。", bundle: .appLanguage)
         case .precise: mode = String(localized: "精细：路线最贴合街道，耗电更多，适合徒步和骑行爱好者。", bundle: .appLanguage)
         }
-        let manual = String(localized: "关闭全天记录后，仍可以在“今天”页右上角手动记录一段。", bundle: .appLanguage)
+        let manual = String(localized: "也可以随时在“今天”页右上角手动记录一段。", bundle: .appLanguage)
         // Chinese sentences sit side by side; languages with spaces need one between them.
         let separator = mode.last.map { "。！？".contains($0) } == true ? "" : " "
         return mode + separator + manual
@@ -366,7 +375,7 @@ struct SettingsView: View {
 
     private var statusText: String {
         if engine.isPaused, engine.activeTripID == nil { return String(localized: "已暂停", bundle: .appLanguage) }
-        guard engine.isRecording else { return String(localized: "已关闭", bundle: .appLanguage) }
+        guard engine.isRecording else { return String(localized: "未在记录", bundle: .appLanguage) }
         switch engine.activity {
         case .moving: return String(localized: "移动中", bundle: .appLanguage)
         case .stationary: return String(localized: "静止", bundle: .appLanguage)
