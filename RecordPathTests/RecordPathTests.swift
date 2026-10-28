@@ -3,6 +3,7 @@ import Foundation
 import UIKit
 import SwiftData
 import CoreLocation
+import MapKit
 @testable import RecordPath
 
 private func point(_ lat: Double, _ lon: Double, _ seconds: TimeInterval, speed: Double = 1.4) -> TrackPoint {
@@ -1016,5 +1017,103 @@ struct TripFinderTests {
         let tokyo = [20, 21].map { visit(day: $0, lat: 35.68, lon: 139.76, city: "東京", code: "JP") }
         let paris = [22, 23].map { visit(day: $0, lat: 48.86, lon: 2.35, city: "Paris", code: "FR") }
         #expect(TripFinder.find(home + tokyo + paris).count == 2)
+    }
+}
+
+struct StampTests {
+    private let day: TimeInterval = 86_400
+    private let start = Date(timeIntervalSince1970: 1_780_000_000)
+
+    private func stay(_ code: String, _ city: String, day offset: Double, hours: Double, lat: Double, lon: Double,
+                      airport: Bool = false, region: String? = nil) -> Stay {
+        let stay = Stay(arrival: start.addingTimeInterval(offset * day), coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon))
+        stay.departure = stay.arrival.addingTimeInterval(hours * 3600)
+        stay.countryCode = code
+        stay.city = city
+        stay.region = region
+        if airport {
+            stay.categoryRaw = MKPointOfInterestCategory.airport.rawValue
+            stay.placeName = "\(city) Airport"
+        }
+        return stay
+    }
+
+    @Test func homeIssuesThePassportAndTripsAbroadGetEntryAndExit() {
+        let stays = [
+            stay("CN", "上海", day: 0, hours: 200, lat: 31.23, lon: 121.47, region: "上海市"),
+            stay("JP", "成田", day: 9, hours: 2, lat: 35.77, lon: 140.39, airport: true),
+            stay("JP", "東京", day: 9.2, hours: 60, lat: 35.68, lon: 139.76),
+            stay("CN", "上海", day: 13, hours: 300, lat: 31.23, lon: 121.47, region: "上海市"),
+        ]
+        let book = StampBook(stays: stays)
+        #expect(book.home == "CN")
+        #expect(book.passport.map(\.kind) == [.entry, .exit])
+        let entry = book.passport[0]
+        #expect(entry.countryCode == "JP" && entry.byAir && entry.port == "成田 Airport")
+        #expect(book.passport[1].days >= 3)
+        #expect(book.provinces.map(\.provinceID) == ["shanghai"])
+        #expect(book.cities.compactMap(\.city).sorted() == ["上海", "成田", "東京"].sorted())
+    }
+
+    @Test func aBlipAcrossTheBorderStampsNothing() {
+        let stays = [
+            stay("SG", "Singapore", day: 0, hours: 300, lat: 1.29, lon: 103.85),
+            // Geocoded across the strait for twenty minutes.
+            stay("MY", "Johor Bahru", day: 13, hours: 0.3, lat: 1.46, lon: 103.76),
+            stay("SG", "Singapore", day: 13.1, hours: 100, lat: 1.29, lon: 103.85),
+        ]
+        #expect(StampBook(stays: stays).passport.isEmpty)
+    }
+
+    @Test func stillAbroadHasNoExitYet() {
+        let stays = [
+            stay("SG", "Singapore", day: 0, hours: 300, lat: 1.29, lon: 103.85),
+            stay("TH", "Bangkok", day: 14, hours: 5, lat: 13.75, lon: 100.50),
+        ]
+        let book = StampBook(stays: stays)
+        #expect(book.passport.map(\.kind) == [.entry])
+        #expect(book.passport[0].byAir, "Singapore to Bangkok is a flight")
+    }
+
+    @Test func reunionNeedsAYearAway() {
+        let old = stay("CN", "杭州", day: 0, hours: 2, lat: 30.25, lon: 120.14)
+        let back = stay("CN", "杭州", day: 400, hours: 1, lat: 30.2501, lon: 120.1401)
+        let soon = stay("CN", "杭州", day: 100, hours: 1, lat: 30.2501, lon: 120.1401)
+        let reunion = Reunion.find(back, after: [old])
+        #expect(reunion?.visits == 2)
+        #expect(reunion?.lastVisit == old.arrival)
+        #expect(Reunion.find(soon, after: [old]) == nil)
+        let elsewhere = stay("CN", "杭州", day: 400, hours: 1, lat: 30.27, lon: 120.16)
+        #expect(Reunion.find(elsewhere, after: [old]) == nil)
+    }
+
+    @Test func famousCitiesGetTheirOwnStampByNameOrPlace() {
+        let hangzhou = CityStampStyle.of(city: "杭州市", countryCode: "CN", coordinate: CLLocationCoordinate2D(latitude: 30.27, longitude: 120.15))
+        #expect(hangzhou.motto == "西子湖畔")
+        let kuta = CityStampStyle.of(city: "Kuta", countryCode: "ID", coordinate: CLLocationCoordinate2D(latitude: -8.72, longitude: 115.17))
+        #expect(kuta.title == "BALI")
+        let somewhere = CityStampStyle.of(city: "Smalltown", countryCode: "US", coordinate: CLLocationCoordinate2D(latitude: 44, longitude: -100))
+        #expect(somewhere.title == "Smalltown" && somewhere.motto == nil)
+    }
+
+    @Test func everyProvinceHasItsOwnSealCharacter() {
+        let characters = Province.all.map { ProvinceSeal.character(for: $0.id) }
+        #expect(Set(characters).count == Province.all.count)
+        #expect(!characters.contains("印"))
+    }
+
+    @Test func everyCountryHasAStampStyle() {
+        for continent in Continent.all {
+            for code in continent.regions {
+                #expect(!CountryStampStyle.of(code).native.isEmpty)
+            }
+        }
+        #expect(CountryStampStyle.of("JP").native == "日本国")
+    }
+
+    @Test func stampsTiltTheSameWayEveryTime() {
+        let a = Stamp(id: "entry.JP.1", kind: .entry, date: start)
+        let b = Stamp(id: "entry.JP.1", kind: .entry, date: start)
+        #expect(a.tilt == b.tilt && abs(a.tilt) <= 6.5)
     }
 }
