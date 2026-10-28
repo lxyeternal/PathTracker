@@ -83,6 +83,12 @@ final class AppServices {
         PlaceSummaries.shared.onStamps = { [notifier] book in notifier.checkStamps(book) }
         #if DEBUG
         // Launched with -ceremonySamples: one of each ceremony, for trying them out.
+        // Launched with -stressData on an empty store: thousands of places, for checking long lists.
+        if ProcessInfo.processInfo.arguments.contains("-stressData"),
+           (try? container.mainContext.fetchCount(FetchDescriptor<Stay>())) == 0 {
+            DemoData.generate(in: container.mainContext)
+            DemoData.photoStress(in: container.mainContext)
+        }
         // Followed by a kind ("province", "city", ...) for just that one.
         let arguments = ProcessInfo.processInfo.arguments
         if let flag = arguments.firstIndex(of: "-ceremonySamples") {

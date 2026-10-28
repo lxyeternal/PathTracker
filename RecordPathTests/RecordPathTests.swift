@@ -1186,6 +1186,15 @@ struct StampTests {
         #expect(memories.first?.stay.placeName == "清水寺")
     }
 
+    @Test func continentsAreFoundForCountries() {
+        #expect(Continent.of("JP")?.id == Continent.of("CN")?.id)
+        #expect(Continent.of("FR")?.id != Continent.of("JP")?.id)
+        let countries = ["JP", "CN", "FR"].map { CountrySummary(code: $0, name: $0) }
+        let options = Continent.options(for: countries)
+        #expect(options.first?.value == "" && options.first?.count == 3)
+        #expect(options.dropFirst().first?.count == 2, "the continent with most countries comes first")
+    }
+
     @Test func stampsTiltTheSameWayEveryTime() {
         let a = Stamp(id: "entry.JP.1", kind: .entry, date: start)
         let b = Stamp(id: "entry.JP.1", kind: .entry, date: start)
