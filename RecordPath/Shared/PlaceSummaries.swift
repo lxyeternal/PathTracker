@@ -126,17 +126,47 @@ struct MapDot: Identifiable {
     let coordinate: CLLocationCoordinate2D
     let countryCode: String?
     let isLandmark: Bool
+    /// How many visits the dot stands for, and when the latest was.
+    var visits = 1
+    var last: Date = .distantPast
 
     /// One dot per ~500 m area, a sight winning over an ordinary place.
     static func dots(for stays: [Stay]) -> [MapDot] {
         var byCell: [Int64: MapDot] = [:]
         for stay in stays {
             let key = cellKey(stay.latitude, stay.longitude, size: 0.005)
-            if let existing = byCell[key], existing.isLandmark || !stay.isLandmark { continue }
-            byCell[key] = MapDot(id: stay.persistentModelID, coordinate: stay.coordinate.onMap,
-                                 countryCode: stay.countryCode, isLandmark: stay.isLandmark)
+            var dot = MapDot(id: stay.persistentModelID, coordinate: stay.coordinate.onMap,
+                             countryCode: stay.countryCode, isLandmark: stay.isLandmark)
+            if let existing = byCell[key] {
+                dot = existing.isLandmark || !stay.isLandmark ? existing : dot
+                dot.visits = existing.visits + 1
+                dot.last = max(existing.last, stay.arrival)
+            } else {
+                dot.last = stay.arrival
+            }
+            byCell[key] = dot
         }
         return Array(byCell.values)
+    }
+
+    /// The part of the world the person lives in lately: the busiest stretch of the past year's
+    /// places and the busy ones near it. Places spread over several continents framed together
+    /// leave a map of the ocean and the continents between them.
+    static func focus(_ dots: [MapDot]) -> [MapDot] {
+        guard let newest = dots.map(\.last).max() else { return [] }
+        let recent = dots.filter { $0.last > newest.addingTimeInterval(-365 * 86_400) }
+        let pool = recent.reduce(0) { $0 + $1.visits } >= 20 ? recent : dots
+        let size = 20.0
+        var weight: [Int64: Int] = [:]
+        for dot in pool { weight[cellKey(dot.coordinate.latitude, dot.coordinate.longitude, size: size), default: 0] += dot.visits }
+        guard let busiest = weight.max(by: { $0.value < $1.value }) else { return dots }
+        let centre = pool.first { cellKey($0.coordinate.latitude, $0.coordinate.longitude, size: size) == busiest.key }!.coordinate
+        return pool.filter { dot in
+            let key = cellKey(dot.coordinate.latitude, dot.coordinate.longitude, size: size)
+            let near = abs(dot.coordinate.latitude - centre.latitude) <= 45
+                && abs((dot.coordinate.longitude - centre.longitude).remainder(dividingBy: 360)) <= 45
+            return key == busiest.key || (near && weight[key, default: 0] * 10 >= busiest.value)
+        }
     }
 
     /// At most `limit` dots spread over the map: the grid coarsens until they fit.

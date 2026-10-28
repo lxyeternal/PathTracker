@@ -114,7 +114,7 @@ struct WorldView: View {
 
     private var mapCard: some View {
         Button { showingMap = true } label: {
-            WorldMap(dots: summaries.dots, interactive: false)
+            WorldMap(dots: summaries.dots, interactive: false, focused: true)
                 .allowsHitTesting(false)
                 .frame(height: 240)
                 .clipShape(.rect(cornerRadius: 28, style: .continuous))
@@ -268,20 +268,24 @@ struct PlaceRow: View {
 struct WorldMap: View {
     let dots: [MapDot]
     var interactive = true
+    /// Opens on where the person has been lately rather than on everywhere at once.
+    var focused = false
     var onSelect: ((Stay) -> Void)?
 
     @State private var position: MapCameraPosition = .automatic
     @State private var region: MKCoordinateRegion?
     @State private var shown: [MapDot]
 
-    init(dots: [MapDot], interactive: Bool = true, onSelect: ((Stay) -> Void)? = nil) {
+    init(dots: [MapDot], interactive: Bool = true, focused: Bool = false, onSelect: ((Stay) -> Void)? = nil) {
         self.dots = dots
         self.interactive = interactive
+        self.focused = focused
         self.onSelect = onSelect
-        _shown = State(initialValue: Self.overview(dots))
+        let framed = focused ? MapDot.focus(dots) : dots
+        _shown = State(initialValue: Self.overview(framed))
         // Framed once from the places themselves. An automatic camera re-frames whenever the
         // dots change, and the dots change when the camera moves: the two would chase each other.
-        _position = State(initialValue: Self.framing(dots))
+        _position = State(initialValue: Self.framing(framed))
     }
 
     var body: some View {
@@ -309,7 +313,7 @@ struct WorldMap: View {
         .onChange(of: dots.count) {
             region = nil
             updateShown()
-            position = Self.framing(dots)
+            position = Self.framing(focused ? MapDot.focus(dots) : dots)
         }
     }
 
@@ -345,7 +349,7 @@ struct WorldMap: View {
 
     private func updateShown() {
         guard let region else {
-            shown = Self.overview(dots)
+            shown = Self.overview(focused ? MapDot.focus(dots) : dots)
             return
         }
         let span = region.span
@@ -365,7 +369,7 @@ private struct WorldMapScreen: View {
 
     var body: some View {
         NavigationStack {
-            WorldMap(dots: dots, interactive: true, onSelect: { selected = $0 })
+            WorldMap(dots: dots, interactive: true, focused: true, onSelect: { selected = $0 })
                 .ignoresSafeArea()
                 .navigationTitle("全部足迹")
                 .navigationBarTitleDisplayMode(.inline)
