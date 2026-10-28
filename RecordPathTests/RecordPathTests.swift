@@ -924,6 +924,17 @@ struct MapFocusTests {
         #expect(focus.count == 48)
         #expect(lons.allSatisfy { $0 > 90 && $0 < 120 })
     }
+
+    @Test func tripMapOpensOnTheTripNotOnHome() {
+        let home = CLLocationCoordinate2D(latitude: 1.36, longitude: 103.99)
+        let europe = (0..<20).map { CLLocationCoordinate2D(latitude: 46 + Double($0) * 0.2, longitude: 7 + Double($0) * 0.3) }
+        let stays = [home] + europe + [home]
+        let region = TrackMap.mainRegion(stays, stays: stays)
+        #expect(region.count == 20)
+        #expect(region.allSatisfy { $0.latitude > 40 })
+        // A trip that stays in one region keeps everything.
+        #expect(TrackMap.mainRegion(europe, stays: europe).count == 20)
+    }
 }
 
 @MainActor

@@ -6,7 +6,8 @@ import os
 
 /// The always-on recorder. It listens to Core Location's live updates (which pause by
 /// themselves when the phone is still, so battery use follows how much you move),
-/// writes the path into `TrackChunk`s and detects `Stay`s along the way.
+/// writes the path into `TrackChunk`s and detects `Stay`s along the way. During a long stay
+/// it turns GPS off and waits on a geofence around the stay instead.
 @MainActor
 @Observable
 final class LocationEngine {
@@ -64,6 +65,11 @@ final class LocationEngine {
     private var rejectedJumps = 0
     private var dwellTask: Task<Void, Never>?
     private var resumeTask: Task<Void, Never>?
+    /// Settled: a long stay where GPS is off and a geofence around the stay wakes us on leaving.
+    private var isSettled = false
+    private var settleTask: Task<Void, Never>?
+    private var fenceMonitor: Task<CLMonitor, Never>?
+    private var fenceWork: Task<Void, Never>?
     private let log = Logger(subsystem: "PathTracker", category: "LocationEngine")
 
     private enum Keys {
@@ -86,7 +92,13 @@ final class LocationEngine {
         /// Faster than this between two fixes, outside of a plane, is a GPS jump.
         static let maxGroundSpeed: CLLocationSpeed = 75
         static let coarseAccuracy: CLLocationAccuracy = 250
+        /// How long a stay lasts before GPS hands over to the geofence. Shorter stops (a red
+        /// light, a shop) keep live updates so the next stretch of path starts on time.
+        static let settleAfter: TimeInterval = 10 * 60
+        static let fenceRadius: CLLocationDistance = 150
     }
+
+    private static let fenceID = "stay"
 
     init(context: ModelContext, tagger: PlaceTagger) {
         self.context = context
@@ -147,7 +159,7 @@ final class LocationEngine {
         authorization = manager.authorizationStatus
         isPreciseLocation = manager.accuracyAuthorization == .fullAccuracy
         Diagnostics.record("authorization status=\(authorization.rawValue) precise=\(isPreciseLocation)")
-        if isRecording, hasAnyPermission, updatesTask == nil { start() }
+        if isRecording, hasAnyPermission, updatesTask == nil, !isSettled { start() }
         if !hasAnyPermission { activity = .unavailable }
     }
 
@@ -163,6 +175,7 @@ final class LocationEngine {
         }
         updatesTask?.cancel()
         updatesTask = nil
+        unsettle()
         Diagnostics.record("start precision=\(precision.rawValue) trip=\(activeTripID != nil) live=\(usesLiveUpdates) \(Diagnostics.battery)")
         // Lets iOS relaunch the app after it was terminated while the user moves on.
         manager.startMonitoringSignificantLocationChanges()
@@ -201,6 +214,7 @@ final class LocationEngine {
         Diagnostics.record("stop paused=\(isPaused)")
         updatesTask?.cancel()
         updatesTask = nil
+        unsettle()
         backgroundSession?.invalidate()
         backgroundSession = nil
         manager.stopMonitoringVisits()
@@ -322,6 +336,7 @@ final class LocationEngine {
             activity = .stationary
             if let location = update.location ?? currentLocation { promoteAnchorIfStill(at: location) }
             flushChunk(carryOver: true)
+            scheduleSettle()
             return
         }
         guard let location = update.location else { return }
@@ -364,6 +379,11 @@ final class LocationEngine {
     private func handleCoarse(_ locations: [CLLocation]) {
         if let last = locations.last { Diagnostics.record("significantChange \(Diagnostics.describe(last))") }
         if pausedUntil != nil, !isPaused { resume() }
+        // A backup for the geofence: a coarse fix well away from the stay also wakes GPS.
+        if isSettled, let stay = openStay, let last = locations.last,
+           last.distance(from: stay.location) > Tuning.fenceRadius + last.horizontalAccuracy {
+            leftFence()
+        }
         guard !usesLiveUpdates, isRecording else { return }
         for location in locations where location.horizontalAccuracy > 0 && location.horizontalAccuracy <= Tuning.coarseAccuracy {
             currentLocation = location
@@ -498,6 +518,7 @@ final class LocationEngine {
             previous.departure = nil
             openStay = previous
             try? context.save()
+            scheduleSettle()
             return
         }
 
@@ -509,6 +530,7 @@ final class LocationEngine {
         openStay = stay
         try? context.save()
         tagger.enqueue()
+        scheduleSettle()
     }
 
     private func refine(_ stay: Stay, with location: CLLocation) {
@@ -528,6 +550,87 @@ final class LocationEngine {
             stay.departure = date
         }
         try? context.save()
+    }
+
+    // MARK: Settling
+
+    /// Live updates pause when the phone is still but wake every time it is picked up, so a day
+    /// at the office kept GPS on about half the time. Once a stay has lasted a while, hand over
+    /// to a geofence around it and turn GPS off until we leave.
+    private func scheduleSettle() {
+        guard let stay = openStay, activeTripID == nil, usesLiveUpdates, !isSettled else { return }
+        settleTask?.cancel()
+        let wait = Tuning.settleAfter - Date().timeIntervalSince(stay.arrival)
+        settleTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(max(0, wait)))
+            guard let self, !Task.isCancelled, self.openStay === stay, self.activity == .stationary else { return }
+            self.settle()
+        }
+    }
+
+    private func settle() {
+        guard let stay = openStay, isRecording, activeTripID == nil, usesLiveUpdates, !isSettled else { return }
+        isSettled = true
+        updatesTask?.cancel()
+        updatesTask = nil
+        flushChunk(carryOver: false)
+        Diagnostics.record("settle radius=\(Int(Tuning.fenceRadius))m \(Diagnostics.battery)")
+        updateFence(around: stay.location.coordinate)
+    }
+
+    private func unsettle() {
+        settleTask?.cancel()
+        settleTask = nil
+        guard isSettled else {
+            // After a relaunch the monitor may still hold a fence from before; clear it.
+            if fenceMonitor == nil, isRecording { updateFence(around: nil) }
+            return
+        }
+        isSettled = false
+        updateFence(around: nil)
+    }
+
+    private func leftFence() {
+        guard isSettled else { return }
+        Diagnostics.record("fence exit \(Diagnostics.battery)")
+        if isRecording { start() } else { unsettle() }
+    }
+
+    /// Adds or removes the stay geofence, one change at a time and in order.
+    private func updateFence(around center: CLLocationCoordinate2D?) {
+        let previous = fenceWork
+        let monitor = monitorTask()
+        fenceWork = Task {
+            await previous?.value
+            let monitor = await monitor.value
+            if let center {
+                let condition = CLMonitor.CircularGeographicCondition(center: center, radius: Tuning.fenceRadius)
+                await monitor.add(condition, identifier: Self.fenceID, assuming: .satisfied)
+            } else {
+                await monitor.remove(Self.fenceID)
+            }
+        }
+    }
+
+    /// One monitor for the app's lifetime; its events also arrive when iOS relaunches us for them.
+    private func monitorTask() -> Task<CLMonitor, Never> {
+        if let fenceMonitor { return fenceMonitor }
+        let task = Task { [weak self] in
+            let monitor = await CLMonitor("StayFence")
+            Task {
+                do {
+                    for try await event in await monitor.events
+                    where event.identifier == Self.fenceID && event.state == .unsatisfied {
+                        self?.leftFence()
+                    }
+                } catch {
+                    Diagnostics.record("fence ended error=\(error.localizedDescription)")
+                }
+            }
+            return monitor
+        }
+        fenceMonitor = task
+        return task
     }
 
     private func lastClosedStay() -> Stay? {

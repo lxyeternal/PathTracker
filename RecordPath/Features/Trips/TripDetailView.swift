@@ -174,6 +174,14 @@ struct TripDetailView: View {
                                 .font(.headline).foregroundStyle(.secondary)
                         }
                         .clipShape(.rect(cornerRadius: 28, style: .continuous))
+                    } else {
+                        Label("查看地图", systemImage: "arrow.up.left.and.arrow.down.right")
+                            .font(.footnote.weight(.semibold))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .glassEffect(.regular, in: .capsule)
+                            .padding(12)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
                     }
                 }
         }
