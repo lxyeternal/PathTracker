@@ -8,7 +8,6 @@ struct WorldView: View {
     @Environment(\.placeTagger) private var tagger
     private var stays: [Stay] { summaries.stays }
     private var insights: WorldInsights { summaries.world }
-    private var lightUp: LightUpInsights { summaries.lightUp }
     @State private var importingPhotos = false
     @AppStorage("photoImport.lastRun") private var photoImportRun: Double = 0
     @State private var selectedStay: Stay?
@@ -91,23 +90,10 @@ struct WorldView: View {
         }
     }
 
-    /// A peek at the light-up map: the province tiles, small, with the counts.
+    /// The way into the passport and the stamp book.
     private var lightUpCard: some View {
         NavigationLink(value: LightUpRoute()) {
-            HStack(spacing: 16) {
-                ProvinceTileMap(insights: lightUp, showsLabels: false)
-                    .allowsHitTesting(false)
-                    .frame(width: 104)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("点亮地图").font(.headline)
-                    Text("\(lightUp.provinces.count) 个省级行政区 · \(lightUp.countries.count) 个国家和地区")
-                        .font(.subheadline).foregroundStyle(.secondary)
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
-            }
-            .padding(14)
-            .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
+            PassportCard(book: summaries.stamps)
         }
         .buttonStyle(PressableStyle())
     }

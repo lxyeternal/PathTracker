@@ -16,13 +16,23 @@ struct CountryDetailView: View {
     @State private var stints: [CityStint] = []
 
     /// Counted once per change, not on every redraw: a country can hold thousands of visits.
+    /// Grouped by the names the stamps use, so "杭州市" and "Hangzhou" are one city.
     private func countCities() -> [(name: String, visits: Int, days: Int)] {
-        Dictionary(grouping: stays.filter { $0.city != nil }, by: { $0.city! })
+        let names = CityNames.canonical(for: stays)
+        return Dictionary(grouping: stays.filter { $0.city != nil }, by: { CityNames.key($0).flatMap { names[$0] } ?? $0.city! })
             .map { name, stays in
                 let days = Set(stays.flatMap { Calendar.current.days(in: DateInterval(start: $0.arrival, end: max($0.departure ?? Date(), $0.arrival))) })
                 return (name, stays.count, days.count)
             }
             .sorted { $0.days > $1.days }
+    }
+
+    private var borderStamps: [Stamp] { PlaceSummaries.shared.stamps.passport(for: country.code) }
+
+    /// Most days first, like the list it replaces.
+    private var cityStamps: [Stamp] {
+        let order = Dictionary(uniqueKeysWithValues: cities.enumerated().map { ($1.name, $0) })
+        return PlaceSummaries.shared.stamps.cities(in: country.code).sorted { (order[$0.city ?? ""] ?? .max) < (order[$1.city ?? ""] ?? .max) }
     }
 
     private var landmarks: [Stay] {
@@ -54,22 +64,29 @@ struct CountryDetailView: View {
                                symbol: "clock.fill", tint: .orange)
                 }
 
-                if !cities.isEmpty {
-                    SectionHeader(title: "城市")
-                    VStack(spacing: 0) {
-                        ForEach(cities, id: \.name) { city in
-                            HStack {
-                                Image(systemName: "building.2").foregroundStyle(.indigo).frame(width: 28)
-                                Text(city.name).font(.body.weight(.medium))
-                                Spacer()
-                                Text("\(city.days) 天 · \(city.visits) 处").font(.subheadline).foregroundStyle(.secondary)
+                if !borderStamps.isEmpty {
+                    SectionHeader(title: "护照上的印章", trailing: "\(borderStamps.filter { $0.kind == .entry }.count) 次入境")
+                    ScrollView(.horizontal) {
+                        HStack(spacing: 4) {
+                            ForEach(borderStamps.reversed()) { stamp in
+                                StampArt(stamp: stamp)
+                                    .frame(width: 128, height: 104)
+                                    .stampIn(stamp, delay: 0.2)
+                                    .padding(.vertical, 14)
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
                         }
+                        .padding(.horizontal, 12)
                     }
-                    .padding(.vertical, 4)
-                    .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
+                    .scrollIndicators(.hidden)
+                    .background { StampPaper(style: .passport) }
+                    .clipShape(.rect(cornerRadius: 24, style: .continuous))
+                }
+
+                if !cityStamps.isEmpty {
+                    SectionHeader(title: "城市", trailing: "\(cityStamps.count) 枚城市章")
+                    CityStampGrid(stamps: cityStamps) { stamp in
+                        cities.first { $0.name == stamp.city }.map { String(localized: "\($0.days) 天", bundle: .appLanguage) }
+                    }
                 }
 
                 if !landmarks.isEmpty {

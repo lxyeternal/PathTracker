@@ -1,9 +1,10 @@
 import SwiftUI
 import MapKit
 
-/// Plays the waiting firsts one after another. Countries, provinces and milestones wait to be
-/// lit by hand — press and hold — because earning something should feel like a moment. Cities
-/// light themselves.
+/// Plays the waiting firsts one after another. A new country, province or city earns a stamp,
+/// pressed by hand — press and hold — because earning something should feel like a moment;
+/// cities stamp themselves. Milestones are lit the same way, and coming back somewhere after
+/// years away gets a quiet page of its own.
 struct CeremonyView: View {
     let items: [Celebrations.Item]
     @Environment(\.dismiss) private var dismiss
@@ -17,6 +18,10 @@ struct CeremonyView: View {
                 Group {
                     if item.kind == .milestone, let milestone = item.milestone {
                         MilestoneCeremony(item: item, milestone: milestone, isLast: index == items.count - 1, next: advance)
+                    } else if item.kind == .reunion {
+                        ReunionCeremony(item: item, isLast: index == items.count - 1, next: advance)
+                    } else if let stamp = item.stamp {
+                        StampCeremony(item: item, stamp: stamp, isLast: index == items.count - 1, next: advance)
                     } else {
                         PlaceCeremony(item: item, isLast: index == items.count - 1, next: advance)
                     }
@@ -110,10 +115,11 @@ private extension View {
 private struct HoldHint: View {
     let isLit: Bool
     let progress: CGFloat
+    var label: LocalizedStringKey = "按住点亮"
     @State private var breathe = false
 
     var body: some View {
-        Label("按住点亮", systemImage: "hand.tap.fill")
+        Label(label, systemImage: "hand.tap.fill")
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(.white.opacity(0.85))
             .padding(.horizontal, 16).padding(.vertical, 9)
@@ -422,11 +428,12 @@ private struct PlaceCeremony: View {
         }
     }
 
-    private static func snapshot(_ item: Celebrations.Item) async -> UIImage? {
+    fileprivate static func snapshot(_ item: Celebrations.Item) async -> UIImage? {
         guard let coordinate = item.coordinate else { return nil }
         let meters: CLLocationDistance = switch item.kind {
         case .country: 1_400_000
         case .province: 420_000
+        case .reunion: 2_400
         default: 26_000
         }
         let options = MKMapSnapshotter.Options()
@@ -438,6 +445,395 @@ private struct PlaceCeremony: View {
         configuration.pointOfInterestFilter = .excludingAll
         options.preferredConfiguration = configuration
         return try? await MKMapSnapshotter(options: options).start().image
+    }
+}
+
+// MARK: - Stamps
+
+/// A page of the passport, the seal book or the city book, and the stamp above it. Holding
+/// lowers the stamp onto the paper, ticking harder as it nears; when it lands it thumps, the
+/// page jolts, and the ink spreads out from the middle.
+private struct StampCeremony: View {
+    let item: Celebrations.Item
+    let stamp: Stamp
+    let isLast: Bool
+    let next: () -> Void
+
+    @Environment(\.modelContext) private var context
+    @State private var map: UIImage?
+    @State private var route: [CGPoint] = []
+    @State private var hold: CGFloat = 0
+    @State private var isStamped = false
+    @State private var ink: CGFloat = 0
+    @State private var squash = false
+    @State private var shake: CGFloat = 0
+    @State private var splash: Date?
+    @State private var appeared = false
+    @State private var share: Image?
+
+    /// Cities stamp themselves; countries and provinces are stamped by hand.
+    private var isHeld: Bool { stamp.kind != .city }
+
+    private var paperStyle: StampPaper.Style {
+        switch stamp.kind {
+        case .entry, .exit: .passport
+        case .province: .seals
+        case .city: .book
+        }
+    }
+
+    private var kindLabel: LocalizedStringKey {
+        switch stamp.kind {
+        case .entry, .exit: "新的入境章"
+        case .province: "新的省份印"
+        case .city: "新的城市章"
+        }
+    }
+
+    private var pageLabel: String {
+        switch stamp.kind {
+        case .entry, .exit: "VISAS"
+        case .province: String(localized: "省份印", bundle: .appLanguage)
+        case .city: String(localized: "城市章", bundle: .appLanguage)
+        }
+    }
+
+    private var inkColor: Color {
+        switch stamp.kind {
+        case .entry, .exit: CountryStampStyle.of(stamp.countryCode ?? "").ink.color
+        case .province: Ink.cinnabar.color
+        case .city: CityStampStyle.of(city: stamp.city ?? "", countryCode: stamp.countryCode, coordinate: stamp.coordinate).ink.color
+        }
+    }
+
+    private var stampSize: CGSize {
+        switch stamp.kind {
+        case .province: CGSize(width: 150, height: 150)
+        default: CGSize(width: 210, height: 190)
+        }
+    }
+
+    private var displayTitle: String {
+        guard item.kind == .country, let code = item.countryCode else { return item.title }
+        return item.title.replacingOccurrences(of: String.flag(for: code), with: "").trimmingCharacters(in: .whitespaces)
+    }
+
+    var body: some View {
+        ZStack {
+            GeometryReader { geo in
+                Group {
+                    if let map {
+                        Image(uiImage: map).resizable().scaledToFill()
+                            .saturation(0.2).brightness(-0.35).blur(radius: 6)
+                    } else {
+                        RadialGradient(colors: [inkColor.opacity(0.35), .black], center: .center, startRadius: 10, endRadius: 500)
+                    }
+                }
+                .frame(width: geo.size.width, height: geo.size.height)
+                .clipped()
+                .overlay(RadialGradient(colors: [inkColor.opacity(isStamped ? 0.35 : 0), .clear], center: .center, startRadius: 40, endRadius: 420))
+                .animation(.easeOut(duration: 1.2), value: isStamped)
+            }
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+
+            VStack(spacing: 16) {
+                Spacer(minLength: 0)
+                VStack(spacing: 6) {
+                    if item.kind == .country, let code = item.countryCode {
+                        Text(String.flag(for: code)).font(.system(size: 40))
+                    }
+                    Text(kindLabel)
+                        .textCase(.uppercase)
+                        .font(.footnote.weight(.bold)).tracking(3)
+                        .foregroundStyle(.white.opacity(0.7))
+                    Text(displayTitle)
+                        .font(.system(size: 30, weight: .heavy))
+                        .multilineTextAlignment(.center)
+                        .minimumScaleFactor(0.6).lineLimit(2)
+                }
+                .foregroundStyle(.white)
+                .opacity(appeared ? 1 : 0)
+                .offset(y: appeared ? 0 : -16)
+
+                page
+                    .scaleEffect(appeared ? 1 : 0.9)
+                    .opacity(appeared ? 1 : 0)
+
+                Text(item.subtitle)
+                    .font(.headline)
+                    .foregroundStyle(.white.opacity(0.75))
+                    .multilineTextAlignment(.center)
+                    .opacity(isStamped ? 1 : 0)
+                    .offset(y: isStamped ? 0 : 10)
+                    .animation(.smooth(duration: 0.6).delay(0.5), value: isStamped)
+                Spacer(minLength: 0)
+                ZStack {
+                    if isHeld { HoldHint(isLit: isStamped, progress: hold, label: "按住盖章") }
+                    CeremonyActions(isLit: isStamped, isLast: isLast, share: share, next: next)
+                }
+                .frame(height: 60)
+                .padding(.bottom, 24)
+            }
+            .padding(.horizontal, 28)
+        }
+        .task {
+            withAnimation(.spring(response: 0.7, dampingFraction: 0.8).delay(0.1)) { appeared = true }
+            if stamp.kind == .city { route = StampRoute.load(stamp, context: context) }
+            map = await PlaceCeremony.snapshot(item)
+            guard !isHeld else { return }
+            try? await Task.sleep(for: .seconds(1.0))
+            withAnimation(.easeIn(duration: 0.45)) { hold = 1 }
+            try? await Task.sleep(for: .seconds(0.45))
+            press()
+        }
+    }
+
+    private var page: some View {
+        let tilt = stamp.tilt
+        return ZStack {
+            StampPaper(style: paperStyle)
+            VStack {
+                Text(verbatim: pageLabel).font(.custom("AvenirNextCondensed-DemiBold", fixedSize: 10)).tracking(3)
+                Spacer()
+                // Seals carry no date of their own.
+                if stamp.kind == .province {
+                    Text(item.date.formatted(.dateTime.year().month().day().locale(appLocale))).font(.system(size: 10, design: .monospaced))
+                }
+            }
+            .foregroundStyle(StampPaper.line)
+            .padding(.vertical, 14)
+
+            // Where it will land.
+            StampArt(stamp: stamp, route: route, inked: false)
+                .frame(width: stampSize.width, height: stampSize.height)
+                .rotationEffect(.degrees(tilt))
+                .opacity(isStamped ? 0 : 0.7)
+
+            // The print it leaves, the ink spreading out from the middle.
+            StampArt(stamp: stamp, route: route)
+                .frame(width: stampSize.width, height: stampSize.height)
+                .rotationEffect(.degrees(tilt))
+                .mask {
+                    Circle()
+                        .frame(width: 320, height: 320)
+                        .scaleEffect(0.15 + ink * 1.1)
+                        .blur(radius: 18 * (1 - ink) + 2)
+                }
+                .opacity(isStamped ? 1 : 0)
+
+            // The stamp itself, coming down as you hold.
+            StampArt(stamp: stamp, route: route)
+                .frame(width: stampSize.width, height: stampSize.height)
+                .rotationEffect(.degrees(tilt - 6 * (1 - hold)))
+                .scaleEffect(1.3 - 0.24 * hold)
+                .offset(y: -30 * (1 - hold))
+                .blur(radius: 2.5 * (1 - hold))
+                .opacity(isStamped ? 0 : 0.15 + 0.55 * hold)
+                .shadow(color: .black.opacity(0.4 * (1 - hold) + 0.15), radius: 22 * (1 - hold) + 3, y: 18 * (1 - hold) + 2)
+
+            if let splash { InkSplash(start: splash, color: inkColor).allowsHitTesting(false) }
+        }
+        .frame(width: 300, height: stamp.kind == .province ? 300 : 340)
+        .clipShape(.rect(cornerRadius: 18, style: .continuous))
+        .shadow(color: .black.opacity(0.5), radius: 30, y: 16)
+        .rotationEffect(.degrees(-1.2))
+        .scaleEffect(squash ? 0.975 : 1)
+        .offset(x: shake, y: squash ? 3 : 0)
+        .contentShape(.rect)
+        .holdToLight(isLit: isStamped || !isHeld, progress: $hold, duration: 1.2) { press() }
+        .accessibilityAction(named: Text("盖章")) { press() }
+    }
+
+    private func press() {
+        guard !isStamped else { return }
+        UIImpactFeedbackGenerator(style: .heavy).impactOccurred(intensity: 1)
+        isStamped = true
+        splash = Date()
+        withAnimation(.easeOut(duration: 0.07)) { squash = true }
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.5).delay(0.07)) { squash = false }
+        withAnimation(.easeOut(duration: 0.7)) { ink = 1 }
+        Task {
+            for offset in [7.0, -5, 3, -1.5, 0] {
+                withAnimation(.easeOut(duration: 0.05)) { shake = offset }
+                try? await Task.sleep(for: .seconds(0.05))
+            }
+            try? await Task.sleep(for: .seconds(0.2))
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        }
+        share = CeremonyShareCard.render(title: item.title, subtitle: item.subtitle) {
+            ZStack {
+                StampPaper(style: paperStyle)
+                StampArt(stamp: stamp, route: route)
+                    .frame(width: stampSize.width, height: stampSize.height)
+                    .rotationEffect(.degrees(stamp.tilt))
+            }
+            .frame(width: 280, height: 240)
+            .clipShape(.rect(cornerRadius: 18, style: .continuous))
+        }
+    }
+}
+
+/// A few drops of ink thrown out as the stamp lands.
+private struct InkSplash: View {
+    let start: Date
+    let color: Color
+
+    private struct Drop { let angle: Double, distance: Double, size: Double }
+    private let drops: [Drop] = (0..<16).map { _ in
+        Drop(angle: .random(in: 0...(2 * .pi)), distance: .random(in: 95...150), size: .random(in: 1.5...4))
+    }
+
+    var body: some View {
+        TimelineView(.animation) { timeline in
+            let t = timeline.date.timeIntervalSince(start)
+            Canvas { context, size in
+                guard t < 0.9 else { return }
+                let center = CGPoint(x: size.width / 2, y: size.height / 2)
+                let travel = 1 - pow(1 - min(t / 0.25, 1), 3)
+                context.opacity = max(0, 1 - max(0, t - 0.35) / 0.55)
+                for drop in drops {
+                    let d = drop.distance * travel
+                    let point = CGPoint(x: center.x + cos(drop.angle) * d, y: center.y + sin(drop.angle) * d)
+                    context.fill(Path(ellipseIn: CGRect(x: point.x - drop.size / 2, y: point.y - drop.size / 2, width: drop.size, height: drop.size)),
+                                 with: .color(color))
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Reunion
+
+/// Back somewhere after more than a year: how long it's been, counted up in front of you, and
+/// the visits before, as a line through time.
+private struct ReunionCeremony: View {
+    let item: Celebrations.Item
+    let isLast: Bool
+    let next: () -> Void
+
+    @State private var map: UIImage?
+    @State private var shown = false
+    @State private var days = 0
+    @State private var counted = false
+    @State private var share: Image?
+
+    private let warm = Color(red: 1, green: 0.78, blue: 0.5)
+    private var totalDays: Int {
+        guard let last = item.lastVisit else { return 0 }
+        return Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: last),
+                                               to: Calendar.current.startOfDay(for: item.date)).day ?? 0
+    }
+
+    var body: some View {
+        ZStack {
+            GeometryReader { geo in
+                Group {
+                    if let map {
+                        Image(uiImage: map).resizable().scaledToFill()
+                            .saturation(0.35).colorMultiply(warm).brightness(-0.3)
+                    } else {
+                        Color.black
+                    }
+                }
+                .frame(width: geo.size.width, height: geo.size.height)
+                .clipped()
+                .overlay(LinearGradient(colors: [.black.opacity(0.5), .black.opacity(0.2), .black.opacity(0.92)], startPoint: .top, endPoint: .bottom))
+            }
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+
+            VStack(spacing: 14) {
+                Spacer(minLength: 0)
+                Text("重逢")
+                    .font(.footnote.weight(.bold)).tracking(6)
+                    .foregroundStyle(warm)
+                Text(item.title)
+                    .font(.system(size: 32, weight: .heavy))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2).minimumScaleFactor(0.6)
+                if !item.subtitle.isEmpty {
+                    Text(item.subtitle).font(.headline).foregroundStyle(.white.opacity(0.7))
+                }
+                VStack(spacing: 0) {
+                    Text("\(days)")
+                        .font(.system(size: 84, weight: .heavy, design: .rounded))
+                        .monospacedDigit()
+                        .contentTransition(.numericText(value: Double(days)))
+                    Text("天没来这里了")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.8))
+                }
+                .padding(.vertical, 18)
+                timeline
+                    .opacity(counted ? 1 : 0)
+                    .offset(y: counted ? 0 : 12)
+                Spacer(minLength: 0)
+                CeremonyActions(isLit: counted, isLast: isLast, share: share, next: next)
+                    .frame(height: 60)
+                    .padding(.bottom, 24)
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 28)
+            .opacity(shown ? 1 : 0)
+        }
+        .task {
+            map = await PlaceCeremony.snapshot(item)
+            withAnimation(.easeOut(duration: 1.2)) { shown = true }
+            try? await Task.sleep(for: .seconds(0.9))
+            // Counted up quickly at first, slowing as it nears the end, like time catching up.
+            let total = totalDays
+            for step in 1...36 {
+                let t = Double(step) / 36
+                withAnimation(.snappy(duration: 0.08)) { days = Int((1 - pow(1 - t, 3)) * Double(total)) }
+                if step % 6 == 0 { UIImpactFeedbackGenerator(style: .soft).impactOccurred(intensity: 0.3 + t * 0.4) }
+                try? await Task.sleep(for: .seconds(0.045))
+            }
+            days = total
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            withAnimation(.smooth(duration: 0.6)) { counted = true }
+            share = CeremonyShareCard.render(title: item.title, subtitle: String(localized: "\(total) 天后，又来到这里", bundle: .appLanguage)) {
+                Text("重逢").font(.system(size: 54, weight: .heavy)).foregroundStyle(warm)
+            }
+        }
+    }
+
+    /// First visit, last visit, today.
+    private var timeline: some View {
+        let format = Date.FormatStyle.dateTime.year().month().day().locale(appLocale)
+        var marks: [(LocalizedStringKey, String)] = []
+        if let first = item.firstVisit, let last = item.lastVisit, !Calendar.current.isDate(first, inSameDayAs: last) {
+            marks.append(("第一次", first.formatted(format)))
+        }
+        if let last = item.lastVisit { marks.append(("上一次", last.formatted(format))) }
+        marks.append(("今天", item.date.formatted(format)))
+        return VStack(spacing: 14) {
+            HStack(alignment: .top, spacing: 0) {
+                ForEach(marks.indices, id: \.self) { index in
+                    VStack(spacing: 6) {
+                        Circle()
+                            .fill(index == marks.count - 1 ? warm : .white.opacity(0.6))
+                            .frame(width: 10, height: 10)
+                        Text(marks[index].0).font(.caption.weight(.semibold)).foregroundStyle(.white.opacity(0.7))
+                        Text(marks[index].1).font(.caption2).foregroundStyle(.white.opacity(0.6)).monospacedDigit()
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            // One line from the first mark to today, behind the dots.
+            .background(alignment: .topLeading) {
+                GeometryReader { geo in
+                    let column = geo.size.width / CGFloat(marks.count)
+                    Rectangle()
+                        .fill(.white.opacity(0.3))
+                        .frame(width: column * CGFloat(marks.count - 1), height: 1.5)
+                        .offset(x: column / 2, y: 4.25)
+                }
+            }
+            if let visits = item.visits {
+                Text("这是你第 \(visits) 次来这里").font(.subheadline).foregroundStyle(.white.opacity(0.75))
+            }
+        }
     }
 }
 

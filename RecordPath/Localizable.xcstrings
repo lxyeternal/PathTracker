@@ -154,6 +154,26 @@
         }
       }
     },
+    "%@城市章，%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ city stamp, %2$@"
+          }
+        }
+      }
+    },
+    "%@省份印，%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ seal, %2$@"
+          }
+        }
+      }
+    },
     "%@自动恢复。暂停期间不会记录位置。": {
       "localizations": {
         "en": {
@@ -202,6 +222,28 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%lld places"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld 个月": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld month"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld months"
                 }
               }
             }
@@ -409,6 +451,60 @@
         }
       }
     },
+    "%lld 天后，又来到这里": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Back here after %lld day"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Back here after %lld days"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld 年": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld year"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld years"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld 年 %lld 个月": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld yr %2$lld mo"
+          }
+        }
+      }
+    },
     "%lld 座城市": {
       "localizations": {
         "en": {
@@ -446,6 +542,38 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%lld photos"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld 枚": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
+          }
+        }
+      }
+    },
+    "%lld 枚城市章": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld city stamp"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld city stamps"
                 }
               }
             }
@@ -532,6 +660,28 @@
                       "value": "%arg visits"
                     }
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld 次入境": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld entry"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld entries"
                 }
               }
             }
@@ -760,6 +910,16 @@
         }
       }
     },
+    "上一次": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last visit"
+          }
+        }
+      }
+    },
     "上个月": {
       "localizations": {
         "en": {
@@ -916,6 +1076,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "China"
+          }
+        }
+      }
+    },
+    "中间的线条，是你第一天在那里走过的路": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The line in the middle is the path you walked on your first day there"
           }
         }
       }
@@ -1140,6 +1310,16 @@
         }
       }
     },
+    "你上次来这里是%@，已经过去%@。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You were last here on %1$@, %2$@ ago."
+          }
+        }
+      }
+    },
     "你可以在“设置 › 删除所有数据”中永久删除所有轨迹、地点、旅程和照片，删除会同步到你的所有设备和 iCloud。卸载 App 会删除本机数据；iCloud 中的数据可以在 iOS“设置 › Apple 账户 › iCloud › 管理存储空间”中删除。": {
       "localizations": {
         "en": {
@@ -1252,6 +1432,28 @@
         }
       }
     },
+    "停留 %lld 天": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "STAYED %lld DAY"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "STAYED %lld DAYS"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "停留天数": {
       "localizations": {
         "en": {
@@ -1338,6 +1540,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Allow"
+          }
+        }
+      }
+    },
+    "入境 %lld · 省份 %lld · 城市 %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entries %1$lld · Provinces %2$lld · Cities %3$lld"
+          }
+        }
+      }
+    },
+    "入境 · ARRIVAL": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ARRIVAL"
+          }
+        }
+      }
+    },
+    "入境章，%@，%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entry stamp, %1$@, %2$@"
           }
         }
       }
@@ -1528,6 +1760,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your route will appear here once you set off"
+          }
+        }
+      }
+    },
+    "出国旅行时，入境的那一刻会自动盖在这里": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Travel abroad and an entry stamp lands here the moment you arrive"
+          }
+        }
+      }
+    },
+    "出境 · DEPARTURE": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DEPARTURE"
+          }
+        }
+      }
+    },
+    "出境章，%@，%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exit stamp, %1$@, %2$@"
           }
         }
       }
@@ -1938,6 +2200,16 @@
         }
       }
     },
+    "去过%@之后，这枚印会盖上。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visit %@ and this seal gets stamped."
+          }
+        }
+      }
+    },
     "去过%@之后，这里会亮起来。": {
       "localizations": {
         "en": {
@@ -1954,6 +2226,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "The countries, cities and sights you visit will be collected here automatically."
+          }
+        }
+      }
+    },
+    "去过的国家和地区": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Countries and regions visited"
           }
         }
       }
@@ -2184,6 +2466,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Swipe left"
+          }
+        }
+      }
+    },
+    "向左轻扫，翻开护照": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe left to open your passport"
           }
         }
       }
@@ -2552,6 +2844,16 @@
         }
       }
     },
+    "城市章": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CITY STAMPS"
+          }
+        }
+      }
+    },
     "处已经记录过": {
       "localizations": {
         "en": {
@@ -2588,6 +2890,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Days"
+          }
+        }
+      }
+    },
+    "天没来这里了": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "days since you were last here"
           }
         }
       }
@@ -3254,6 +3566,16 @@
         }
       }
     },
+    "我的省份印": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My province seals"
+          }
+        }
+      }
+    },
     "所在城市": {
       "localizations": {
         "en": {
@@ -3396,12 +3718,52 @@
         }
       }
     },
+    "护照": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passport"
+          }
+        }
+      }
+    },
+    "护照上的印章": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passport stamps"
+          }
+        }
+      }
+    },
+    "护照与印章": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passport and Stamps"
+          }
+        }
+      }
+    },
     "按住点亮": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Press and Hold to Light Up"
+          }
+        }
+      }
+    },
+    "按住盖章": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hold to stamp"
           }
         }
       }
@@ -3492,6 +3854,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Keep as Trip"
+          }
+        }
+      }
+    },
+    "收集的城市章": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "City stamps collected"
           }
         }
       }
@@ -3608,6 +3980,16 @@
         }
       }
     },
+    "新的入境章": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New entry stamp"
+          }
+        }
+      }
+    },
     "新的国家和地区": {
       "localizations": {
         "en": {
@@ -3628,6 +4010,16 @@
         }
       }
     },
+    "新的城市章": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New city stamp"
+          }
+        }
+      }
+    },
     "新的奖牌": {
       "localizations": {
         "en": {
@@ -3644,6 +4036,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "New Province"
+          }
+        }
+      }
+    },
+    "新的省份印": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New province seal"
           }
         }
       }
@@ -4438,6 +4840,16 @@
         }
       }
     },
+    "每到一座新城市，就会得到一枚它的纪念章，中间印着你那天走过的路。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every new city gives you its stamp, with the path you walked that day in the middle."
+          }
+        }
+      }
+    },
     "每周一回顾上周": {
       "localizations": {
         "en": {
@@ -4768,6 +5180,36 @@
         }
       }
     },
+    "盖上了第 %lld 枚省份印。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Province seal number %lld."
+          }
+        }
+      }
+    },
+    "盖上的省份印": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Province seals stamped"
+          }
+        }
+      }
+    },
+    "盖章": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamp"
+          }
+        }
+      }
+    },
     "相册": {
       "localizations": {
         "en": {
@@ -4784,6 +5226,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Provinces"
+          }
+        }
+      }
+    },
+    "省份印": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PROVINCE SEALS"
           }
         }
       }
@@ -4914,6 +5366,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sync Now"
+          }
+        }
+      }
+    },
+    "第 %lld / %lld 页": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Page %1$lld of %2$lld"
           }
         }
       }
@@ -5864,6 +6326,16 @@
         }
       }
     },
+    "还没有城市章": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No city stamps yet"
+          }
+        }
+      }
+    },
     "还没有步数记录": {
       "localizations": {
         "en": {
@@ -5910,6 +6382,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Not Lit Up Yet"
+          }
+        }
+      }
+    },
+    "还没盖上“%@”": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” isn’t stamped yet"
           }
         }
       }
@@ -6142,6 +6624,16 @@
         }
       }
     },
+    "这是你第 %lld 次来这里": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visit number %lld"
+          }
+        }
+      }
+    },
     "这条路线": {
       "localizations": {
         "en": {
@@ -6338,6 +6830,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Identify Unnamed Places Again"
+          }
+        }
+      }
+    },
+    "重逢": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BACK AGAIN"
+          }
+        }
+      }
+    },
+    "重逢 · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back again · %@"
           }
         }
       }

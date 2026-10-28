@@ -17,6 +17,8 @@ final class PlaceSummaries {
     private(set) var stays: [Stay] = []
     private(set) var world = WorldInsights()
     private(set) var lightUp = LightUpInsights()
+    /// Passport stamps, province seals and city stamps.
+    private(set) var stamps = StampBook()
     private(set) var milestones = MilestoneProgress()
     /// One dot per ~500 m area, for the maps.
     private(set) var dots: [MapDot] = []
@@ -65,6 +67,7 @@ final class PlaceSummaries {
             stays = result.ids.compactMap { context.model(for: $0) as? Stay }
             world = result.world.rehomed(in: context)
             lightUp = result.lightUp
+            stamps = result.stamps
             milestones = result.milestones
             dots = result.dots
             foundTrips = result.foundTrips
@@ -97,6 +100,7 @@ final class PlaceSummaries {
         var ids: [PersistentIdentifier] = []
         var world = WorldInsights()
         var lightUp = LightUpInsights()
+        var stamps = StampBook()
         var milestones = MilestoneProgress()
         var dots: [MapDot] = []
         var foundTrips: [TripFinder.Found] = []
@@ -108,6 +112,7 @@ final class PlaceSummaries {
             ids = all.map(\.persistentModelID)
             world = WorldInsights(stays: all)
             lightUp = LightUpInsights(stays: all)
+            stamps = StampBook(stays: all)
             milestones = MilestoneProgress(stays: all, movements: chunks.filter { $0.mode != .flying }.map { ($0.startDate, $0.distance) })
             dots = MapDot.dots(for: all)
             let cityNames = CityNames.canonical(for: all)

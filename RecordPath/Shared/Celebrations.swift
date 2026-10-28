@@ -11,7 +11,7 @@ final class Celebrations {
     static let shared = Celebrations()
 
     struct Item: Codable, Identifiable, Equatable {
-        enum Kind: String, Codable { case country, province, city, sight, milestone }
+        enum Kind: String, Codable { case country, province, city, sight, milestone, reunion }
 
         let id: String
         let kind: Kind
@@ -21,6 +21,15 @@ final class Celebrations {
         var latitude: Double?
         var longitude: Double?
         var date = Date()
+        /// A new country: where the border was crossed, and whether by air.
+        var port: String?
+        var byAir: Bool?
+        /// A new city: its name as the stamp prints it.
+        var city: String?
+        /// A reunion: the last and the first time here, and how many visits now.
+        var lastVisit: Date?
+        var firstVisit: Date?
+        var visits: Int?
 
         var coordinate: CLLocationCoordinate2D? {
             guard let latitude, let longitude else { return nil }
@@ -37,6 +46,25 @@ final class Celebrations {
 
         /// Sights are frequent, so they get a quiet banner rather than a ceremony.
         var isCeremony: Bool { kind != .sight }
+
+        /// The stamp a new country, province or city earns, as the ceremony presses it.
+        var stamp: Stamp? {
+            switch kind {
+            case .country:
+                return Stamp(id: "ceremony.\(id)", kind: .entry, date: date, countryCode: countryCode, port: port, byAir: byAir ?? false,
+                             latitude: latitude ?? 0, longitude: longitude ?? 0)
+            case .province:
+                let provinceID = id.replacingOccurrences(of: "arrival.", with: "")
+                return Stamp(id: "province.\(provinceID)", kind: .province, date: date, countryCode: countryCode, provinceID: provinceID,
+                             latitude: latitude ?? 0, longitude: longitude ?? 0)
+            case .city:
+                guard let city else { return nil }
+                return Stamp(id: "city.\(countryCode ?? "")|\(city)", kind: .city, date: date, countryCode: countryCode, city: city,
+                             latitude: latitude ?? 0, longitude: longitude ?? 0)
+            default:
+                return nil
+            }
+        }
     }
 
     private(set) var pending: [Item] = []
@@ -62,7 +90,7 @@ final class Celebrations {
 
     /// Bigger news first: countries, provinces, milestones, then cities; sights last.
     var ceremonies: [Item] {
-        let order: [Item.Kind] = [.country, .province, .milestone, .city]
+        let order: [Item.Kind] = [.country, .province, .milestone, .city, .reunion]
         return pending.filter(\.isCeremony).sorted {
             (order.firstIndex(of: $0.kind) ?? 9, $0.date) < (order.firstIndex(of: $1.kind) ?? 9, $1.date)
         }
@@ -82,12 +110,18 @@ final class Celebrations {
         let now = Date().timeIntervalSince1970
         add(Item(id: "sample.country.\(now)", kind: .country, title: String(localized: "欢迎来到\("日本") \(String.flag(for: "JP"))", bundle: .appLanguage),
                  subtitle: String(localized: "这是你去过的第 \(5) 个国家和地区。", bundle: .appLanguage),
-                 countryCode: "JP", latitude: 35.68, longitude: 139.76))
+                 countryCode: "JP", latitude: 35.55, longitude: 139.78, port: "羽田空港", byAir: true))
+        add(Item(id: "arrival.zhejiang", kind: .province, title: String(localized: "第一次来\("浙江")", bundle: .appLanguage),
+                 subtitle: String(localized: "盖上了第 \(6) 枚省份印。", bundle: .appLanguage),
+                 countryCode: "CN", latitude: 30.27, longitude: 120.15))
         add(Item(id: "milestone.cities.25", kind: .milestone, title: Milestone(kind: .cities, threshold: 25).title,
                  subtitle: Milestone(kind: .cities, threshold: 25).kind.title))
         add(Item(id: "sample.city.\(now)", kind: .city, title: String(localized: "第一次来\("苏州")", bundle: .appLanguage),
                  subtitle: String(localized: "这是你去过的第 \(13) 座城市。", bundle: .appLanguage),
-                 countryCode: "CN", latitude: 31.32, longitude: 120.62))
+                 countryCode: "CN", latitude: 31.32, longitude: 120.62, city: "苏州"))
+        add(Item(id: "sample.reunion.\(now)", kind: .reunion, title: "西湖", subtitle: "杭州",
+                 countryCode: "CN", latitude: 30.25, longitude: 120.14,
+                 lastVisit: Date().addingTimeInterval(-932 * 86_400), firstVisit: Date().addingTimeInterval(-2100 * 86_400), visits: 4))
         add(Item(id: "sample.sight.\(now)", kind: .sight, title: "拙政园", subtitle: String(localized: "新景点", bundle: .appLanguage),
                  countryCode: "CN", latitude: 31.3253, longitude: 120.6283))
     }

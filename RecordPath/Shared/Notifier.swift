@@ -52,9 +52,30 @@ final class Notifier {
         let others = ((try? context.fetch(FetchDescriptor<Stay>(predicate: #Predicate { $0.id != id }))) ?? [])
             .filter { $0.tagState == .tagged }
         if let arrival = Self.firstArrival(stay, after: others) {
-            Celebrations.shared.add(Celebrations.Item(id: arrival.id, kind: arrival.kind, title: arrival.title, subtitle: arrival.body,
-                                                      countryCode: stay.countryCode, latitude: stay.latitude, longitude: stay.longitude))
+            var item = Celebrations.Item(id: arrival.id, kind: arrival.kind, title: arrival.title, subtitle: arrival.body,
+                                         countryCode: stay.countryCode, latitude: stay.latitude, longitude: stay.longitude, date: stay.arrival)
+            switch arrival.kind {
+            case .country:
+                let before = others.filter { $0.arrival < stay.arrival }.max { $0.arrival < $1.arrival }
+                item.byAir = stay.category == .airport || before.map { $0.location.distance(from: stay.location) > 400_000 } ?? false
+                item.port = stay.category == .airport ? stay.displayName : (stay.city ?? stay.placeName)
+            case .city:
+                item.city = arrival.place
+            default:
+                break
+            }
+            Celebrations.shared.add(item)
             if Setting.arrivals.isOn { post(id: arrival.id, title: arrival.title, body: arrival.body) }
+        } else if let reunion = Reunion.find(stay, after: others) {
+            let id = "reunion.\(stay.id.uuidString)"
+            let when = reunion.lastVisit.formatted(.dateTime.year().month().day().locale(appLocale))
+            Celebrations.shared.add(Celebrations.Item(id: id, kind: .reunion, title: stay.displayName, subtitle: stay.city ?? "",
+                                                      countryCode: stay.countryCode, latitude: stay.latitude, longitude: stay.longitude,
+                                                      lastVisit: reunion.lastVisit, firstVisit: reunion.firstVisit, visits: reunion.visits))
+            if Setting.arrivals.isOn {
+                post(id: id, title: String(localized: "重逢 · \(stay.displayName)", bundle: .appLanguage),
+                     body: String(localized: "你上次来这里是\(when)，已经过去\(Reunion.away(since: reunion.lastVisit))。", bundle: .appLanguage))
+            }
         } else if let sight = Self.firstSight(stay, after: others) {
             Celebrations.shared.add(Celebrations.Item(id: sight.id, kind: .sight, title: sight.title, subtitle: sight.body,
                                                       countryCode: stay.countryCode, latitude: stay.latitude, longitude: stay.longitude))
@@ -66,6 +87,8 @@ final class Notifier {
         var kind: Celebrations.Item.Kind = .city
         let title: String
         let body: String
+        /// A new city's name.
+        var place: String?
     }
 
     /// A sight the user hasn't been to before, for a quiet banner.
@@ -92,14 +115,14 @@ final class Notifier {
         if let province = provinceOf(stay), !others.contains(where: { provinceOf($0) == province }) {
             let lit = Set(others.compactMap { provinceOf($0)?.id }).count + 1
             return Arrival(id: "arrival.\(province.id)", kind: .province, title: String(localized: "第一次来\(province.name)", bundle: .appLanguage),
-                           body: String(localized: "点亮了第 \(lit) 个省级行政区。", bundle: .appLanguage))
+                           body: String(localized: "盖上了第 \(lit) 枚省份印。", bundle: .appLanguage))
         }
         let names = CityNames.canonical(for: others + [stay])
         func city(_ s: Stay) -> String? { CityNames.key(s).flatMap { names[$0] }.map { "\(s.countryCode ?? "")|\($0)" } }
         if let key = city(stay), !others.contains(where: { city($0) == key }), let name = CityNames.key(stay).flatMap({ names[$0] }) {
             let count = Set(others.compactMap(city)).count + 1
             return Arrival(id: "arrival.city.\(key)", title: String(localized: "第一次来\(name)", bundle: .appLanguage),
-                           body: String(localized: "这是你去过的第 \(count) 座城市。", bundle: .appLanguage))
+                           body: String(localized: "这是你去过的第 \(count) 座城市。", bundle: .appLanguage), place: name)
         }
         return nil
     }
