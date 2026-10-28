@@ -75,7 +75,6 @@ struct CountrySummary: Identifiable, Hashable {
 
     var id: String { code }
     var flag: String { .flag(for: code) }
-    var sortedCities: [String] { cities.sorted { $0.value > $1.value }.map(\.key) }
 
     static func == (lhs: Self, rhs: Self) -> Bool { lhs.code == rhs.code && lhs.days == rhs.days }
     func hash(into hasher: inout Hasher) { hasher.combine(code) }

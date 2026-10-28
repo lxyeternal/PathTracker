@@ -279,11 +279,6 @@ struct Reunion: Equatable {
     /// A year away counts. Shorter gaps are just life.
     static let minimumGap: TimeInterval = 365 * 86_400
 
-    var daysAway: Int {
-        Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: lastVisit),
-                                        to: Calendar.current.startOfDay(for: Date())).day ?? 0
-    }
-
     /// "2 年 7 个月", "1 年": how long it's been, in the words people use.
     static func away(since date: Date, now: Date = Date()) -> String {
         let parts = Calendar.current.dateComponents([.year, .month], from: date, to: now)

@@ -15,8 +15,6 @@ struct Province: Identifiable, Hashable {
     var regionCode: String?
 
     var name: String { appLocale.language.languageCode == .chinese ? chineseName : englishName }
-    /// What fits on a tile: "广东" / "GD".
-    var tileLabel: String { appLocale.language.languageCode == .chinese ? String(chineseName.prefix(3)) : code }
 
     static let columns = 8
     static let rows = 8

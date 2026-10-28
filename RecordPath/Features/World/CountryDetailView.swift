@@ -124,7 +124,6 @@ struct PlacesListView: View {
 
     var body: some View {
         let insights = summaries.world
-        let stays = summaries.stays
         Group {
             switch list {
             case .frequent:
