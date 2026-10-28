@@ -6,8 +6,8 @@
 
 <p align="center">
   <b>No need to open it, no need to press start. It remembers every road you take.</b><br>
-  An all-day footprint tracker for iPhone and Apple Watch: your routes, the places you stop, the cities and countries you visit,<br>
-  stamped one by one into a passport of your own.
+  An all-day footprint tracker for iPhone and Apple Watch: the roads you take each day, the places you stop, the cities and countries you visit,<br>
+  growing year by year into a map of your own.
 </p>
 
 <p align="center">
@@ -28,18 +28,18 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/today.jpg" width="190" alt="Today">
+  <img src="docs/images/day.jpg" width="190" alt="A day's route">
+  <img src="docs/images/timeline.jpg" width="190" alt="Timeline">
+  <img src="docs/images/trip.jpg" width="190" alt="Trip">
   <img src="docs/images/passport.jpg" width="190" alt="Passport">
-  <img src="docs/images/city-stamps.jpg" width="190" alt="City stamps">
-  <img src="docs/images/stamp-ceremony.jpg" width="190" alt="Stamping">
 </p>
 
 <p align="center">
   <a href="#-records-itself">Recording</a> ·
+  <a href="#-trips">Trips</a> ·
+  <a href="#-the-world-youve-seen">Places</a> ·
   <a href="#-passport-and-stamps">Passport and stamps</a> ·
   <a href="#-moments-that-make-you-pause">Moments</a> ·
-  <a href="#-the-world-youve-seen">Places</a> ·
-  <a href="#-trips">Trips</a> ·
   <a href="#-apple-watch">Apple Watch</a> ·
   <a href="#privacy">Privacy</a> ·
   <a href="#under-the-hood">Under the hood</a>
@@ -48,6 +48,12 @@
 ---
 
 ## 🗺️ Records itself
+
+<p align="center">
+  <img src="docs/images/day.jpg" width="190" alt="A day's route">
+  <img src="docs/images/timeline.jpg" width="190" alt="Timeline">
+  <img src="docs/images/stats.jpg" width="190" alt="Stats">
+</p>
 
 | | |
 |---|---|
@@ -58,6 +64,32 @@
 | **Timeline** | Each day reads stay → journey → stay, every place with the photos you took there. |
 
 **Bring back the past from Photos**: the places your photos and videos were taken fill in where you went before the app existed. New users can do it in the last step of onboarding, and the passport opens as the years of stamps land. Everything is read on the phone; photos are never uploaded.
+
+---
+
+## 🧳 Trips
+
+<p align="center">
+  <img src="docs/images/trips.jpg" width="190" alt="Trips found">
+  <img src="docs/images/trip.jpg" width="190" alt="A trip">
+</p>
+
+- **Past trips found for you**: runs of days more than 80 km from home, saved as a trip in one tap.
+- A trip gathers those days' routes, places and photos; add notes, export GPX, make a share card or a postcard.
+- Hikes, runs and rides can be recorded on their own at high precision, with Apple Watch recording heart rate and saving a workout.
+
+---
+
+## 🌏 The world you've seen
+
+- **Countries and regions**: filter by continent (All · Asia · Europe…), search, and sort by days, most recent or earliest, so a long list never means endless scrolling.
+- **Country pages**: the country outlined (the app draws no borders for mainland China, Hong Kong, Macao or Taiwan), each city you visited a glow of light, then the country's entry stamps and every city's stamp.
+- **Every visit**: grouped as runs of days in one city. A long history shows a year at a time, with a twelve-month bar chart on top; tap a month to jump to it.
+
+<p align="center">
+  <img src="docs/images/places.jpg" width="190" alt="Places">
+  <img src="docs/images/country.jpg" width="190" alt="Country page">
+</p>
 
 ---
 
@@ -107,26 +139,6 @@ Stamps not yet earned are **blind-embossed**: paper-coloured, in relief, every c
 </p>
 
 ---
-
-## 🌏 The world you've seen
-
-- **Countries and regions**: filter by continent (All · Asia · Europe…), search, and sort by days, most recent or earliest, so a long list never means endless scrolling.
-- **Country pages**: the country outlined (the app draws no borders for mainland China, Hong Kong, Macao or Taiwan), each city you visited a glow of light, then the country's entry stamps and every city's stamp.
-- **Every visit**: grouped as runs of days in one city. A long history shows a year at a time, with a twelve-month bar chart on top; tap a month to jump to it.
-
-<p align="center">
-  <img src="docs/images/places.jpg" width="190" alt="Places">
-  <img src="docs/images/country.jpg" width="190" alt="Country page">
-  <img src="docs/images/sets.jpg" width="190" alt="Sets">
-</p>
-
----
-
-## 🧳 Trips
-
-- **Past trips found for you**: runs of days more than 80 km from home, saved as a trip in one tap.
-- A trip gathers those days' routes, places and photos; add notes, export GPX, make a share card or a postcard.
-- Hikes, runs and rides can be recorded on their own at high precision, with Apple Watch recording heart rate and saving a workout.
 
 ## ⌚ Apple Watch
 
