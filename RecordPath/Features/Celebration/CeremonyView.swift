@@ -1,5 +1,6 @@
 import SwiftUI
 import MapKit
+import SwiftData
 
 /// Plays the waiting firsts one after another. A new country, province or city earns a stamp,
 /// pressed by hand — press and hold — because earning something should feel like a moment;
@@ -18,6 +19,8 @@ struct CeremonyView: View {
                 Group {
                     if item.kind == .milestone, let milestone = item.milestone {
                         MilestoneCeremony(item: item, milestone: milestone, isLast: index == items.count - 1, next: advance)
+                    } else if item.kind == .postcard {
+                        PostcardCeremony(item: item, isLast: index == items.count - 1, next: advance)
                     } else if item.kind == .reunion {
                         ReunionCeremony(item: item, isLast: index == items.count - 1, next: advance)
                     } else if let stamp = item.stamp {
@@ -478,7 +481,7 @@ private struct StampCeremony: View {
         switch stamp.kind {
         case .entry, .exit: .passport
         case .province: .seals
-        case .city: .book
+        case .city, .special, .set: .book
         }
     }
 
@@ -487,6 +490,8 @@ private struct StampCeremony: View {
         case .entry, .exit: "新的入境章"
         case .province: "新的省份印"
         case .city: "新的城市章"
+        case .special: "特别的章"
+        case .set: "集齐套章"
         }
     }
 
@@ -495,6 +500,7 @@ private struct StampCeremony: View {
         case .entry, .exit: "VISAS"
         case .province: String(localized: "省份印", bundle: .appLanguage)
         case .city: String(localized: "城市章", bundle: .appLanguage)
+        case .special, .set: String(localized: "纪念章", bundle: .appLanguage)
         }
     }
 
@@ -503,12 +509,15 @@ private struct StampCeremony: View {
         case .entry, .exit: CountryStampStyle.of(stamp.countryCode ?? "").ink.color
         case .province: Ink.cinnabar.color
         case .city: CityStampStyle.of(city: stamp.city ?? "", countryCode: stamp.countryCode, coordinate: stamp.coordinate).ink.color
+        case .special: SpecialStampStyle.of(stamp.code ?? "").ink.color
+        case .set: (StampSet.named(stamp.code)?.ink ?? .crimson).color
         }
     }
 
     private var stampSize: CGSize {
         switch stamp.kind {
         case .province: CGSize(width: 150, height: 150)
+        case .set: CGSize(width: 230, height: 230)
         default: CGSize(width: 210, height: 190)
         }
     }
@@ -594,7 +603,7 @@ private struct StampCeremony: View {
         return ZStack {
             StampPaper(style: paperStyle)
             VStack {
-                Text(verbatim: pageLabel).font(.custom("AvenirNextCondensed-DemiBold", fixedSize: 10)).tracking(3)
+                Text(verbatim: pageLabel.uppercased()).font(.custom("AvenirNextCondensed-DemiBold", fixedSize: 10)).tracking(3)
                 Spacer()
                 // Seals carry no date of their own.
                 if stamp.kind == .province {
@@ -834,6 +843,104 @@ private struct ReunionCeremony: View {
                 Text("这是你第 \(visits) 次来这里").font(.subheadline).foregroundStyle(.white.opacity(0.75))
             }
         }
+    }
+}
+
+// MARK: - Postcard
+
+/// A postcard sent a year ago arrives: it drops in from above, lands, and turns over to show
+/// what you wrote.
+private struct PostcardCeremony: View {
+    let item: Celebrations.Item
+    let isLast: Bool
+    let next: () -> Void
+
+    @Environment(\.modelContext) private var context
+    @State private var content: PostcardContent?
+    @State private var landed = false
+    @State private var flipped = false
+    @State private var share: Image?
+
+    var body: some View {
+        ZStack {
+            RadialGradient(colors: [Color(red: 0.45, green: 0.25, blue: 0.12), .black], center: .center, startRadius: 20, endRadius: 520)
+                .ignoresSafeArea()
+            VStack(spacing: 18) {
+                Spacer(minLength: 0)
+                VStack(spacing: 6) {
+                    Text("来自一年前的你")
+                        .font(.footnote.weight(.bold)).tracking(4)
+                        .foregroundStyle(Color(red: 1, green: 0.8, blue: 0.55))
+                    Text(trip.map { "\($0.coverEmoji) \($0.title)" } ?? item.title)
+                        .font(.system(size: 26, weight: .heavy))
+                        .multilineTextAlignment(.center)
+                    Text(String(localized: "寄出于 \(item.subtitle)", bundle: .appLanguage))
+                        .font(.subheadline).foregroundStyle(.white.opacity(0.65))
+                }
+                .foregroundStyle(.white)
+                .opacity(landed ? 1 : 0)
+                if let content {
+                    PostcardView(content: content, flipped: $flipped)
+                        .rotationEffect(.degrees(landed ? -2 : -24))
+                        .offset(y: landed ? 0 : -520)
+                        .scaleEffect(landed ? 1 : 0.85)
+                        .opacity(landed ? 1 : 0)
+                        .padding(.horizontal, 6)
+                }
+                Label(flipped ? "轻点翻回正面" : "轻点翻到背面", systemImage: "hand.tap")
+                    .font(.footnote).foregroundStyle(.white.opacity(0.6))
+                    .opacity(landed ? 1 : 0)
+                Spacer(minLength: 0)
+                CeremonyActions(isLit: flipped || share != nil, isLast: isLast, share: share, next: next)
+                    .frame(height: 60)
+                    .padding(.bottom, 24)
+            }
+            .padding(.horizontal, 22)
+        }
+        .task {
+            var made = makeContent()
+            content = made
+            // Once the screen has finished sliding up.
+            try? await Task.sleep(for: .seconds(0.7))
+            withAnimation(.spring(response: 0.8, dampingFraction: 0.68)) { landed = true }
+            try? await Task.sleep(for: .seconds(0.5))
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            if let trip = trip {
+                let interval = trip.interval
+                let assets = DayPhotos.canRead ? await Task.detached { DayPhotos.assets(in: interval) }.value : []
+                made.image = await PostcardContent.picture(trip: trip, chunks: chunks(trip), assets: assets,
+                                                           home: TripSuggestionCard.homeBase(in: context))
+                withAnimation(.smooth) { content = made }
+            }
+            try? await Task.sleep(for: .seconds(1.2))
+            flipped = true
+            share = PostcardImage.render(made)
+        }
+    }
+
+    private var trip: Trip? {
+        guard let id = item.code.flatMap(UUID.init(uuidString:)) else { return nil }
+        return try? context.fetch(FetchDescriptor<Trip>(predicate: #Predicate { $0.id == id })).first
+    }
+
+    private func chunks(_ trip: Trip) -> [TrackChunk] {
+        let start = trip.startDate, end = trip.endDate ?? Date()
+        return (try? context.fetch(FetchDescriptor<TrackChunk>(predicate: #Predicate { $0.endDate >= start && $0.startDate <= end }))) ?? []
+    }
+
+    private func makeContent() -> PostcardContent {
+        guard let trip else {
+            return PostcardContent(title: item.title, subtitle: item.subtitle, message: item.value ?? "",
+                                   postmark: Stamp(id: "postmark.\(item.id)", kind: .city, date: item.date, city: AppInfo.name),
+                                   sent: item.date)
+        }
+        let start = trip.startDate, end = trip.endDate ?? Date()
+        let stays = ((try? context.fetch(FetchDescriptor<Stay>(predicate: #Predicate { $0.arrival <= end }))) ?? [])
+            .filter { ($0.departure ?? Date()) >= start }
+        var made = PostcardContent.make(trip: trip, stays: stays, chunks: chunks(trip), home: TripSuggestionCard.homeBase(in: context))
+        made.message = item.value ?? made.message
+        made.sent = item.date
+        return made
     }
 }
 

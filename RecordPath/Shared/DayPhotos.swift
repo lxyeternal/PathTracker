@@ -154,7 +154,7 @@ struct AssetViewer: View {
     }
 }
 
-private enum AssetLoader {
+enum AssetLoader {
     /// A blurry preview at once, then the full one (from iCloud if need be).
     static func images(for asset: PHAsset, size: CGSize) -> AsyncStream<UIImage> {
         AsyncStream { continuation in

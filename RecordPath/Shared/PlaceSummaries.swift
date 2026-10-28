@@ -25,6 +25,8 @@ final class PlaceSummaries {
     /// Trips found in the history, newest first.
     private(set) var foundTrips: [TripFinder.Found] = []
 
+    /// Told whenever the stamps have been worked out again, to notice new ones.
+    @ObservationIgnored var onStamps: ((StampBook) -> Void)?
     @ObservationIgnored private var context: ModelContext?
     @ObservationIgnored private var pending: Task<Void, Never>?
     @ObservationIgnored private var observer: NSObjectProtocol?
@@ -68,6 +70,7 @@ final class PlaceSummaries {
             world = result.world.rehomed(in: context)
             lightUp = result.lightUp
             stamps = result.stamps
+            onStamps?(result.stamps)
             milestones = result.milestones
             dots = result.dots
             foundTrips = result.foundTrips

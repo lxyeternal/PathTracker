@@ -11,7 +11,7 @@ final class Celebrations {
     static let shared = Celebrations()
 
     struct Item: Codable, Identifiable, Equatable {
-        enum Kind: String, Codable { case country, province, city, sight, milestone, reunion }
+        enum Kind: String, Codable { case country, province, city, sight, milestone, reunion, special, set, postcard }
 
         let id: String
         let kind: Kind
@@ -30,6 +30,9 @@ final class Celebrations {
         var lastVisit: Date?
         var firstVisit: Date?
         var visits: Int?
+        /// A special stamp: which one and what it prints; a set: its id; a postcard: the trip's id.
+        var code: String?
+        var value: String?
 
         var coordinate: CLLocationCoordinate2D? {
             guard let latitude, let longitude else { return nil }
@@ -61,6 +64,12 @@ final class Celebrations {
                 guard let city else { return nil }
                 return Stamp(id: "city.\(countryCode ?? "")|\(city)", kind: .city, date: date, countryCode: countryCode, city: city,
                              latitude: latitude ?? 0, longitude: longitude ?? 0)
+            case .special:
+                return Stamp(id: "special.\(code ?? "")", kind: .special, date: date, countryCode: countryCode, city: city,
+                             latitude: latitude ?? 0, longitude: longitude ?? 0, code: code, value: value)
+            case .set:
+                return Stamp(id: "set.\(code ?? "")", kind: .set, date: date, countryCode: countryCode, city: city,
+                             latitude: latitude ?? 0, longitude: longitude ?? 0, code: code)
             default:
                 return nil
             }
@@ -90,7 +99,7 @@ final class Celebrations {
 
     /// Bigger news first: countries, provinces, milestones, then cities; sights last.
     var ceremonies: [Item] {
-        let order: [Item.Kind] = [.country, .province, .milestone, .city, .reunion]
+        let order: [Item.Kind] = [.postcard, .country, .set, .special, .province, .milestone, .city, .reunion]
         return pending.filter(\.isCeremony).sorted {
             (order.firstIndex(of: $0.kind) ?? 9, $0.date) < (order.firstIndex(of: $1.kind) ?? 9, $1.date)
         }
@@ -119,6 +128,11 @@ final class Celebrations {
         add(Item(id: "sample.city.\(now)", kind: .city, title: String(localized: "第一次来\("苏州")", bundle: .appLanguage),
                  subtitle: String(localized: "这是你去过的第 \(13) 座城市。", bundle: .appLanguage),
                  countryCode: "CN", latitude: 31.32, longitude: 120.62, city: "苏州"))
+        add(Item(id: "sample.special.\(now)", kind: .special, title: String(localized: "你跨过了赤道", bundle: .appLanguage),
+                 subtitle: String(localized: "从这里开始，季节反过来了。", bundle: .appLanguage), countryCode: "ID",
+                 latitude: -0.5, longitude: 117.1, city: "Samarinda", code: "equator", value: "0°00′"))
+        add(Item(id: "sample.set.\(now)", kind: .set, title: String(localized: "集齐了“\("関西")”", bundle: .appLanguage),
+                 subtitle: "京都、大阪、奈良都去过了。", countryCode: "JP", latitude: 34.68, longitude: 135.8, city: "奈良", code: "kansai"))
         add(Item(id: "sample.reunion.\(now)", kind: .reunion, title: "西湖", subtitle: "杭州",
                  countryCode: "CN", latitude: 30.25, longitude: 120.14,
                  lastVisit: Date().addingTimeInterval(-932 * 86_400), firstVisit: Date().addingTimeInterval(-2100 * 86_400), visits: 4))

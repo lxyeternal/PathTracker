@@ -56,6 +56,9 @@ struct TripDetailView: View {
                 metrics
                 photosSection
                 notesSection
+                if !trip.isActive && !stays.isEmpty {
+                    PostcardInvite(trip: trip, stays: stays, chunks: chunks, assets: libraryPhotos)
+                }
                 if !trip.isRecording && !stays.isEmpty { daysSection }
             }
             .padding(.horizontal)

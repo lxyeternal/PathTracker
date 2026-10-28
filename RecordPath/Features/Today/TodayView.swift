@@ -120,6 +120,7 @@ struct DayContentView: View {
     @State private var home: CLLocation?
     @Environment(\.modelContext) private var context
     @State private var showingFullMap = false
+    @State private var memories: [OnThisDayCard.Memory] = []
     @Namespace private var mapNamespace
 
     init(day: Date) {
@@ -150,6 +151,10 @@ struct DayContentView: View {
                 if isToday {
                     TrackingStatusCard()
                     TripSuggestionCard(todayStays: stays, home: home)
+                    if !memories.isEmpty {
+                        OnThisDayCard(memories: memories)
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                    }
                 }
 
                 mapCard
@@ -173,8 +178,10 @@ struct DayContentView: View {
         .refreshable { await load(force: true) }
         .task(id: day) {
             if isToday { home = TripSuggestionCard.homeBase(in: context) }
+            findMemories()
             await load(force: false)
         }
+        .onChange(of: PlaceSummaries.shared.stays.count) { findMemories() }
         .sheet(item: $selectedStay) { stay in
             StayDetailView(stay: stay, showsDayLink: false)
         }
@@ -187,6 +194,13 @@ struct DayContentView: View {
                          subtitle: day.formatted(.dateTime.year().month().day().weekday(.wide).locale(appLocale)))
                 .navigationTransition(.zoom(sourceID: "map", in: mapNamespace))
         }
+    }
+
+    /// Where you were on this day in earlier years, for the card on today's page.
+    private func findMemories() {
+        guard isToday else { return }
+        let found = OnThisDayCard.find(stays: PlaceSummaries.shared.stays, today: Date(), home: home)
+        withAnimation(.smooth) { memories = found }
     }
 
     private func load(force: Bool) async {

@@ -134,6 +134,7 @@ final class Notifier {
         guard Date().timeIntervalSince(lastCheck) > 30 * 60 else { return }
         lastCheck = Date()
         checkMilestones()
+        PostcardMail.deliverDue()
         Task { await scheduleWeeklySummaryIfDue() }
     }
 
@@ -154,6 +155,48 @@ final class Notifier {
         }
         guard Setting.milestones.isOn, let latest = new.first else { return }
         post(id: "milestone.\(latest.id)", title: String(localized: "达成里程碑", bundle: .appLanguage), body: latest.milestone.title)
+    }
+
+    // MARK: Special stamps and sets
+
+    /// Special stamps and completed sets earned since the last look, each time the stamps are
+    /// worked out again in the background. Only recent ones get a ceremony: stamps that appear
+    /// because old places were imported or synced are history.
+    private let knownStamps = SyncedSet(key: "stamps.known")
+
+    func checkStamps(_ book: StampBook) {
+        let earned = book.earnedOnce
+        guard knownStamps.stored != nil else {
+            knownStamps.insert(earned.map(\.id), now: true)
+            return
+        }
+        let new = earned.filter { !knownStamps.contains($0.id) }
+        knownStamps.insert(new.map(\.id), now: true)
+        for stamp in new where Date().timeIntervalSince(stamp.date) < 3 * 86_400 {
+            let title: String, body: String
+            if stamp.kind == .set, let group = StampSet.named(stamp.code) {
+                title = String(localized: "集齐了“\(group.title)”", bundle: .appLanguage)
+                body = String(localized: "\(group.members.joined(separator: "、"))都去过了。", bundle: .appLanguage)
+            } else {
+                (title, body) = Self.specialText(stamp)
+            }
+            Celebrations.shared.add(Celebrations.Item(id: stamp.id, kind: stamp.kind == .set ? .set : .special, title: title, subtitle: body,
+                                                      countryCode: stamp.countryCode, latitude: stamp.latitude, longitude: stamp.longitude,
+                                                      date: stamp.date, city: stamp.city, code: stamp.code, value: stamp.value))
+            if Setting.milestones.isOn { post(id: stamp.id, title: title, body: body) }
+        }
+    }
+
+    static func specialText(_ stamp: Stamp) -> (String, String) {
+        let place = stamp.city ?? ""
+        switch stamp.code ?? "" {
+        case "equator": return (String(localized: "你跨过了赤道", bundle: .appLanguage), String(localized: "从这里开始，季节反过来了。", bundle: .appLanguage))
+        case "dateline": return (String(localized: "你越过了国际日期变更线", bundle: .appLanguage), String(localized: "这一天，你多过了一次，或者少过了一次。", bundle: .appLanguage))
+        case "arctic": return (String(localized: "你进入了北极圈", bundle: .appLanguage), String(localized: "夏天这里太阳不落。", bundle: .appLanguage))
+        case "antarctic": return (String(localized: "你进入了南极圈", bundle: .appLanguage), String(localized: "很少有人走到这么远。", bundle: .appLanguage))
+        default:
+            return (String(localized: "\(stamp.value ?? "")，新年快乐", bundle: .appLanguage), String(localized: "这一年，从\(place)开始。", bundle: .appLanguage))
+        }
     }
 
     func currentMilestones() -> MilestoneProgress {

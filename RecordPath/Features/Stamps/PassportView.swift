@@ -277,7 +277,7 @@ private struct PageCurl: UIViewControllerRepresentable {
         controller.delegate = context.coordinator
         controller.isDoubleSided = false
         controller.view.backgroundColor = .clear
-        controller.setViewControllers([context.coordinator.controllers[min(current, pages.count - 1)]], direction: .forward, animated: false)
+        controller.setViewControllers([context.coordinator.page(min(current, pages.count - 1))], direction: .forward, animated: false)
         return controller
     }
 
@@ -285,32 +285,44 @@ private struct PageCurl: UIViewControllerRepresentable {
         context.coordinator.parent = self
     }
 
+    /// A page, remembering which one it is.
+    final class Page: UIHostingController<AnyView> {
+        var index = 0
+    }
+
+    /// Pages are made as they're turned to, so a passport of hundreds of pages opens at once.
     final class Coordinator: NSObject, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
         var parent: PageCurl
-        let controllers: [UIViewController]
+        private var made: [Int: Page] = [:]
 
         init(_ parent: PageCurl) {
             self.parent = parent
-            controllers = parent.pages.map { page in
-                let host = UIHostingController(rootView: page.environment(\.locale, appLocale))
-                host.view.backgroundColor = .clear
-                return host
-            }
+        }
+
+        func page(_ index: Int) -> Page {
+            if let page = made[index] { return page }
+            let page = Page(rootView: AnyView(parent.pages[index].environment(\.locale, appLocale)))
+            page.index = index
+            page.view.backgroundColor = .clear
+            // Keep only the pages near the one open.
+            made = made.filter { abs($0.key - index) <= 3 }
+            made[index] = page
+            return page
         }
 
         func pageViewController(_ controller: UIPageViewController, viewControllerBefore viewController: UIViewController) -> UIViewController? {
-            guard let index = controllers.firstIndex(of: viewController), index > 0 else { return nil }
-            return controllers[index - 1]
+            guard let index = (viewController as? Page)?.index, index > 0 else { return nil }
+            return page(index - 1)
         }
 
         func pageViewController(_ controller: UIPageViewController, viewControllerAfter viewController: UIViewController) -> UIViewController? {
-            guard let index = controllers.firstIndex(of: viewController), index + 1 < controllers.count else { return nil }
-            return controllers[index + 1]
+            guard let index = (viewController as? Page)?.index, index + 1 < parent.pages.count else { return nil }
+            return page(index + 1)
         }
 
         func pageViewController(_ controller: UIPageViewController, didFinishAnimating finished: Bool,
                                 previousViewControllers: [UIViewController], transitionCompleted completed: Bool) {
-            guard completed, let shown = controller.viewControllers?.first, let index = controllers.firstIndex(of: shown) else { return }
+            guard completed, let index = (controller.viewControllers?.first as? Page)?.index else { return }
             parent.current = index
             UIImpactFeedbackGenerator(style: .soft).impactOccurred(intensity: 0.5)
         }

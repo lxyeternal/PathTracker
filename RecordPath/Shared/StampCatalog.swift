@@ -317,3 +317,98 @@ struct CityStampStyle {
         e("MA", ["Marrakech", "Marrakesh", "马拉喀什"], 31.630, -7.981, "مراكش", "MARRAKECH", "sun.dust.fill", .crimson, .octagon),
     ]
 }
+
+/// A group of cities that belong together. Visit them all and the set's own stamp is pressed.
+struct StampSet: Identifiable {
+    let id: String
+    let title: String
+    let motto: String
+    let symbol: String
+    let ink: Ink
+    /// Cities by the title their stamp prints, as in the city catalog.
+    let members: [String]
+
+    struct Progress: Identifiable {
+        let group: StampSet
+        /// Members visited, with the stamp that earned each.
+        let visited: [String: Stamp]
+        var id: String { group.id }
+        var isComplete: Bool { visited.count == group.members.count }
+        /// The set's stamp, dated the day the last city was reached.
+        var stamp: Stamp? {
+            guard isComplete, let last = visited.values.max(by: { $0.date < $1.date }) else { return nil }
+            return Stamp(id: "set.\(group.id)", kind: .set, date: last.date, countryCode: last.countryCode, city: last.city,
+                         latitude: last.latitude, longitude: last.longitude, code: group.id)
+        }
+    }
+
+    static func progress(cities: [Stamp]) -> [Progress] {
+        var byTitle: [String: Stamp] = [:]
+        for stamp in cities {
+            guard let city = stamp.city,
+                  let entry = CityStampStyle.match(city: city, countryCode: stamp.countryCode, coordinate: stamp.coordinate),
+                  byTitle[entry.title] == nil else { continue }
+            byTitle[entry.title] = stamp
+        }
+        return all.map { group in
+            Progress(group: group, visited: byTitle.filter { group.members.contains($0.key) })
+        }
+    }
+
+    static func named(_ id: String?) -> StampSet? { all.first { $0.id == id } }
+
+    static let all: [StampSet] = [
+        StampSet(id: "jiangnan", title: "江南", motto: "烟雨江南", symbol: "sailboat.fill", ink: .teal,
+                 members: ["苏州", "杭州", "无锡", "扬州", "绍兴", "嘉兴"]),
+        StampSet(id: "capitals", title: "六大古都", motto: "千年帝都", symbol: "building.columns.fill", ink: .crimson,
+                 members: ["北京", "西安", "南京", "洛阳", "开封", "杭州"]),
+        StampSet(id: "silkroad", title: "丝绸之路", motto: "驼铃声声", symbol: "sun.dust.fill", ink: .umber,
+                 members: ["西安", "兰州", "敦煌", "乌鲁木齐"]),
+        StampSet(id: "bay", title: "粤港澳", motto: "大湾区", symbol: "ferry.fill", ink: .navy,
+                 members: ["广州", "深圳", "香港", "澳門", "珠海"]),
+        StampSet(id: "yunnan", title: "彩云之南", motto: "云南", symbol: "cloud.sun.fill", ink: .forest,
+                 members: ["昆明", "大理", "丽江", "西双版纳"]),
+        StampSet(id: "northeast", title: "白山黑水", motto: "东北", symbol: "snowflake", ink: .slate,
+                 members: ["哈尔滨", "长春", "沈阳", "大连"]),
+        StampSet(id: "coast", title: "北方海滨", motto: "看海去", symbol: "water.waves", ink: .navy,
+                 members: ["青岛", "大连", "烟台", "威海", "秦皇岛"]),
+        StampSet(id: "kansai", title: "関西", motto: "KANSAI", symbol: "building.columns.fill", ink: .crimson,
+                 members: ["京都", "大阪", "奈良"]),
+        StampSet(id: "kanto", title: "関東", motto: "KANTO", symbol: "tram.fill", ink: .plum,
+                 members: ["東京", "横浜", "箱根"]),
+        StampSet(id: "swiss", title: "SWISS ALPS", motto: "SCHWEIZ · SUISSE", symbol: "mountain.2.fill", ink: .crimson,
+                 members: ["ZÜRICH", "LUZERN", "INTERLAKEN", "ZERMATT", "GENÈVE"]),
+        StampSet(id: "italy", title: "ITALIA", motto: "LA DOLCE VITA", symbol: "fork.knife", ink: .forest,
+                 members: ["ROMA", "FIRENZE", "VENEZIA", "MILANO"]),
+        StampSet(id: "uswest", title: "AMERICAN WEST", motto: "ROAD TRIP", symbol: "car.fill", ink: .umber,
+                 members: ["LOS ANGELES", "SAN FRANCISCO", "LAS VEGAS", "SEATTLE"]),
+        StampSet(id: "nordic", title: "NORDEN", motto: "NORDIC CAPITALS", symbol: "snowflake", ink: .navy,
+                 members: ["KØBENHAVN", "STOCKHOLM", "OSLO", "HELSINKI"]),
+        StampSet(id: "southeastasia", title: "新马泰", motto: "SOUTHEAST ASIA", symbol: "sun.max.fill", ink: .forest,
+                 members: ["SINGAPORE", "KUALA LUMPUR", "กรุงเทพฯ"]),
+    ]
+}
+
+/// How a special stamp looks: shape, ink, what it says.
+struct SpecialStampStyle {
+    let shape: StampShape
+    let ink: Ink
+    let symbol: String
+    /// Round the rim, or across the top.
+    let label: String
+
+    static func of(_ code: String) -> SpecialStampStyle {
+        switch code {
+        case "equator": SpecialStampStyle(shape: .circle, ink: .teal, symbol: "globe.americas.fill", label: "EQUATOR · 赤道")
+        case "dateline": SpecialStampStyle(shape: .ticket, ink: .plum, symbol: "arrow.left.arrow.right", label: "INTERNATIONAL DATE LINE")
+        case "arctic": SpecialStampStyle(shape: .hexagon, ink: .navy, symbol: "snowflake", label: "ARCTIC CIRCLE · 北极圈")
+        case "antarctic": SpecialStampStyle(shape: .hexagon, ink: .navy, symbol: "snowflake", label: "ANTARCTIC CIRCLE · 南极圈")
+        case "record.north": SpecialStampStyle(shape: .octagon, ink: .navy, symbol: "arrow.up", label: "最北 · NORTHERNMOST")
+        case "record.south": SpecialStampStyle(shape: .octagon, ink: .crimson, symbol: "arrow.down", label: "最南 · SOUTHERNMOST")
+        case "record.east": SpecialStampStyle(shape: .octagon, ink: .forest, symbol: "arrow.right", label: "最东 · EASTERNMOST")
+        case "record.west": SpecialStampStyle(shape: .octagon, ink: .umber, symbol: "arrow.left", label: "最西 · WESTERNMOST")
+        case "record.high": SpecialStampStyle(shape: .octagon, ink: .slate, symbol: "mountain.2.fill", label: "最高 · HIGHEST")
+        default: SpecialStampStyle(shape: .scalloped, ink: .crimson, symbol: "sparkles", label: "跨年 · HAPPY NEW YEAR")
+        }
+    }
+}

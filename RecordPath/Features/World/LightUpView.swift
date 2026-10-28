@@ -13,7 +13,7 @@ struct LightUpView: View {
     @State private var openCountry: CountrySummary?
     @State private var shareImage: Image?
 
-    enum Scope: Hashable { case passport, provinces, cities }
+    enum Scope: Hashable { case passport, provinces, cities, keepsakes }
 
     var body: some View {
         ScrollView {
@@ -22,6 +22,7 @@ struct LightUpView: View {
                     Text("护照").tag(Scope.passport)
                     Text("省份").tag(Scope.provinces)
                     Text("城市").tag(Scope.cities)
+                    Text("纪念").tag(Scope.keepsakes)
                 }
                 .pickerStyle(.segmented)
 
@@ -29,6 +30,7 @@ struct LightUpView: View {
                 case .passport: world
                 case .provinces: china
                 case .cities: cities
+                case .keepsakes: CommemorativeView(book: book)
                 }
             }
             .padding(.horizontal)

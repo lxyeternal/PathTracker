@@ -245,6 +245,9 @@ struct YearReportView: View {
             pages.append(StoryPage { AnyView(StoryPlacesPage(report: r, backdrop: data.placesMap, pinCodes: data.placesPins,
                                                              elsewhere: data.placesElsewhere, isActive: $0)) })
         }
+        if StoryPassportPage.hasStamps(year: r.year) {
+            pages.append(StoryPage { AnyView(StoryPassportPage(year: r.year, isActive: $0)) })
+        }
         if r.longestDay != nil, !data.longestDayRoutes.isEmpty {
             pages.append(StoryPage { AnyView(StoryLongestDayPage(report: r, backdrop: data.dayMap, isActive: $0)) })
         }
@@ -508,6 +511,12 @@ private struct YearPoster: View {
                     GridRow {
                         stat("\(r.countries.count)", String(localized: "国家和地区", bundle: .appLanguage))
                         stat("\(r.cities.count)", String(localized: "城市", bundle: .appLanguage))
+                    }
+                    if StoryPassportPage.hasStamps(year: r.year) {
+                        GridRow {
+                            stat("\(r.provinces.count)", String(localized: "省份", bundle: .appLanguage))
+                            stat("\(YearStamps.count(year: r.year))", String(localized: "枚印章", bundle: .appLanguage))
+                        }
                     }
                 }
                 if !r.countries.isEmpty {

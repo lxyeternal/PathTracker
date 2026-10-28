@@ -2,8 +2,9 @@ import SwiftUI
 import AuthenticationServices
 import CoreLocation
 
-/// Five short steps: what the app does, how to record (all day or only when asked), location
-/// (When In Use, then Always for all-day recording), steps, and an optional Sign in with Apple.
+/// Six short steps: what the app does, how to record (all day or only when asked), location
+/// (When In Use, then Always for all-day recording), steps, the places in your photos stamped
+/// into a passport, and an optional Sign in with Apple.
 /// Every permission can be skipped and granted later.
 struct OnboardingView: View {
     var onFinish: () -> Void
@@ -12,7 +13,7 @@ struct OnboardingView: View {
     @Environment(ActivityProvider.self) private var activity
     @Environment(AccountManager.self) private var account
 
-    enum Step: Int, CaseIterable { case welcome, mode, location, activity, account }
+    enum Step: Int, CaseIterable { case welcome, mode, location, activity, photos, account }
     @State private var step: Step = .welcome
     @State private var recordsAllDay = true
 
@@ -24,6 +25,7 @@ struct OnboardingView: View {
                 case .mode: mode
                 case .location: location
                 case .activity: activityStep
+                case .photos: PhotosStep(onDone: advance)
                 case .account: accountStep
                 }
             }

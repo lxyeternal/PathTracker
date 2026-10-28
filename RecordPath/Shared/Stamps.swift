@@ -4,7 +4,7 @@ import CoreLocation
 /// One stamp in the passport or the stamp book. Nothing is stored: stamps are read off the
 /// stays, so they're the same on every device and appear for visits imported from photos too.
 struct Stamp: Identifiable, Hashable {
-    enum Kind: String { case entry, exit, province, city }
+    enum Kind: String { case entry, exit, province, city, special, set }
 
     let id: String
     let kind: Kind
@@ -19,6 +19,10 @@ struct Stamp: Identifiable, Hashable {
     var city: String?
     var latitude = 0.0
     var longitude = 0.0
+    /// Special stamps: which one ("equator", "newyear.2026", "record.north"); sets: the set's id.
+    var code: String?
+    /// What the special stamp prints big: "45°48′N", "2026", "1,523 m".
+    var value: String?
 
     var coordinate: CLLocationCoordinate2D { CLLocationCoordinate2D(latitude: latitude, longitude: longitude) }
     var province: Province? { provinceID.flatMap { id in Province.all.first { $0.id == id } } }
@@ -47,6 +51,10 @@ struct StampBook {
     var passport: [Stamp] = []
     var provinces: [Stamp] = []
     var cities: [Stamp] = []
+    /// Once-in-a-lifetime crossings, each New Year's Eve, and the farthest you've been.
+    var specials: [Stamp] = []
+    /// Groups of cities, and how far along each one is.
+    var sets: [StampSet.Progress] = []
     /// The country lived in, which issues the passport rather than stamping it.
     var home: String?
     var since: Date?
@@ -63,21 +71,17 @@ struct StampBook {
         for run in runs { time[run.code, default: 0] += run.end.timeIntervalSince(run.start) }
         home = time.max { $0.value < $1.value }?.key
 
-        for (index, run) in runs.enumerated() where run.code != home {
-            let previous = index > 0 ? runs[index - 1].last : nil
-            let byAir = run.first.category == .airport
-                || previous.map { $0.location.distance(from: run.first.location) > 400_000 } ?? false
-            passport.append(Stamp(id: "entry.\(run.code).\(Int(run.start.timeIntervalSince1970))", kind: .entry, date: run.start,
-                                  countryCode: run.code, port: Self.port(run.first), byAir: byAir,
-                                  latitude: run.first.latitude, longitude: run.first.longitude))
+        for visit in Self.visits(runs, home: home) {
+            passport.append(Stamp(id: "entry.\(visit.code).\(Int(visit.start.timeIntervalSince1970))", kind: .entry, date: visit.start,
+                                  countryCode: visit.code, port: Self.port(visit.first), byAir: visit.arrivedByAir,
+                                  latitude: visit.first.latitude, longitude: visit.first.longitude))
             // Still there: no exit stamp yet.
-            guard index < runs.count - 1 else { continue }
-            let next = runs[index + 1].first
-            let days = Calendar.current.days(in: DateInterval(start: run.start, end: max(run.end, run.start))).count
-            passport.append(Stamp(id: "exit.\(run.code).\(Int(run.start.timeIntervalSince1970))", kind: .exit, date: run.end,
-                                  countryCode: run.code, port: Self.port(run.last),
-                                  byAir: run.last.category == .airport || run.last.location.distance(from: next.location) > 400_000,
-                                  days: days, latitude: run.last.latitude, longitude: run.last.longitude))
+            guard let next = visit.next else { continue }
+            let days = Calendar.current.days(in: DateInterval(start: visit.start, end: max(visit.end, visit.start))).count
+            passport.append(Stamp(id: "exit.\(visit.code).\(Int(visit.start.timeIntervalSince1970))", kind: .exit, date: visit.end,
+                                  countryCode: visit.code, port: Self.port(visit.last),
+                                  byAir: visit.last.category == .airport || visit.last.location.distance(from: next.location) > 400_000,
+                                  days: days, latitude: visit.last.latitude, longitude: visit.last.longitude))
         }
 
         var seenProvinces = Set<String>()
@@ -97,6 +101,82 @@ struct StampBook {
                 }
             }
         }
+        specials = Self.specials(stays.sorted { $0.arrival < $1.arrival })
+        sets = StampSet.progress(cities: cities)
+    }
+
+    /// Special stamps and completed sets: the ones worth a ceremony when they're new.
+    var earnedOnce: [Stamp] {
+        specials.filter { !($0.code ?? "").hasPrefix("record.") } + sets.compactMap(\.stamp)
+    }
+
+    // MARK: Special stamps
+
+    static let arcticCircle = 66.5634
+
+    static func specials(_ sorted: [Stay]) -> [Stamp] {
+        var result: [Stamp] = []
+        func add(_ code: String, _ stay: Stay, value: String? = nil) {
+            result.append(Stamp(id: "special.\(code)", kind: .special, date: stay.arrival, countryCode: stay.countryCode,
+                                city: stay.city ?? stay.country ?? stay.placeName, latitude: stay.latitude, longitude: stay.longitude,
+                                code: code, value: value))
+        }
+        var crossedEquator = false, crossedDateLine = false, arctic = false, antarctic = false
+        for (previous, stay) in zip(sorted, sorted.dropFirst()) {
+            // Well clear of the line on both sides, so wobbling near it doesn't count.
+            if !crossedEquator, previous.latitude * stay.latitude < 0, abs(previous.latitude) > 0.2 || abs(stay.latitude) > 0.2 {
+                crossedEquator = true
+                add("equator", stay, value: "0°00′")
+            }
+            // The short way between them runs across the Pacific's 180th meridian.
+            if !crossedDateLine, abs(previous.longitude - stay.longitude) > 180 {
+                crossedDateLine = true
+                add("dateline", stay, value: "180°")
+            }
+        }
+        for stay in sorted {
+            if !arctic, stay.latitude >= arcticCircle { arctic = true; add("arctic", stay, value: "66°33′N") }
+            if !antarctic, stay.latitude <= -arcticCircle { antarctic = true; add("antarctic", stay, value: "66°33′S") }
+        }
+
+        // Where each New Year began: the place you were at midnight, or the nearest to it
+        // within a couple of hours, out celebrating between places.
+        let calendar = Calendar.current
+        if let first = sorted.first?.arrival {
+            let firstYear = calendar.component(.year, from: first), thisYear = calendar.component(.year, from: Date())
+            for year in max(firstYear, thisYear - 40)...thisYear {
+                guard let midnight = calendar.date(from: DateComponents(year: year, month: 1, day: 1)), midnight <= Date() else { continue }
+                func gap(_ stay: Stay) -> TimeInterval {
+                    let end = stay.departure ?? Date()
+                    return stay.arrival > midnight ? stay.arrival.timeIntervalSince(midnight) : max(0, midnight.timeIntervalSince(end))
+                }
+                guard let stay = sorted.filter({ gap($0) < 2 * 3600 }).min(by: { gap($0) < gap($1) }) else { continue }
+                result.append(Stamp(id: "special.newyear.\(year)", kind: .special, date: midnight, countryCode: stay.countryCode,
+                                    city: stay.displayName, latitude: stay.latitude, longitude: stay.longitude,
+                                    code: "newyear.\(year)", value: String(year)))
+            }
+        }
+
+        // The four corners of everywhere you've been: 四至.
+        let named = sorted.filter { $0.city != nil }
+        let corners: [(String, (Stay, Stay) -> Bool, (Stay) -> String)] = [
+            ("north", { $0.latitude < $1.latitude }, { Self.degrees($0.latitude, "N", "S") }),
+            ("south", { $0.latitude > $1.latitude }, { Self.degrees($0.latitude, "N", "S") }),
+            ("east", { $0.longitude < $1.longitude }, { Self.degrees($0.longitude, "E", "W") }),
+            ("west", { $0.longitude > $1.longitude }, { Self.degrees($0.longitude, "E", "W") }),
+        ]
+        if named.count > 1 {
+            for (code, isLess, label) in corners {
+                if let best = named.max(by: isLess) { add("record.\(code)", best, value: label(best)) }
+            }
+        }
+        return result
+    }
+
+    /// 45.803 → "45°48′N".
+    static func degrees(_ value: Double, _ positive: String, _ negative: String) -> String {
+        let whole = Int(abs(value)), minutes = Int((abs(value) - Double(whole)) * 60)
+        return "\(whole)°\(String(format: "%02d", minutes))′\(value >= 0 ? positive : negative)"
     }
 
     /// Stamps for one country: its entries and exits.
@@ -114,6 +194,39 @@ struct StampBook {
         var time: TimeInterval
         var count: Int
         var fromPhotos: Bool
+    }
+
+    struct Visit {
+        let code: String
+        var first: Stay
+        var last: Stay
+        var start: Date
+        var end: Date
+        var arrivedByAir: Bool
+        /// The first stay after leaving; nil while still there.
+        var next: Stay?
+    }
+
+    /// Trips abroad, one entry and one exit each. Going back within a few days, like living on
+    /// one side of a border and working on the other, continues the same visit rather than
+    /// stamping the passport twice a day.
+    static func visits(_ runs: [Run], home: String?, rejoin: TimeInterval = 3 * 86_400) -> [Visit] {
+        var visits: [Visit] = []
+        for (index, run) in runs.enumerated() where run.code != home {
+            let next = index + 1 < runs.count ? runs[index + 1].first : nil
+            if let open = visits.lastIndex(where: { $0.code == run.code }), run.start.timeIntervalSince(visits[open].end) < rejoin,
+               open == visits.count - 1 {
+                visits[open].last = run.last
+                visits[open].end = max(visits[open].end, run.end)
+                visits[open].next = next
+                continue
+            }
+            let previous = index > 0 ? runs[index - 1].last : nil
+            let byAir = run.first.category == .airport || previous.map { $0.location.distance(from: run.first.location) > 400_000 } ?? false
+            visits.append(Visit(code: run.code, first: run.first, last: run.last, start: run.start, end: run.end,
+                                arrivedByAir: byAir, next: next))
+        }
+        return visits
     }
 
     /// Back-to-back stays in one country make one visit. Brief blips, like a place across the
