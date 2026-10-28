@@ -1112,6 +1112,16 @@
         }
       }
     },
+    "东至": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "East to"
+          }
+        }
+      }
+    },
     "个人信息": {
       "localizations": {
         "en": {
@@ -2362,6 +2372,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Post"
+          }
+        }
+      }
+    },
+    "北至": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "North to"
+          }
+        }
+      }
+    },
+    "南至": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "South to"
           }
         }
       }
@@ -4912,6 +4942,26 @@
         }
       }
     },
+    "最高": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Highest"
+          }
+        }
+      }
+    },
+    "最高 · HIGHEST": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HIGHEST"
+          }
+        }
+      }
+    },
     "最高速度": {
       "localizations": {
         "en": {
@@ -6358,6 +6408,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Street"
+          }
+        }
+      }
+    },
+    "西至": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "West to"
           }
         }
       }

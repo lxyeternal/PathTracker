@@ -378,7 +378,7 @@ struct CityStampGrid: View {
                         StampWithRoute(stamp: stamp)
                             .frame(height: 92)
                             .stampIn(stamp, delay: 0.2 + Double(index % 9) * 0.14, tilt: stamp.tilt * 0.6)
-                        Text(stamp.city ?? "")
+                        Text(CityStampStyle.displayName(stamp))
                             .font(.footnote.weight(.semibold))
                             .foregroundStyle(Color(red: 0.25, green: 0.22, blue: 0.2))
                             .lineLimit(1)

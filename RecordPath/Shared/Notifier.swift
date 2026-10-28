@@ -121,7 +121,9 @@ final class Notifier {
         func city(_ s: Stay) -> String? { CityNames.key(s).flatMap { names[$0] }.map { "\(s.countryCode ?? "")|\($0)" } }
         if let key = city(stay), !others.contains(where: { city($0) == key }), let name = CityNames.key(stay).flatMap({ names[$0] }) {
             let count = Set(others.compactMap(city)).count + 1
-            return Arrival(id: "arrival.city.\(key)", title: String(localized: "第一次来\(name)", bundle: .appLanguage),
+            // "第一次来武汉", not "第一次来Wuhan", whatever language the place was named in.
+            let shown = CityStampStyle.match(city: name, countryCode: stay.countryCode, coordinate: stay.coordinate)?.localizedName ?? name
+            return Arrival(id: "arrival.city.\(key)", title: String(localized: "第一次来\(shown)", bundle: .appLanguage),
                            body: String(localized: "这是你去过的第 \(count) 座城市。", bundle: .appLanguage), place: name)
         }
         return nil
@@ -175,8 +177,8 @@ final class Notifier {
         for stamp in new where Date().timeIntervalSince(stamp.date) < 3 * 86_400 {
             let title: String, body: String
             if stamp.kind == .set, let group = StampSet.named(stamp.code) {
-                title = String(localized: "集齐了“\(group.title)”", bundle: .appLanguage)
-                body = String(localized: "\(group.members.joined(separator: "、"))都去过了。", bundle: .appLanguage)
+                title = String(localized: "集齐了“\(group.localizedName)”", bundle: .appLanguage)
+                body = String(localized: "\(group.members.map(StampSet.memberName).joined(separator: "、"))都去过了。", bundle: .appLanguage)
             } else {
                 (title, body) = Self.specialText(stamp)
             }

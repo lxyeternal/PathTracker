@@ -32,7 +32,10 @@ struct StampArt: View {
         case .province: ProvinceSealArt(id: stamp.provinceID ?? "").inkWorn(seed: stamp.seed, inked: inked, wear: 0.6)
         case .city: CityStampArt(stamp: stamp, route: route).inkWorn(seed: stamp.seed, inked: inked)
         case .special: SpecialStampArt(stamp: stamp).inkWorn(seed: stamp.seed, inked: inked)
-        case .set: SetStampArt(stamp: stamp).inkWorn(seed: stamp.seed, inked: inked)
+        case .set:
+            // Solid seals show every speck; they wear less.
+            let isSeal = if case .seal = StampSet.named(stamp.code)?.layout { true } else { false }
+            SetStampArt(stamp: stamp).inkWorn(seed: stamp.seed, inked: inked, wear: isSeal ? 0.45 : 1)
         }
     }
 
@@ -42,7 +45,11 @@ struct StampArt: View {
         case .city:
             CGSize(width: 140, height: 140)
         case .set:
-            CGSize(width: 176, height: 176)
+            SetStampArt.size(StampSet.named(stamp.code))
+        case .special where stamp.code == "record.high":
+            CGSize(width: 150, height: 140)
+        case .special where (stamp.code ?? "").hasPrefix("record."):
+            CGSize(width: 110, height: 110)
         case .special:
             switch SpecialStampStyle.of(stamp.code ?? "").shape {
             case .ticket, .hexagon: CGSize(width: 172, height: 110)
@@ -183,11 +190,20 @@ enum StampDate {
 private struct SpecialStampArt: View {
     let stamp: Stamp
 
+    @ViewBuilder
     var body: some View {
+        switch stamp.code ?? "" {
+        case "record.high": PeakStamp(stamp: stamp)
+        case let code where code.hasPrefix("record."): DirectionSeal(direction: String(code.dropFirst("record.".count)))
+        default: crossing
+        }
+    }
+
+    private var crossing: some View {
         let style = SpecialStampStyle.of(stamp.code ?? "")
         let ink = style.ink.color
         let isNewYear = (stamp.code ?? "").hasPrefix("newyear")
-        ZStack {
+        return ZStack {
             StampOutline(shape: style.shape).stroke(ink, lineWidth: 2.8)
             switch style.shape {
             case .ticket, .hexagon:
@@ -244,37 +260,287 @@ private struct SpecialStampArt: View {
     }
 }
 
-/// A completed set: the cities running round the rim, the set's name in the middle.
+/// A completed set, drawn in its own layout: a carved seal of its name, its cities as a route
+/// on a little map, or a luggage label.
 private struct SetStampArt: View {
     let stamp: Stamp
 
     var body: some View {
         let set = StampSet.named(stamp.code)
         let ink = (set?.ink ?? .crimson).color
-        let members = (set?.members ?? []).joined(separator: " · ")
-        ZStack {
-            Circle().inset(by: 1.5).stroke(ink, lineWidth: 3)
-            Circle().inset(by: 6).stroke(ink, lineWidth: 0.9)
-            Circle().inset(by: 30).stroke(ink, lineWidth: 1.2)
-            Circle().inset(by: 34).stroke(ink, lineWidth: 0.6)
-            ArcText(text: members + " · ", radius: 70, font: SpecialStampArt.font(members, size: 10), color: ink, tracking: 1.2,
-                    span: 2 * .pi, fillsRing: true)
-            VStack(spacing: 3) {
-                Image(systemName: set?.symbol ?? "seal.fill").font(.system(size: 15, weight: .bold))
-                Text(verbatim: set?.title ?? "")
-                    .font(SpecialStampArt.font(set?.title ?? "", size: 22))
-                    .lineLimit(1).minimumScaleFactor(0.5)
-                    .frame(width: 96)
-                Text(verbatim: set?.motto ?? "")
-                    .font(SpecialStampArt.font(set?.motto ?? "", size: 8.5)).tracking(1)
-                    .lineLimit(1).minimumScaleFactor(0.5)
-                    .frame(width: 90)
-                Text(verbatim: stamp.date == .distantPast ? "★ ★ ★" : "★ \(StampDate.long(stamp.date)) ★")
-                    .font(.system(size: 7.5, weight: .bold, design: .monospaced))
-                    .padding(.top, 2)
+        Group {
+            if let set {
+                switch set.layout {
+                case .seal(let carved): SetSeal(set: set, carved: carved)
+                case .map(let shape): SetRouteStamp(set: set, shape: shape, date: stamp.date)
+                case .label(let shape): SetLabel(set: set, shape: shape, date: stamp.date)
+                }
             }
         }
         .foregroundStyle(ink)
+    }
+
+    static func size(_ set: StampSet?) -> CGSize {
+        switch set?.layout {
+        case .seal:
+            (set?.title.count ?? 0) >= 4 ? CGSize(width: 160, height: 160) : CGSize(width: 116, height: 176)
+        case .map(let shape), .label(let shape):
+            switch shape {
+            case .circle, .scalloped, .octagon: CGSize(width: 176, height: 176)
+            case .oval: CGSize(width: 196, height: 134)
+            default: CGSize(width: 196, height: 128)
+            }
+        case nil: CGSize(width: 176, height: 176)
+        }
+    }
+
+    static func font(_ text: String, size: CGFloat) -> Font {
+        text.unicodeScalars.allSatisfy { $0.value < 0x0250 || $0.value == 0x00B7 }
+            ? .custom("AvenirNextCondensed-Heavy", fixedSize: size) : .system(size: size, weight: .heavy)
+    }
+
+    static func date(_ date: Date) -> String {
+        date == .distantPast ? "" : StampDate.long(date)
+    }
+}
+
+/// The set's name cut into a seal: four characters in two columns read right to left, or two
+/// or three down a tall stone. White characters cut into red, or red characters left standing.
+private struct SetSeal: View {
+    let set: StampSet
+    let carved: Bool
+
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width, h = geo.size.height
+            let chars = set.title.map(String.init)
+            ZStack {
+                if carved {
+                    // Cut out of the stone, so the paper shows through, inked or not.
+                    RoundedRectangle(cornerRadius: w * 0.07, style: .continuous).fill(.foreground)
+                    RoundedRectangle(cornerRadius: w * 0.04, style: .continuous).inset(by: w * 0.05).stroke(.black, lineWidth: w * 0.012)
+                        .blendMode(.destinationOut)
+                } else {
+                    RoundedRectangle(cornerRadius: w * 0.06, style: .continuous).inset(by: w * 0.02).stroke(.foreground, lineWidth: w * 0.055)
+                    RoundedRectangle(cornerRadius: w * 0.03, style: .continuous).inset(by: w * 0.1).stroke(.foreground, lineWidth: w * 0.012)
+                }
+                Group {
+                    if chars.count >= 4 {
+                        // Right column first, top to bottom, the way seals are read.
+                        HStack(spacing: w * 0.02) {
+                            column([chars[2], chars[3]], size: w * 0.34)
+                            column([chars[0], chars[1]], size: w * 0.34)
+                        }
+                    } else {
+                        column(chars, size: min(w * 0.62, h * 0.78 / CGFloat(max(chars.count, 1))))
+                    }
+                }
+                .foregroundStyle(carved ? AnyShapeStyle(Color.black) : AnyShapeStyle(.foreground))
+                .blendMode(carved ? .destinationOut : .normal)
+            }
+            .compositingGroup()
+        }
+    }
+
+    private func column(_ chars: [String], size: CGFloat) -> some View {
+        VStack(spacing: -size * 0.08) {
+            ForEach(Array(chars.enumerated()), id: \.offset) { _, char in
+                Text(verbatim: char).font(.system(size: size, weight: .black))
+            }
+        }
+    }
+}
+
+/// The set's cities where they really are, joined in order by a dashed route.
+private struct SetRouteStamp: View {
+    let set: StampSet
+    let shape: StampShape
+    let date: Date
+
+    private var round: Bool { shape == .circle || shape == .scalloped || shape == .octagon }
+
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width, h = geo.size.height
+            ZStack {
+                StampOutline(shape: shape).stroke(.foreground, lineWidth: 2.8)
+                StampOutline(shape: shape, inset: 6.5).stroke(.foreground, lineWidth: 0.9)
+                if round {
+                    ArcText(text: set.title, radius: w / 2 - 22, font: SetStampArt.font(set.title, size: 14), color: .primary,
+                            tracking: 2).foregroundStyle(.foreground)
+                    ArcText(text: set.motto, radius: w / 2 - 22, font: SetStampArt.font(set.motto, size: 9), color: .primary,
+                            bottom: true, tracking: 1.4)
+                    route.frame(width: w * 0.48, height: h * 0.38)
+                    Text(verbatim: SetStampArt.date(date)).font(.system(size: 7.5, weight: .bold, design: .monospaced))
+                        .offset(y: h * 0.25)
+                } else {
+                    VStack(spacing: 4) {
+                        Text(verbatim: set.title).font(SetStampArt.font(set.title, size: 15)).tracking(1.5)
+                            .lineLimit(1).minimumScaleFactor(0.5)
+                        route.frame(width: w * 0.62, height: h * 0.34)
+                        HStack(spacing: 5) {
+                            Image(systemName: set.symbol).font(.system(size: 8, weight: .bold))
+                            Text(verbatim: set.motto).font(SetStampArt.font(set.motto, size: 8.5)).tracking(1)
+                            if !SetStampArt.date(date).isEmpty {
+                                Text(verbatim: "· " + SetStampArt.date(date)).font(.system(size: 7.5, weight: .bold, design: .monospaced))
+                            }
+                        }
+                        .lineLimit(1).minimumScaleFactor(0.6)
+                    }
+                    .padding(.horizontal, shape == .hexagon ? w * 0.16 : w * 0.09)
+                }
+            }
+            .frame(width: w, height: h)
+        }
+    }
+
+    /// The member cities, projected flat and fitted to the box keeping their shape.
+    private var route: some View {
+        Canvas { context, size in
+            let entries = set.members.compactMap { title in CityStampStyle.catalog.first { $0.title == title } }
+            guard entries.count > 1 else { return }
+            let k = cos(entries[0].latitude * .pi / 180)
+            let xs = entries.map { $0.longitude * k }, ys = entries.map { -$0.latitude }
+            let minX = xs.min()!, maxX = xs.max()!, minY = ys.min()!, maxY = ys.max()!
+            let scale = min(size.width / max(maxX - minX, 0.01), size.height / max(maxY - minY, 0.01)) * 0.86
+            let ox = (size.width - (maxX - minX) * scale) / 2, oy = (size.height - (maxY - minY) * scale) / 2
+            let points = zip(xs, ys).map { CGPoint(x: ox + ($0 - minX) * scale, y: oy + ($1 - minY) * scale) }
+            var line = Path()
+            line.addLines(points)
+            context.stroke(line, with: .foreground, style: StrokeStyle(lineWidth: 1.3, lineCap: .round, dash: [3, 2.5]))
+            for (index, point) in points.enumerated() {
+                let r: CGFloat = index == 0 || index == points.count - 1 ? 3.6 : 2.8
+                context.fill(Path(ellipseIn: CGRect(x: point.x - r, y: point.y - r, width: r * 2, height: r * 2)), with: .foreground)
+                if index == 0 {
+                    let ring = r + 2.4
+                    context.stroke(Path(ellipseIn: CGRect(x: point.x - ring, y: point.y - ring, width: ring * 2, height: ring * 2)),
+                                   with: .foreground, lineWidth: 0.9)
+                }
+            }
+        }
+    }
+}
+
+/// A luggage label: the set's name large, a rule with its emblem, the cities along the foot.
+private struct SetLabel: View {
+    let set: StampSet
+    let shape: StampShape
+    let date: Date
+
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            ZStack {
+                StampOutline(shape: shape).stroke(.foreground, lineWidth: 3.2)
+                StampOutline(shape: shape, inset: 7).stroke(.foreground, style: StrokeStyle(lineWidth: 1, dash: [2, 2]))
+                VStack(spacing: 3) {
+                    Text(verbatim: set.motto).font(SetStampArt.font(set.motto, size: 8)).tracking(2.5)
+                        .lineLimit(1).minimumScaleFactor(0.6)
+                    Text(verbatim: set.title).font(SetStampArt.font(set.title, size: 26)).tracking(1)
+                        .lineLimit(1).minimumScaleFactor(0.5)
+                    HStack(spacing: 6) {
+                        Rectangle().frame(height: 0.9)
+                        Image(systemName: set.symbol).font(.system(size: 10, weight: .bold))
+                        Rectangle().frame(height: 0.9)
+                    }
+                    .frame(width: w * 0.5)
+                    Text(verbatim: set.members.joined(separator: " · "))
+                        .font(SetStampArt.font(set.members.joined(), size: 7.5)).tracking(0.6)
+                        .lineLimit(1).minimumScaleFactor(0.5)
+                    if !SetStampArt.date(date).isEmpty {
+                        Text(verbatim: SetStampArt.date(date)).font(.system(size: 7, weight: .bold, design: .monospaced))
+                    }
+                }
+                .padding(.horizontal, shape == .oval ? w * 0.17 : (shape == .hexagon ? w * 0.18 : w * 0.11))
+            }
+        }
+    }
+}
+
+/// One of the four corners as a seal: the direction's character, cut white into red for north
+/// and south, standing red for east and west.
+struct DirectionSeal: View {
+    let direction: String
+
+    static func character(_ direction: String) -> String {
+        let chinese = appLocale.language.languageCode == .chinese
+        switch direction {
+        case "north": return chinese ? "北" : "N"
+        case "south": return chinese ? "南" : "S"
+        case "east": return chinese ? "东" : "E"
+        default: return chinese ? "西" : "W"
+        }
+    }
+
+    var body: some View {
+        GeometryReader { geo in
+            let side = min(geo.size.width, geo.size.height)
+            let carved = direction == "north" || direction == "south"
+            let ink = Ink.cinnabar.color
+            let char = Self.character(direction)
+            let latin = char.count == 1 && char.unicodeScalars.first!.isASCII
+            ZStack {
+                if carved {
+                    RoundedRectangle(cornerRadius: side * 0.1, style: .continuous).fill(ink)
+                    RoundedRectangle(cornerRadius: side * 0.06, style: .continuous).inset(by: side * 0.07).stroke(.black, lineWidth: side * 0.015)
+                        .blendMode(.destinationOut)
+                } else {
+                    RoundedRectangle(cornerRadius: side * 0.08, style: .continuous).inset(by: side * 0.03).stroke(ink, lineWidth: side * 0.07)
+                }
+                Text(verbatim: char)
+                    .font(latin ? .system(size: side * 0.6, weight: .black, design: .serif) : .system(size: side * 0.62, weight: .black))
+                    .foregroundStyle(carved ? .black : ink)
+                    .blendMode(carved ? .destinationOut : .normal)
+                    .offset(y: -side * 0.01)
+            }
+            .compositingGroup()
+            .frame(width: side, height: side)
+            .frame(width: geo.size.width, height: geo.size.height)
+        }
+    }
+}
+
+/// The highest point reached: a stamp shaped like a peak.
+private struct PeakStamp: View {
+    let stamp: Stamp
+
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            ZStack {
+                Peak().stroke(.foreground, lineWidth: 2.8)
+                Peak(inset: 6.5).stroke(.foreground, lineWidth: 0.9)
+                VStack(spacing: 2) {
+                    Image(systemName: "mountain.2.fill").font(.system(size: 15, weight: .bold))
+                    Text(verbatim: stamp.value ?? "").font(.system(size: 20, weight: .heavy, design: .monospaced))
+                        .lineLimit(1).minimumScaleFactor(0.6)
+                    Text(verbatim: String(localized: "最高 · HIGHEST", bundle: .appLanguage).uppercased())
+                        .font(.custom("AvenirNextCondensed-DemiBold", fixedSize: 8.5)).tracking(1.5)
+                    if let city = stamp.city {
+                        Text(verbatim: city).font(SpecialStampArt.font(city, size: 8)).lineLimit(1).minimumScaleFactor(0.6)
+                    }
+                }
+                .padding(.top, w * 0.12)
+                .padding(.horizontal, w * 0.12)
+            }
+            .foregroundStyle(Ink.slate.color)
+        }
+    }
+
+    /// A wide base rising to a summit.
+    private struct Peak: Shape {
+        var inset: CGFloat = 1.5
+        func path(in full: CGRect) -> Path {
+            let r = full.insetBy(dx: inset, dy: inset)
+            var path = Path()
+            path.move(to: CGPoint(x: r.minX, y: r.maxY))
+            path.addLine(to: CGPoint(x: r.minX, y: r.minY + r.height * 0.42))
+            path.addLine(to: CGPoint(x: r.midX, y: r.minY))
+            path.addLine(to: CGPoint(x: r.maxX, y: r.minY + r.height * 0.42))
+            path.addLine(to: CGPoint(x: r.maxX, y: r.maxY))
+            path.closeSubpath()
+            return path
+        }
     }
 }
 
@@ -290,19 +556,18 @@ struct ProvinceSealArt: View {
         let character = ProvinceSeal.character(for: id)
         if ProvinceSeal.isCarved(id) {
             // 白文: the character cut out of solid red.
-            RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .fill(ink)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .inset(by: 6)
-                        .stroke(Color(red: 0.97, green: 0.95, blue: 0.9), lineWidth: 1.4)
-                }
-                .overlay {
-                    Text(character)
-                        .font(.system(size: 60, weight: .black))
-                        .foregroundStyle(Color(red: 0.97, green: 0.95, blue: 0.9))
-                        .offset(y: -1)
-                }
+            // Cut out of the stone, so the paper shows through, inked or not.
+            ZStack {
+                RoundedRectangle(cornerRadius: 9, style: .continuous).fill(ink)
+                RoundedRectangle(cornerRadius: 6, style: .continuous).inset(by: 6).stroke(.black, lineWidth: 1.4)
+                    .blendMode(.destinationOut)
+                Text(character)
+                    .font(.system(size: 60, weight: .black))
+                    .foregroundStyle(.black)
+                    .offset(y: -1)
+                    .blendMode(.destinationOut)
+            }
+            .compositingGroup()
         } else {
             // 朱文: the character standing out in red inside a red frame.
             RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -532,36 +797,52 @@ private struct InkWorn: ViewModifier {
     let inked: Bool
     let wear: Double
 
+    @ViewBuilder
     func body(content: Content) -> some View {
-        var random = SeededRandom(seed)
-        let density = 0.82 + random.unit() * 0.12
-        return content
-            .mask {
-                Canvas { context, size in
-                    var random = SeededRandom(seed &+ 7)
-                    context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(.black))
-                    context.blendMode = .destinationOut
-                    // Specks stay fine-grained whatever the stamp's size.
-                    let grain = min(size.width, size.height) / 140
-                    for _ in 0..<Int(size.width * size.height / 70 * wear) {
-                        let r = (0.3 + random.unit() * 0.9) * grain
-                        let point = CGPoint(x: random.unit() * size.width, y: random.unit() * size.height)
-                        context.fill(Path(ellipseIn: CGRect(x: point.x - r, y: point.y - r, width: r * 2, height: r * 2)), with: .color(.black))
-                    }
-                    // Soft-edged, like ink that ran thin there.
-                    for _ in 0..<2 {
-                        let r = min(size.width, size.height) * (0.06 + random.unit() * 0.08)
-                        let point = CGPoint(x: random.unit() * size.width, y: random.unit() * size.height)
-                        context.fill(Path(ellipseIn: CGRect(x: point.x - r, y: point.y - r, width: r * 2, height: r * 2)),
-                                     with: .radialGradient(Gradient(colors: [.black.opacity(0.2), .clear]), center: point,
-                                                           startRadius: 0, endRadius: r))
+        if inked {
+            var random = SeededRandom(seed)
+            let density = 0.82 + random.unit() * 0.12
+            content
+                .mask {
+                    Canvas { context, size in
+                        var random = SeededRandom(seed &+ 7)
+                        context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(.black))
+                        context.blendMode = .destinationOut
+                        // Specks stay fine-grained whatever the stamp's size.
+                        let grain = min(size.width, size.height) / 140
+                        for _ in 0..<Int(size.width * size.height / 70 * wear) {
+                            let r = (0.3 + random.unit() * 0.9) * grain
+                            let point = CGPoint(x: random.unit() * size.width, y: random.unit() * size.height)
+                            context.fill(Path(ellipseIn: CGRect(x: point.x - r, y: point.y - r, width: r * 2, height: r * 2)), with: .color(.black))
+                        }
+                        // Soft-edged, like ink that ran thin there.
+                        for _ in 0..<2 {
+                            let r = min(size.width, size.height) * (0.06 + random.unit() * 0.08)
+                            let point = CGPoint(x: random.unit() * size.width, y: random.unit() * size.height)
+                            context.fill(Path(ellipseIn: CGRect(x: point.x - r, y: point.y - r, width: r * 2, height: r * 2)),
+                                         with: .radialGradient(Gradient(colors: [.black.opacity(0.2), .clear]), center: point,
+                                                               startRadius: 0, endRadius: r))
+                        }
                     }
                 }
+                .opacity(density)
+                .drawingGroup()
+        } else {
+            // Not earned yet: pressed into the paper without ink, a blind stamp. Every line
+            // still reads, lit from the top left like a real impression.
+            ZStack {
+                Color.white.opacity(0.85).mask(content).offset(x: -0.8, y: -0.8)
+                BlindStamp.shade.mask(content).offset(x: 0.8, y: 0.8)
+                BlindStamp.face.mask(content)
             }
-            .opacity(inked ? density : 0.12)
-            .saturation(inked ? 1 : 0)
             .drawingGroup()
+        }
     }
+}
+
+enum BlindStamp {
+    static let face = Color(red: 0.75, green: 0.71, blue: 0.62)
+    static let shade = Color(red: 0.52, green: 0.47, blue: 0.40).opacity(0.55)
 }
 
 extension View {
