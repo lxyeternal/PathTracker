@@ -6,13 +6,15 @@
 
 <p align="center">
   <b>不用打开，不用记得按开始。你走过的路，它都替你记着。</b><br>
-  全天自动记录足迹的 iPhone 和 Apple Watch App：轨迹、停留的地点、去过的城市和国家，一年一年攒成你自己的地图。
+  全天记录足迹的 iPhone 和 Apple Watch App：轨迹、停留的地点、去过的城市和国家，<br>
+  一枚一枚盖进你自己的护照里。
 </p>
 
 <p align="center">
   <img alt="iOS 26+" src="https://img.shields.io/badge/iOS-26%2B-black?logo=apple">
   <img alt="watchOS 26+" src="https://img.shields.io/badge/watchOS-26%2B-black?logo=apple">
   <img alt="Swift" src="https://img.shields.io/badge/Swift-SwiftUI%20%C2%B7%20SwiftData-F05138?logo=swift&logoColor=white">
+  <img alt="iCloud" src="https://img.shields.io/badge/数据-只在你的%20iCloud-0A84FF?logo=icloud&logoColor=white">
   <img alt="No third-party dependencies" src="https://img.shields.io/badge/依赖-零第三方库-34C759">
   <img alt="License" src="https://img.shields.io/badge/许可-非商业使用-orange">
 </p>
@@ -22,55 +24,108 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/today.jpg" width="200" alt="今天">
-  <img src="docs/images/country.jpg" width="200" alt="国家页">
-  <img src="docs/images/year.jpg" width="200" alt="年度足迹">
-  <img src="docs/images/milestones.jpg" width="200" alt="里程碑">
+  <img src="docs/images/today.jpg" width="190" alt="今天">
+  <img src="docs/images/passport.jpg" width="190" alt="护照">
+  <img src="docs/images/city-stamps.jpg" width="190" alt="城市章">
+  <img src="docs/images/stamp-ceremony.jpg" width="190" alt="盖章">
+</p>
+
+<p align="center">
+  <a href="#-自动记录什么都不用管">记录</a> ·
+  <a href="#-护照与印章">护照与印章</a> ·
+  <a href="#-那些会让你停一下的时刻">时刻</a> ·
+  <a href="#-你去过的世界">足迹</a> ·
+  <a href="#-旅程">旅程</a> ·
+  <a href="#-apple-watch">Apple Watch</a> ·
+  <a href="#隐私">隐私</a> ·
+  <a href="#技术">技术</a>
 </p>
 
 ---
 
-## 它能做什么
+## 🗺️ 自动记录，什么都不用管
 
-### 🗺️ 自动记录，什么都不用管
-- **全天后台记录**：口袋里的手机就够了。走路、骑车、开车、坐飞机，自动分辨出行方式，用不同颜色画在地图上。
-- **自动认出地点**：在一个地方停留几分钟，就记成一次“停留”，并认出它是哪家店、哪个景点、哪座城市、哪个国家。
-- **时间线**：一天按“停留 → 路上 → 停留”排开，每个地点带上你在那里拍的照片；点照片直接看大图，点地点先看再改。
-- **省电**：三档精度可选，静止时自动降频，在国内地图上自动纠正坐标偏移。
+| | |
+|---|---|
+| **两种记录方式** | **全天自动记录**：出门就有轨迹；或者**想记录时再记录**：只在你点“开始”时用位置，不需要“始终允许”。随时在设置里切换。 |
+| **认出怎么走的** | 结合 iPhone 的运动协处理器和速度，分辨步行、跑步、骑行、乘车和飞行，用不同颜色画在地图上。 |
+| **认出在哪里** | 停留几分钟就记一次，并认出是哪家店、哪个景点、哪座城市和国家。 |
+| **省电** | 手机不动时定位休眠；在一个地方待满 10 分钟，GPS 完全关闭，换成一圈 150 米的地理围栏，离开时才重新唤醒。 |
+| **时间线** | 一天按“停留 → 路上 → 停留”排开，每个地点带上那里拍的照片。 |
 
-### 📸 一键从相册点亮过去
-- 扫描相册里上万张照片和视频的拍摄地点，**补上 App 出现之前你去过的所有地方**，点亮城市、省份和国家。
-- 同一天同一座城市的照片合成一次到访；已经记录过的不会重复。
-- 所有读取都在手机上完成，照片不会被上传或复制。
+**从相册找回过去**：读取照片和视频的拍摄地点，补上 App 出现之前去过的地方。新用户在引导最后一步就能做，护照当场翻开，这些年的印章一枚枚盖上。所有读取都在手机上完成，照片不会上传。
 
-### 🌏 你去过的世界
-- **点亮地图**：中国 34 个省级行政区的方块地图，世界各大洲的国旗墙；点进去就是那个省或国家的全部足迹。
-- **国家页**：描出国境的地图（中国大陆、港澳台不由 App 绘制边界），每座去过的城市一团光，标着天数。
-- **一段段行程**：成百上千条到访按“同一城市的连续几天”自动归成一段，按年份排开；每段有地图、照片拼贴和每一天的轨迹。
+---
+
+## 🛂 护照与印章
 
 <p align="center">
-  <img src="docs/images/places.jpg" width="200" alt="足迹">
-  <img src="docs/images/lightup.jpg" width="200" alt="点亮地图">
-  <img src="docs/images/country.jpg" width="200" alt="国家页">
+  <img src="docs/images/passport.jpg" width="190" alt="护照">
+  <img src="docs/images/seals.jpg" width="190" alt="省份印">
+  <img src="docs/images/city-stamps.jpg" width="190" alt="城市章">
+  <img src="docs/images/four-corners.jpg" width="190" alt="四至">
 </p>
 
-### 🧳 旅程，自动整理
+去过的地方不是一个数字，而是一枚枚盖上去的章，收在一本可以翻页的护照里。
+
+- **入境章与出境章**：每个国家用本国文字（日本国、대한민국、SCHWEIZ · SUISSE），盖着真实的日期和入境口岸；离开时盖出境章，写着“停留 9 天”。你常住的国家不盖章，它是这本护照的签发国。
+- **省份印**：中国 34 个省级行政区，每个一方朱砂印：沪、粤、蜀、黔、滇、秦、陇……排成一张方位图。
+- **城市章**：每座城市一枚纪念章，**中间印着你第一天在那里走过的路线**，所以每个人的“上海章”都不一样。约 150 座热门城市有专属设计：北京 · 京华，杭州 · 西子湖畔，京都 · 古都，PARIS · LA VILLE LUMIÈRE。
+- **纪念章**：跨过赤道、越过国际日期变更线、进入北极圈；每年跨年那一刻在哪里；还有**你的四至**：去过的最北、最南、最东、最西（像老地契一样写着“东至、西至”）和到过的最高点。
+- **套章**：集齐一组城市，盖一枚联合章。江南、六大古都、丝绸之路、彩云之南、関西、瑞士阿尔卑斯、美国西部……共 14 套，有篆刻印、路线图、旅行标签三种样式。
+
+**盖章本身就是仪式**，每一类有自己的手感：
+
+| | 像什么 | 怎么盖 |
+|---|---|---|
+| 入境章 | 海关的橡皮章 | 按住，章慢慢落下，“咚”一声，墨迹晕开 |
+| 省份印 | 篆刻石章 | 先蘸印泥，盖下后左右压一压，再慢慢提起 |
+| 城市章 | 车站的日期章 | 日期滚轮滚到今天，轻轻“啪”一下 |
+| 纪念章、套章 | 烫金 | 落下后一道光从章面扫过；套章由几座城市的章聚拢而成 |
+
+还没盖上的章以**压印**显示：和纸一个颜色，有凹凸的光影，看得清每一个字，但没有墨。
+
+---
+
+## ✨ 那些会让你停一下的时刻
+
+- **重逢**：时隔一年以上回到同一个地方，会轻轻提醒你：“你上次来这里是 2023 年 4 月 12 日”，天数从 0 一路数上去，再排出第一次、上一次和今天。
+- **那年今日**：“今天”页上，往年的今天你在哪里，照片像拍立得一样慢慢显影。
+- **旅行明信片**：每段旅程结束后生成一张明信片，正面是照片，背面是你写的话，城市章做邮戳。可以分享，也可以**寄给一年后的自己**：一年后它会落到屏幕上，翻过来给你看。
+- **里程碑奖牌**：23 枚插画奖牌，铜、银、金、铂金分级，按住点亮。
+- **年度足迹**：像故事一样一页页翻，有发光的城市地图、转动的点阵地球、最远那天的路线、照片墙，还有一页**“今年的护照”**，最后是一张可以分享的海报。
+
+<p align="center">
+  <img src="docs/images/year.jpg" width="190" alt="年度足迹">
+  <img src="docs/images/globe.jpg" width="190" alt="移动距离">
+  <img src="docs/images/milestones.jpg" width="190" alt="里程碑">
+  <img src="docs/images/stamp-ceremony.jpg" width="190" alt="集齐套章">
+</p>
+
+---
+
+## 🌏 你去过的世界
+
+- **国家和地区**：按大洲筛选（全部 · 亚洲 · 欧洲……），可以搜索，按停留天数、最近去过、最早去过排序；去过的地方再多，也不用一直往下拉。
+- **国家页**：描出国境的地图（中国大陆、港澳台不由 App 绘制边界），每座去过的城市一团光；下面是这个国家的入境章和每座城市的城市章。
+- **每一次到访**：按“同一城市的连续几天”自动归成一段。历史长的话，一次只看一年，上面一排 12 个月的柱状图，点哪个月就跳到哪个月。
+
+<p align="center">
+  <img src="docs/images/places.jpg" width="190" alt="足迹">
+  <img src="docs/images/country.jpg" width="190" alt="国家页">
+  <img src="docs/images/sets.jpg" width="190" alt="套章">
+</p>
+
+---
+
+## 🧳 旅程
+
 - 从足迹里**自动找出过去的旅行**：离开常住地 80 公里以上的连续日子，一键收进旅程。
-- 旅程汇总这几天的路线、地点和照片，可以写备注、导出 GPX、生成分享图。
-- 徒步、跑步、骑行可以单独用高精度记录，Apple Watch 一起记录心率并存为体能训练。
+- 旅程汇总这几天的路线、地点和照片，可以写备注、导出 GPX、生成分享图和明信片。
+- 徒步、跑步、骑行可以单独用高精度记录，Apple Watch 同时记录心率并存为体能训练。
 
-### ✨ 有仪式感的时刻
-- **点亮仪式**：第一次到新的国家或省份，地图从灰色亮起来，国旗落下，撒下彩纸；按住才会点亮。
-- **插画奖牌**：23 枚里程碑，每一枚是一幅小画，铜、银、金、铂金分级。
-- **年度足迹**：故事一样一页页翻：发光的城市地图、转动的点阵地球、走过的脚印、落在地图上的国旗、最远那天的路线、一墙拍立得照片，最后是一张可以分享的海报。
+## ⌚ Apple Watch
 
-<p align="center">
-  <img src="docs/images/year.jpg" width="200" alt="年度足迹封面">
-  <img src="docs/images/globe.jpg" width="200" alt="移动距离">
-  <img src="docs/images/milestones.jpg" width="200" alt="里程碑">
-</p>
-
-### ⌚ Apple Watch
 - 打开就是地图：你的位置、今天的路线、所在的地点。
 - 不带手机也能记录徒步、跑步、骑行；在 iPhone 上开始记录时，手表自动跟着一起记录。
 - 表盘复杂功能：今天走了多远、现在在哪。
@@ -79,22 +134,22 @@
 
 ## 隐私
 
-漫迹**没有自己的服务器**。轨迹、地点、旅程和照片只存在你的设备和你自己的 iCloud 里，开发者看不到。地点名称通过 Apple 地图服务识别；照片只在手机上读取。详见 [PRIVACY.md](PRIVACY.md)。
+漫迹**没有自己的服务器**。轨迹、地点、旅程和照片只存在你的设备和你自己的 iCloud 里，开发者看不到。地点名称通过 Apple 地图服务识别，照片只在手机上读取。详见 [PRIVACY.md](PRIVACY.md)。
 
 ## 技术
 
 | | |
 |---|---|
-| 界面 | SwiftUI、MapKit、Swift Charts，iOS 26 Liquid Glass |
-| 存储与同步 | SwiftData + CloudKit 私有数据库，自动同步 |
-| 后台定位 | `CLLocationUpdate.liveUpdates` + `CLBackgroundActivitySession`，被系统终止后由显著位置变化唤醒 |
+| 界面 | SwiftUI、MapKit、Swift Charts、iOS 26 Liquid Glass；印章全部用 `Canvas` 和 `Shape` 实时绘制，没有一张图片素材 |
+| 存储与同步 | SwiftData + CloudKit 私有数据库；印章由停留记录推算，不额外存储；“看过的盖章动画”和明信片通过 iCloud 键值存储同步 |
+| 后台定位 | `CLLocationUpdate.liveUpdates` + `CLBackgroundActivitySession`；久停时改用 `CLMonitor` 地理围栏，显著位置变化兜底 |
 | 地点 | `MKReverseGeocodingRequest`、`MKLocalPointsOfInterestRequest`；国内地图 WGS-84 → GCJ-02 转换 |
 | 运动与健康 | CoreMotion 识别出行方式，HealthKit 步数 |
 | Apple Watch | watchOS SwiftUI App、WidgetKit 复杂功能、`HKWorkoutSession`、WatchConnectivity |
 | 实时活动 | ActivityKit：锁屏、灵动岛、手表智能叠放 |
-| 多语言 | String Catalog，简体中文和英文，App 内切换 |
+| 多语言 | String Catalog，简体中文和英文，App 内切换；印章上印当地文字，周围的名字跟随 App 语言 |
 
-轨迹点按段压缩（LZFSE）成 `TrackChunk`，一天只有几十条 CloudKit 记录。所有汇总（国家、城市、点亮地图、里程碑、旅程发现）在后台线程计算，几千个地点也不卡。没有任何第三方依赖。
+轨迹点按段压缩（LZFSE）成 `TrackChunk`，一天只有几十条 CloudKit 记录。国家、城市、印章、里程碑和旅程发现都在后台线程计算；在 6000 个地点、上千页护照的压力数据下，页面也随翻随建，不卡顿。没有任何第三方依赖。
 
 <details>
 <summary>项目结构</summary>
@@ -107,9 +162,17 @@ RecordPath/
 ├── Places/         地点识别、常去地点
 ├── Health/         步数
 ├── Account/        Apple 登录
-├── Features/       今天 / 足迹 / 旅程 / 统计 / 庆祝 / 设置 / 引导
+├── Features/
+│   ├── Today/          今天、时间线、那年今日
+│   ├── World/          足迹、国家页、大洲筛选
+│   ├── Stamps/         护照、印章绘制、盖章动效、纪念章
+│   ├── Trips/          旅程、明信片
+│   ├── Celebration/    盖章仪式、重逢、里程碑
+│   ├── Stats/          统计、年度足迹
+│   ├── Onboarding/     引导、从相册找回
+│   └── Settings/
 ├── Watch/          和手表的同步
-└── Shared/         地图、统计、相册导入、旅程发现、GPX
+└── Shared/         印章推算与目录、地图、相册导入、旅程发现、GPX
 Common/             iPhone、手表、复杂功能共用的代码
 WaytraceWatch/      Apple Watch App
 WaytraceWidgets/    表盘复杂功能
@@ -122,12 +185,18 @@ WaytraceLiveActivity/  实时活动
 - Xcode 26 或更高版本；iOS 26+（iPhone），watchOS 26+。
 - 打开 `RecordPath.xcodeproj`，选择 RecordPath scheme 运行即可，不需要安装任何依赖。
 - 在真机上运行需要把 Signing 里的 Team 换成你自己的。
-- 调试版的“设置 › 开发者”可以生成演示数据，方便在模拟器里看效果。
+- 调试版的“设置 › 开发者”可以生成演示数据、预览各种仪式；也可以用启动参数：
 
 ```bash
 # 单元测试
 xcodebuild test -project RecordPath.xcodeproj -scheme RecordPath \
   -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:RecordPathTests
+
+# 启动时加载演示数据和 6000 个照片地点（空数据时）
+xcrun simctl launch booted com.honywen.waytrace -stressData
+
+# 只预览某一种盖章仪式：province / city / country / special / set / reunion / postcard
+xcrun simctl launch booted com.honywen.waytrace -ceremonySamples province
 
 # 在模拟器里模拟一段移动
 xcrun simctl location booted start --speed=12 31.2245,121.4466 31.2310,121.4650 31.2400,121.4900
