@@ -1171,7 +1171,7 @@ private struct PostcardCeremony: View {
                 let interval = trip.interval
                 let assets = DayPhotos.canRead ? await Task.detached { DayPhotos.assets(in: interval) }.value : []
                 made.image = await PostcardContent.picture(trip: trip, chunks: chunks(trip), assets: assets,
-                                                           home: TripSuggestionCard.homeBase(in: context))
+                                                           home: TripSuggestionCard.homeBase(in: context), design: made.design)
                 withAnimation(.smooth) { content = made }
             }
             try? await Task.sleep(for: .seconds(1.2))
@@ -1202,6 +1202,7 @@ private struct PostcardCeremony: View {
         var made = PostcardContent.make(trip: trip, stays: stays, chunks: chunks(trip), home: TripSuggestionCard.homeBase(in: context))
         made.message = item.value ?? made.message
         made.sent = item.date
+        if let design = PostcardMail.all.first(where: { "postcard.\($0.id)" == item.id })?.design { made.design = design }
         return made
     }
 }

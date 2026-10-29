@@ -51,11 +51,15 @@ private struct BackdropImage: View {
 
     var body: some View {
         ZStack {
-            Image(uiImage: image)
-                .resizable()
-                .scaledToFill()
-                .scaleEffect(isActive ? 1.06 : 1)
-                .animation(.easeInOut(duration: 12), value: isActive)
+            Color.clear
+                .overlay {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .scaleEffect(isActive ? 1.06 : 1)
+                        .animation(.easeInOut(duration: 12), value: isActive)
+                }
+                .clipped()
             LinearGradient(stops: [.init(color: .black.opacity(0.45), location: 0), .init(color: .clear, location: 0.22),
                                    .init(color: .black.opacity(0.15), location: 0.5), .init(color: .black.opacity(0.88), location: 0.82)],
                            startPoint: .top, endPoint: .bottom)
@@ -494,64 +498,139 @@ private struct StoryBackgroundFallback: View {
     }
 }
 
-// MARK: - The favourite place, full bleed
+// MARK: - The favourite place, as a print
 
+/// The place you went most, with the best photo taken there as a print on a blur of itself.
+/// The photo is chosen for you; "换一张" goes through the other good ones, and the choice stays.
 struct StoryFavoritePage: View {
     let report: YearReport
-    let photo: PHAsset?
+    let photos: [PHAsset]
     let isActive: Bool
+    @State private var index = 0
     @State private var image: UIImage?
 
+    private var choiceKey: String { "yearStory.\(report.year).favoritePhoto" }
+
     var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
-            Group {
+        GeometryReader { geo in
+            ZStack {
+                Color.black
                 if let image {
-                    BackdropImage(image: image, isActive: isActive)
-                } else if let stay = report.favoritePlace?.stay {
-                    PlacePicture(stay: stay)
-                        .ignoresSafeArea()
-                        .overlay { if isActive { PulseRings().ignoresSafeArea() } }
-                        .overlay(LinearGradient(colors: [.clear, .black.opacity(0.9)], startPoint: .center, endPoint: .bottom).ignoresSafeArea())
+                    // Clear first, so the filled picture can't make the page wider than the screen.
+                    Color.clear
+                        .overlay { Image(uiImage: image).resizable().scaledToFill() }
+                        .clipped()
+                        .blur(radius: 40)
+                        .overlay(Color.black.opacity(0.5))
+                        .transition(.opacity)
+                } else if photos.isEmpty, let stay = report.favoritePlace?.stay {
+                    Color.clear
+                        .overlay { PlacePicture(stay: stay) }
+                        .clipped()
+                        .overlay { if isActive { PulseRings() } }
+                        .overlay(LinearGradient(colors: [.clear, .black.opacity(0.9)], startPoint: .center, endPoint: .bottom))
                 }
             }
+            .ignoresSafeArea()
             .opacity(isActive ? 1 : 0.4)
             .animation(.easeOut(duration: 1.2), value: isActive)
-            PageText {
-                if let favorite = report.favoritePlace {
-                    Kicker(text: "除了家，你最常去", tint: Color(red: 1, green: 0.8, blue: 0.5)).comesIn(isActive, after: 0.2)
-                    Text(favorite.name)
-                        .font(.system(size: 46, weight: .black))
-                        .lineLimit(2).minimumScaleFactor(0.5)
-                        .comesIn(isActive, after: 0.35)
-                    Text("去了 \(favorite.visits) 次").font(.title3.weight(.semibold)).foregroundStyle(.white.opacity(0.85))
-                        .comesIn(isActive, after: 0.5)
+
+            VStack(alignment: .leading, spacing: 0) {
+                Spacer(minLength: geo.safeAreaInsets.top + 56)
+                if let image {
+                    VStack(spacing: 14) {
+                        Print(image: image, date: photos.indices.contains(index) ? photos[index].creationDate : nil)
+                            .frame(maxWidth: geo.size.width - 64, maxHeight: geo.size.height * 0.42)
+                            .rotationEffect(.degrees(isActive ? -2 : -8))
+                            .scaleEffect(isActive ? 1 : 0.9)
+                            .animation(.spring(response: 0.9, dampingFraction: 0.75).delay(0.1), value: isActive)
+                            .id(index)
+                            .transition(.asymmetric(insertion: .scale(scale: 0.92).combined(with: .opacity), removal: .opacity))
+                        if photos.count > 1 {
+                            Button(action: another) {
+                                Label("换一张", systemImage: "arrow.triangle.2.circlepath")
+                                    .font(.footnote.weight(.semibold))
+                                    .padding(.horizontal, 14).padding(.vertical, 8)
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(.white)
+                            .glassEffect(.regular.interactive(), in: .capsule)
+                            .comesIn(isActive, after: 1.1)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
                 }
-                if let farthest = report.farthestPlace {
-                    Label("离家最远到过\(farthest.name)，\(Format.distance(farthest.distance))", systemImage: "location.north.line.fill")
+                Spacer(minLength: 24)
+                VStack(alignment: .leading, spacing: 10) {
+                    if let favorite = report.favoritePlace {
+                        Kicker(text: "除了家，你最常去", tint: Color(red: 1, green: 0.8, blue: 0.5)).comesIn(isActive, after: 0.2)
+                        Text(favorite.name)
+                            .font(.system(size: 40, weight: .black))
+                            .lineLimit(2).minimumScaleFactor(0.6)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .comesIn(isActive, after: 0.35)
+                        Text("去了 \(favorite.visits) 次").font(.title3.weight(.semibold)).foregroundStyle(.white.opacity(0.85))
+                            .comesIn(isActive, after: 0.5)
+                    }
+                    if let farthest = report.farthestPlace {
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            Image(systemName: "location.north.line.fill")
+                            Text("离家最远到过\(farthest.name)，\(Format.distance(farthest.distance))")
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                         .font(.subheadline.weight(.semibold))
-                        .padding(.horizontal, 14).padding(.vertical, 8)
-                        .glassEffect(.regular, in: .capsule)
+                        .padding(.horizontal, 14).padding(.vertical, 10)
+                        .glassEffect(.regular, in: .rect(cornerRadius: 18, style: .continuous))
                         .padding(.top, 8)
                         .comesIn(isActive, after: 0.9)
+                    }
                 }
+                .foregroundStyle(.white)
+                .padding(.bottom, 64)
             }
+            .padding(.horizontal, 28)
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .leading)
         }
-        .task(id: photo?.localIdentifier) {
-            guard let photo else { return }
-            image = await Self.load(photo)
+        .task(id: photos.map(\.localIdentifier)) {
+            let saved = UserDefaults.standard.string(forKey: choiceKey)
+            index = photos.firstIndex { $0.localIdentifier == saved } ?? 0
+            await load()
         }
     }
 
-    private static func load(_ asset: PHAsset) async -> UIImage? {
-        let options = PHImageRequestOptions()
-        options.isNetworkAccessAllowed = true
-        options.deliveryMode = .highQualityFormat
-        let size = CGSize(width: UIScreen.main.bounds.width * 3, height: UIScreen.main.bounds.height * 3)
-        return await withCheckedContinuation { continuation in
-            PHImageManager.default().requestImage(for: asset, targetSize: size, contentMode: .aspectFill, options: options) { image, _ in
-                continuation.resume(returning: image)
+    private func another() {
+        guard photos.count > 1 else { return }
+        index = (index + 1) % photos.count
+        UserDefaults.standard.set(photos[index].localIdentifier, forKey: choiceKey)
+        UISelectionFeedbackGenerator().selectionChanged()
+        Task { await load() }
+    }
+
+    private func load() async {
+        guard photos.indices.contains(index) else { return }
+        let loaded = await AssetLoader.image(for: photos[index], size: CGSize(width: 1400, height: 1400), exact: false)
+        withAnimation(.smooth(duration: 0.5)) { image = loaded }
+    }
+
+    /// A photo printed with a white border and the day it was taken written under it.
+    private struct Print: View {
+        let image: UIImage
+        let date: Date?
+
+        var body: some View {
+            VStack(spacing: 8) {
+                Image(uiImage: image).resizable().scaledToFit()
+                    .clipShape(.rect(cornerRadius: 2))
+                if let date {
+                    Text(date.formatted(.dateTime.year().month().day().locale(appLocale)))
+                        .font(.system(size: 11, weight: .medium, design: .serif))
+                        .foregroundStyle(.black.opacity(0.5))
+                }
             }
+            .padding([.horizontal, .top], 9)
+            .padding(.bottom, date == nil ? 9 : 10)
+            .background(Color(white: 0.98), in: .rect(cornerRadius: 3))
+            .shadow(color: .black.opacity(0.5), radius: 24, y: 12)
         }
     }
 }
