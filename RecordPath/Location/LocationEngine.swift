@@ -94,7 +94,12 @@ final class LocationEngine {
         static let coarseAccuracy: CLLocationAccuracy = 250
         /// How long a stay lasts before GPS hands over to the geofence. Shorter stops (a red
         /// light, a shop) keep live updates so the next stretch of path starts on time.
-        static let settleAfter: TimeInterval = 10 * 60
+        static let settleAfter: TimeInterval = {
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-quickSettle") { return 60 }
+            #endif
+            return 10 * 60
+        }()
         static let fenceRadius: CLLocationDistance = 150
     }
 
@@ -189,7 +194,9 @@ final class LocationEngine {
             return
         }
         manager.stopMonitoringVisits()
-        backgroundSession = CLBackgroundActivitySession()
+        // Keep the session we have: a new one only takes effect in the foreground, so replacing it
+        // when a geofence wakes us in the background would leave GPS unable to run there.
+        if backgroundSession == nil { backgroundSession = CLBackgroundActivitySession() }
         // A phone lying still may get no fix at all; don't say "starting" forever.
         Task { [weak self] in
             try? await Task.sleep(for: .seconds(15))
@@ -298,7 +305,9 @@ final class LocationEngine {
     func refreshState() {
         validateActiveTrip()
         if pausedUntil != nil, !isPaused { resume() }
-        if isRecording, activity == .off { start() }
+        // Opening the app during a settled stay turns GPS back on; if we're still there it
+        // settles again on its own.
+        if isRecording, activity == .off || isSettled { start() }
     }
 
     // MARK: Trips
@@ -405,6 +414,8 @@ final class LocationEngine {
 
     /// System-detected visits: arrival opens a stay, departure closes it.
     private func handleVisit(_ visit: CLVisit) {
+        // During a settled stay, a visit's departure is another sign we've left.
+        if isSettled, visit.departureDate != .distantFuture { leftFence() }
         Diagnostics.record("visit arrival=\(visit.arrivalDate.formatted(.iso8601)) departure=\(visit.departureDate == .distantFuture ? "-" : visit.departureDate.formatted(.iso8601))")
         guard !usesLiveUpdates, isRecording else { return }
         let arrived = visit.arrivalDate != .distantPast ? visit.arrivalDate : Date()
@@ -576,6 +587,8 @@ final class LocationEngine {
         flushChunk(carryOver: false)
         Diagnostics.record("settle radius=\(Int(Tuning.fenceRadius))m \(Diagnostics.battery)")
         updateFence(around: stay.location.coordinate)
+        // A third way to notice leaving, after the geofence and significant changes.
+        manager.startMonitoringVisits()
     }
 
     private func unsettle() {
@@ -593,6 +606,12 @@ final class LocationEngine {
     private func leftFence() {
         guard isSettled else { return }
         Diagnostics.record("fence exit \(Diagnostics.battery)")
+        // GPS was off on the way to the edge of the fence; start the path at the stay so it
+        // doesn't begin 150 m down the road.
+        if isRecording, let stay = openStay, pendingPoints.isEmpty {
+            pendingPoints = [TrackPoint(CLLocation(coordinate: stay.location.coordinate, altitude: 0, horizontalAccuracy: 10,
+                                                   verticalAccuracy: -1, timestamp: Date()))]
+        }
         if isRecording { start() } else { unsettle() }
     }
 
