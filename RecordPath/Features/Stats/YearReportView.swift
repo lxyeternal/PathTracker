@@ -34,7 +34,8 @@ struct YearReportView: View {
         /// Photos from the library this year: the ones to show, and how many there were.
         var libraryPhotos: [PHAsset] = []
         var libraryCount = 0
-        var favoritePhoto: PHAsset?
+        /// Good photos taken at the favourite place, the best first; the page lets you pick another.
+        var favoritePhotos: [PHAsset] = []
     }
 
     var body: some View {
@@ -191,19 +192,18 @@ struct YearReportView: View {
         }
         guard DayPhotos.canRead else { return }
         let all = DayPhotos.assets(in: interval)
-        let favorites = all.filter(\.isFavorite)
-        let pool = favorites.count >= 9 ? favorites : all
-        let step = max(1, pool.count / 9)
-        let picked = stride(from: 0, to: pool.count, by: step).prefix(9).map { pool[$0] }
-        var favoritePhoto: PHAsset?
+        // The nine best of the year, in the order they were taken.
+        let picked = await PhotoCurator.rank(all, limit: 60).prefix(9)
+            .sorted { ($0.creationDate ?? .distantPast) < ($1.creationDate ?? .distantPast) }
+        var favoritePhotos: [PHAsset] = []
         if let stay = report.favoritePlace?.stay {
             let near = all.filter { ($0.location?.distance(from: stay.location) ?? .infinity) < 500 }
-            favoritePhoto = near.isEmpty ? nil : near[near.count / 2]
+            favoritePhotos = Array(await PhotoCurator.rank(near, limit: 24).prefix(8))
         }
         guard data?.report.year == year else { return }
         data?.libraryPhotos = picked
         data?.libraryCount = all.count
-        data?.favoritePhoto = favoritePhoto
+        data?.favoritePhotos = favoritePhotos
     }
 
     /// The routes around where most of the year was spent, so the cover shows a web of
@@ -252,7 +252,7 @@ struct YearReportView: View {
             pages.append(StoryPage { AnyView(StoryLongestDayPage(report: r, backdrop: data.dayMap, isActive: $0)) })
         }
         if r.favoritePlace != nil || r.farthestPlace != nil {
-            pages.append(StoryPage { AnyView(StoryFavoritePage(report: r, photo: data.favoritePhoto, isActive: $0)) })
+            pages.append(StoryPage { AnyView(StoryFavoritePage(report: r, photos: data.favoritePhotos, isActive: $0)) })
         }
         if data.libraryPhotos.count >= 3 {
             pages.append(StoryPage { AnyView(StoryPhotosPage(assets: data.libraryPhotos, total: data.libraryCount, isActive: $0)) })
@@ -356,11 +356,15 @@ private struct CoverPage: View {
             StoryBackground(colors: Palette.night)
             if let cover = data.cover {
                 // The year's map, drifting slowly closer, darkened where the words sit.
-                Image(uiImage: cover)
-                    .resizable()
-                    .scaledToFill()
-                    .scaleEffect(isActive ? 1.08 : 1.0)
-                    .animation(.easeInOut(duration: 14), value: isActive)
+                Color.clear
+                    .overlay {
+                        Image(uiImage: cover)
+                            .resizable()
+                            .scaledToFill()
+                            .scaleEffect(isActive ? 1.08 : 1.0)
+                            .animation(.easeInOut(duration: 14), value: isActive)
+                    }
+                    .clipped()
                     .ignoresSafeArea()
                     .transition(.opacity)
                 LinearGradient(stops: [.init(color: .black.opacity(0.35), location: 0), .init(color: .clear, location: 0.25),
@@ -405,7 +409,7 @@ private struct SharePage: View {
         ZStack {
             StoryBackground(colors: Palette.night)
             if let cover = data.cover {
-                Image(uiImage: cover).resizable().scaledToFill().blur(radius: 24).opacity(0.6).ignoresSafeArea()
+                Color.clear.overlay { Image(uiImage: cover).resizable().scaledToFill() }.clipped().blur(radius: 24).opacity(0.6).ignoresSafeArea()
             }
             VStack(spacing: 22) {
                 Spacer(minLength: 80)

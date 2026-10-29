@@ -2828,6 +2828,16 @@
         }
       }
     },
+    "在明信片上拖动、双指缩放，调整构图": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag and pinch on the card to frame the photo"
+          }
+        }
+      }
+    },
     "在足迹里找到 %lld 段旅行": {
       "localizations": {
         "en": {
@@ -3012,6 +3022,16 @@
         }
       }
     },
+    "墨水": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ink"
+          }
+        }
+      }
+    },
     "处已经记录过": {
       "localizations": {
         "en": {
@@ -3028,6 +3048,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Notes"
+          }
+        }
+      }
+    },
+    "复原": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset"
+          }
+        }
+      }
+    },
+    "复古": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vintage"
           }
         }
       }
@@ -3132,12 +3172,32 @@
         }
       }
     },
+    "字迹": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Handwriting"
+          }
+        }
+      }
+    },
     "学校": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "School"
+          }
+        }
+      }
+    },
+    "宋体": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serif"
           }
         }
       }
@@ -3814,6 +3874,16 @@
         }
       }
     },
+    "打字机": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Typewriter"
+          }
+        }
+      }
+    },
     "打开当天的地图": {
       "localizations": {
         "en": {
@@ -3962,6 +4032,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "By Month"
+          }
+        }
+      }
+    },
+    "换一张": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another photo"
           }
         }
       }
@@ -4858,12 +4938,32 @@
         }
       }
     },
+    "样式": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Design"
+          }
+        }
+      }
+    },
     "根据你离开常住地的日子整理出来": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "From the days you spent away from home"
+          }
+        }
+      }
+    },
+    "楷书": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brush"
           }
         }
       }
@@ -4974,6 +5074,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Identifying place…"
+          }
+        }
+      }
+    },
+    "正面": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Front"
           }
         }
       }
@@ -5418,6 +5528,16 @@
         }
       }
     },
+    "留白": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editorial"
+          }
+        }
+      }
+    },
     "登录以同步资料": {
       "localizations": {
         "en": {
@@ -5808,6 +5928,16 @@
         }
       }
     },
+    "经典": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Classic"
+          }
+        }
+      }
+    },
     "结束": {
       "localizations": {
         "en": {
@@ -5974,6 +6104,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Contact Us"
+          }
+        }
+      }
+    },
+    "背面": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        }
+      }
+    },
+    "胶片": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Film"
           }
         }
       }
@@ -7166,6 +7316,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Back again · %@"
+          }
+        }
+      }
+    },
+    "钢笔": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pen"
           }
         }
       }
