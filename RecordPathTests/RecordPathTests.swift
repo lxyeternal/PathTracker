@@ -1211,3 +1211,60 @@ struct StampTests {
         #expect(a.tilt == b.tilt && abs(a.tilt) <= 6.5)
     }
 }
+
+struct TravelModeTests {
+    /// A track heading east, one fix every 5 s, at the given speed for each stretch.
+    private func track(_ stretches: [(seconds: Int, speed: Double)]) -> [TrackPoint] {
+        var points: [TrackPoint] = []
+        var lon = 103.68, time = 0.0
+        for stretch in stretches {
+            for _ in 0..<(stretch.seconds / 5) {
+                points.append(point(1.34, lon, time, speed: stretch.speed))
+                lon += stretch.speed * 5 / 111_320
+                time += 5
+            }
+        }
+        return points
+    }
+
+    @Test func walkBusWalkIsThreeLegs() {
+        // 10 min on foot, a bus with a stop on the way, 10 min on foot.
+        let points = track([(600, 1.3), (240, 9), (40, 0), (240, 10), (600, 1.4)])
+        let legs = MotionClassifier.legs(of: points, readings: [])
+        #expect(legs.map(\.mode) == [.walking, .automotive, .walking])
+        // Legs meet at a shared point, so the line stays unbroken.
+        for (a, b) in zip(legs, legs.dropFirst()) { #expect(a.points.last == b.points.first) }
+    }
+
+    @Test func speedOverrulesAMotionChipThatSaysWalking() {
+        let points = track([(600, 1.3), (480, 10), (600, 1.4)])
+        let walking = [MotionClassifier.Reading(start: points[0].timestamp.addingTimeInterval(-60), mode: .walking)]
+        #expect(MotionClassifier.legs(of: points, readings: walking).map(\.mode) == [.walking, .automotive, .walking])
+    }
+
+    @Test func aRedLightDoesNotEndTheDrive() {
+        let points = track([(600, 12), (60, 0), (600, 12)])
+        #expect(MotionClassifier.legs(of: points, readings: []).map(\.mode) == [.automotive])
+    }
+
+    @Test func flightPathRunsFromAirportToAirport() {
+        let changi = CLLocationCoordinate2D(latitude: 1.3644, longitude: 103.9915)
+        let capital = CLLocationCoordinate2D(latitude: 40.0799, longitude: 116.6031)
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let path = FlightPath.points(from: changi, to: capital, start: start, end: start.addingTimeInterval(6 * 3600))
+        #expect(path.count > 50)
+        #expect(abs(path.first!.latitude - changi.latitude) < 1e-6 && abs(path.last!.longitude - capital.longitude) < 1e-6)
+        let distance = TrackPoint.distance(of: path)
+        #expect(distance > 4_400_000 && distance < 4_600_000)
+    }
+
+    @Test func timelineShowsEachLegAndFoldsTinyOnes() {
+        let walk1 = TrackChunk(points: track([(600, 1.3)]), mode: .walking, tripID: nil)
+        let blip = TrackChunk(points: Array(track([(600, 1.3), (60, 9)]).suffix(13)), mode: .automotive, tripID: nil)
+        let bus = TrackChunk(points: Array(track([(660, 1.3), (480, 9)]).suffix(97)), mode: .automotive, tripID: nil)
+        let legs = Timeline.legs(of: [walk1, bus])
+        #expect(legs.count == 2)
+        // A sliver under 300 m is not a leg of its own.
+        #expect(Timeline.legs(of: [walk1, blip]).count == 1)
+    }
+}
