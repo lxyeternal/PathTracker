@@ -101,6 +101,14 @@ final class LocationEngine {
             return 10 * 60
         }()
         static let fenceRadius: CLLocationDistance = 150
+        /// Further than this from the last place, and faster than any train to get there, is a
+        /// flight: there's no GPS on a plane, so the next fix is simply somewhere else.
+        static let flightDistance: CLLocationDistance = 150_000
+        static let flightSpeed: CLLocationSpeed = 50
+        /// Roughly how fast planes go, and the boarding and taxiing around it, to place the
+        /// take-off when only the landing is known.
+        static let cruiseSpeed: CLLocationSpeed = 230
+        static let groundTime: TimeInterval = 40 * 60
     }
 
     private static let fenceID = "stay"
@@ -303,6 +311,7 @@ final class LocationEngine {
 
     /// Called whenever the app becomes active.
     func refreshState() {
+        Task { await splitRecentLegs() }
         validateActiveTrip()
         if pausedUntil != nil, !isPaused { resume() }
         // Opening the app during a settled stay turns GPS back on; if we're still there it
@@ -361,6 +370,7 @@ final class LocationEngine {
         }
         Diagnostics.count("accepted")
         activity = location.speed >= 0 && location.speed < 0.5 && openStay != nil ? .stationary : .moving
+        noteFlight(to: location)
         record(location)
         detectStay(with: location)
     }
@@ -382,6 +392,74 @@ final class LocationEngine {
         return false
     }
 
+    /// Tracks saved before journeys were split by how they were travelled, read again once
+    /// against the motion history the phone keeps for a week. A stretch travelled one way
+    /// only, or corrected by hand to one way, is left as it is.
+    private func splitRecentLegs() async {
+        let key = "tracks.legsSplit.v1"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+        UserDefaults.standard.set(true, forKey: key)
+        let since = Date().addingTimeInterval(-7 * 86_400)
+        let flying = MovementMode.flying.rawValue
+        let chunks = (try? context.fetch(FetchDescriptor<TrackChunk>(predicate: #Predicate { $0.startDate >= since && $0.modeRaw != flying }))) ?? []
+        var split = 0
+        for chunk in chunks {
+            let legs = await classifier.legs(of: chunk.points)
+            guard legs.count > 1 else { continue }
+            for leg in legs where leg.points.count >= 2 {
+                context.insert(TrackChunk(points: leg.points, mode: leg.mode, tripID: chunk.tripID))
+            }
+            context.delete(chunk)
+            split += 1
+        }
+        try? context.save()
+        Diagnostics.record("legs split=\(split) of \(chunks.count)")
+    }
+
+    // MARK: Flights
+
+    /// A fix far from where we last were, sooner than anything on the ground could get there,
+    /// means a flight. It's drawn as a great-circle arc from the last place to here, and the
+    /// stay at the departure airport ends at about take-off rather than at landing.
+    private func noteFlight(to location: CLLocation) {
+        var from: CLLocation?
+        var left: Date?
+        if let last = lastAcceptedLocation ?? pendingPoints.last?.location {
+            from = last
+            left = last.timestamp
+        } else if let stay = openStay ?? lastClosedStay().flatMap({ stay in
+            stay.departure.map { location.timestamp.timeIntervalSince($0) < 86_400 } == true ? stay : nil
+        }) {
+            from = stay.location
+            left = stay.departure ?? stay.arrival
+        }
+        guard let from, let left else { return }
+        let distance = location.distance(from: from)
+        guard distance > Tuning.flightDistance else { return }
+        // When take-off isn't known (still "at" the airport), work back from the landing.
+        let flightTime = distance / Tuning.cruiseSpeed
+        var takeoff = left
+        if let stay = openStay {
+            takeoff = max(stay.arrival.addingTimeInterval(Tuning.stayMinimumDuration),
+                          location.timestamp.addingTimeInterval(-flightTime - Tuning.groundTime))
+        }
+        let elapsed = location.timestamp.timeIntervalSince(takeoff)
+        guard elapsed > 0, distance / elapsed > Tuning.flightSpeed else { return }
+
+        // The landing is a little before this fix, once the phone found a signal.
+        let landing = max(takeoff.addingTimeInterval(flightTime), location.timestamp.addingTimeInterval(-15 * 60))
+        let path = FlightPath.points(from: from.coordinate, to: location.coordinate,
+                                     start: takeoff, end: min(landing, location.timestamp))
+        Diagnostics.record("flight \(Int(distance / 1000))km takeoff=\(takeoff.formatted(.iso8601))")
+        flushChunk(carryOver: false)
+        if let stay = openStay { close(stay, at: takeoff) }
+        context.insert(TrackChunk(points: path, mode: .flying, tripID: activeTripID))
+        try? context.save()
+        anchor = nil
+        lastAcceptedLocation = nil
+        pendingPoints = []
+    }
+
     // MARK: Battery saver
 
     /// Significant-change locations: wake-ups while paused, and a rough path in battery mode.
@@ -396,6 +474,7 @@ final class LocationEngine {
         guard !usesLiveUpdates, isRecording else { return }
         for location in locations where location.horizontalAccuracy > 0 && location.horizontalAccuracy <= Tuning.coarseAccuracy {
             currentLocation = location
+            noteFlight(to: location)
             lastAcceptedLocation = nil
             // Visit departures can arrive late or not at all; clearly being elsewhere ends the stay.
             if let stay = openStay,
@@ -456,9 +535,12 @@ final class LocationEngine {
 
         let tripID = activeTripID
         Task {
-            let mode = await classifier.mode(from: points[0].timestamp, to: points[points.count - 1].timestamp, points: points)
-            Diagnostics.record("chunk points=\(points.count) distance=\(Int(TrackPoint.distance(of: points)))m mode=\(mode.rawValue)")
-            context.insert(TrackChunk(points: points, mode: mode, tripID: tripID))
+            // A walk to the bus stop and the ride after it are saved as two legs, not one.
+            let legs = await classifier.legs(of: points)
+            for leg in legs where leg.points.count >= 2 {
+                context.insert(TrackChunk(points: leg.points, mode: leg.mode, tripID: tripID))
+            }
+            Diagnostics.record("chunk points=\(points.count) distance=\(Int(TrackPoint.distance(of: points)))m legs=\(legs.map(\.mode.rawValue).joined(separator: ","))")
             try? context.save()
         }
     }

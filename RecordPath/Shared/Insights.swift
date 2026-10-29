@@ -46,7 +46,9 @@ enum Timeline {
 
         var group: [TrackChunk] = []
         func closeGroup() {
-            if !group.isEmpty, group.reduce(0, { $0 + $1.distance }) > 50 { entries.append(.move(Move(chunks: group))) }
+            for leg in legs(of: group) where leg.reduce(0, { $0 + $1.distance }) > 50 {
+                entries.append(.move(Move(chunks: leg)))
+            }
             group = []
         }
         for chunk in chunks {
@@ -59,6 +61,41 @@ enum Timeline {
         }
         closeGroup()
         return entries.sorted { $0.start < $1.start }
+    }
+
+    /// A journey split where the way of travelling changes (walk, bus, walk), each a move of
+    /// its own. A bit too short to count (crossing a car park) stays with its neighbour.
+    static func legs(of chunks: [TrackChunk]) -> [[TrackChunk]] {
+        var legs: [[TrackChunk]] = []
+        for chunk in chunks {
+            if let last = legs.last?.last, last.mode == chunk.mode {
+                legs[legs.count - 1].append(chunk)
+            } else {
+                legs.append([chunk])
+            }
+        }
+        func minor(_ leg: [TrackChunk]) -> Bool {
+            let distance = leg.reduce(0) { $0 + $1.distance }
+            let duration = (leg.last?.endDate ?? .distantPast).timeIntervalSince(leg.first?.startDate ?? .distantPast)
+            return leg.first?.mode != .flying && (distance < 300 || duration < 120)
+        }
+        while legs.count > 1, let index = legs.indices.filter({ minor(legs[$0]) })
+            .min(by: { legs[$0].reduce(0) { $0 + $1.distance } < legs[$1].reduce(0) { $0 + $1.distance } }) {
+            let target = index == 0 ? 1 : index - 1
+            if target < index { legs[target] += legs[index] } else { legs[target] = legs[index] + legs[target] }
+            legs.remove(at: index)
+            // Neighbours that now share a way of travelling join up.
+            var joined: [[TrackChunk]] = []
+            for leg in legs {
+                if let last = joined.last, Move(chunks: last).mode == Move(chunks: leg).mode {
+                    joined[joined.count - 1] += leg
+                } else {
+                    joined.append(leg)
+                }
+            }
+            legs = joined
+        }
+        return legs
     }
 }
 
