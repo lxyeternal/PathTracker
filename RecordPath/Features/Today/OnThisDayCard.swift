@@ -3,10 +3,9 @@ import SwiftData
 import CoreLocation
 
 /// "那年今日": where you were on this day in earlier years, as a Polaroid that develops while
-/// you look at it. Tapping opens that day.
+/// you look at it. Tapping opens that day on top of today's page.
 struct OnThisDayCard: View {
     let memories: [Memory]
-    @Environment(AppNavigator.self) private var navigator
     @State private var page = 0
 
     struct Memory: Identifiable {
@@ -21,7 +20,7 @@ struct OnThisDayCard: View {
                 VStack(spacing: 8) {
                     TabView(selection: $page) {
                         ForEach(memories.indices, id: \.self) { index in
-                            MemoryRow(memory: memories[index]) { navigator.show(day: memories[index].day) }
+                            MemoryRow(memory: memories[index])
                                 .tag(index)
                         }
                     }
@@ -71,10 +70,10 @@ struct OnThisDayCard: View {
 
 private struct MemoryRow: View {
     let memory: OnThisDayCard.Memory
-    let open: () -> Void
 
     var body: some View {
-        Button(action: open) {
+        // Opened on top of today, so the back button brings you home.
+        NavigationLink(value: DayRoute(day: memory.day)) {
             HStack(spacing: 16) {
                 Polaroid(stay: memory.stay)
                     .rotationEffect(.degrees(-4))

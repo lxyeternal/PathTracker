@@ -135,9 +135,12 @@ Two lists of Waytrace's own: **China 100** (Hong Kong, Macao and Taiwan included
 - **A night map**: places not yet reached are faint stars; places you've been glow warm gold.
 - **A hundred small squares**: one fills for each place reached, so you can see how far you've come. The words change as you go, from "the first light is waiting for you" to "all one hundred".
 - **No checking in**: stay nearby or take a photo there (imported photos count too) and it lights up on its own. A park is as big as the park.
-- **Back to that day**: tap a place you've been to open the day you first got there, with that day's route and photos.
+- **A page for each place**: tap any of them to see it at its best: a real photograph, a few lines written for Waytrace, the best time to go and how far it is, plus a flight around it from the air and a walk through Look Around. Places you've been also show your own photos from there.
+- **Back to that day**: from a place you've been, one tap opens the day you first got there, with that day's route and photos.
 - **Want to go**: tap ♡ to keep a place for later, and see **your nearest next stop** and how far it is.
 - **Newly lit**: places reached since you last looked get a moment of their own.
+
+The photos are freely licensed works from Wikimedia Commons, shipped inside the app so they show everywhere, mainland China included. Each page credits the photographer and licence.
 
 ---
 

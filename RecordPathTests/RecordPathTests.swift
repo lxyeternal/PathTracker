@@ -1242,6 +1242,36 @@ struct TravelModeTests {
         #expect(MotionClassifier.legs(of: points, readings: walking).map(\.mode) == [.walking, .automotive, .walking])
     }
 
+    @Test func aWalkTooFastToBeOneIsARide() {
+        // The motion chip says walking throughout, but 18 km/h is a bicycle.
+        let points = track([(600, 1.3), (600, 5), (600, 1.4)])
+        let walking = [MotionClassifier.Reading(start: points[0].timestamp.addingTimeInterval(-60), mode: .walking)]
+        #expect(MotionClassifier.legs(of: points, readings: walking).map(\.mode) == [.walking, .cycling, .walking])
+    }
+
+    @Test func steadyPedallingStaysARide() {
+        let points = track([(600, 1.3), (900, 4.5), (600, 1.3)])
+        #expect(MotionClassifier.legs(of: points, readings: []).map(\.mode) == [.walking, .cycling, .walking])
+    }
+
+    @Test func slowTrafficBetweenFastStretchesIsStillTheDrive() {
+        // Through town at 20 km/h, out on the open road at 45, back into town.
+        let points = track([(600, 1.3), (300, 5.5), (300, 12.5), (300, 5.5), (300, 12), (600, 1.3)])
+        #expect(MotionClassifier.legs(of: points, readings: []).map(\.mode) == [.walking, .automotive, .walking])
+    }
+
+    @Test func thereAndBackDrawSideBySide() {
+        let east = (0..<60).map { CLLocationCoordinate2D(latitude: 1.30, longitude: 103.80 + Double($0) * 0.0001) }
+        let west = Array(east.reversed())
+        let apart = TrackMap.separated([east, west])
+        let a = CLLocation(latitude: apart[0][30].latitude, longitude: apart[0][30].longitude)
+        let b = CLLocation(latitude: apart[1][29].latitude, longitude: apart[1][29].longitude)
+        #expect(a.distance(from: b) > 9 && a.distance(from: b) < 15)
+        // A road taken once stays where it was recorded.
+        let alone = TrackMap.separated([east])[0]
+        #expect(zip(alone, east).allSatisfy { abs($0.latitude - $1.latitude) < 1e-9 && abs($0.longitude - $1.longitude) < 1e-9 })
+    }
+
     @Test func aRedLightDoesNotEndTheDrive() {
         let points = track([(600, 12), (60, 0), (600, 12)])
         #expect(MotionClassifier.legs(of: points, readings: []).map(\.mode) == [.automotive])

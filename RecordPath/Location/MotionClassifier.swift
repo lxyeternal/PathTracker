@@ -31,8 +31,16 @@ final class MotionClassifier {
         static let minimumLegDistance: Double = 300
         /// Faster than this, nobody is on foot (25 km/h).
         static let notOnFoot: Double = 7
+        /// Faster than this nobody walks (11 km/h), and faster than this nobody runs (20 km/h):
+        /// the motion chip calling it a walk then means wheels, usually a bicycle's.
+        static let notWalking: Double = 3
+        static let notRunning: Double = 5.5
         /// Faster than this, nobody is on a bicycle (43 km/h).
         static let notOnBike: Double = 12
+        /// A ride whose quicker moments pass this (30 km/h) was in something with an engine.
+        static let bikeBursts: Double = 8.5
+        /// Between two drives, a slow stretch this fast or faster (16 km/h) is traffic, not a bike.
+        static let trafficPace: Double = 4.5
     }
 
     func legs(of points: [TrackPoint]) async -> [Leg] {
@@ -73,9 +81,13 @@ final class MotionClassifier {
 
     static func legs(of points: [TrackPoint], readings: [Reading]) -> [Leg] {
         guard points.count >= 2 else { return [Leg(points: points, mode: mode(forSpeeds: points.map(\.speed)))] }
-        let labels = labels(for: points, readings: readings.sorted { $0.start < $1.start })
+        let sorted = readings.sorted { $0.start < $1.start }
+        let said = chipModes(for: points, readings: sorted)
+        let speeds = windowSpeeds(points)
+        let labels = labels(for: points, said: said, speeds: speeds)
         var runs = runs(of: labels)
         runs = merged(runs, points: points)
+        runs = checked(runs, said: said, speeds: speeds)
         return runs.enumerated().map { index, run in
             // Each leg ends where the next begins.
             let end = index + 1 < runs.count ? runs[index + 1].range.lowerBound : points.count - 1
@@ -85,18 +97,15 @@ final class MotionClassifier {
 
     /// A way of travelling for every point: what the motion coprocessor said at that moment,
     /// overruled where the speed makes it impossible.
-    static func labels(for points: [TrackPoint], readings: [Reading]) -> [MovementMode] {
-        let speeds = windowSpeeds(points)
-        var reading = 0
-        return points.indices.map { index in
-            let time = points[index].timestamp
-            while reading + 1 < readings.count, readings[reading + 1].start <= time { reading += 1 }
-            let said = readings.indices.contains(reading) && readings[reading].start <= time ? readings[reading].mode : nil
+    static func labels(for points: [TrackPoint], said: [MovementMode?], speeds: [Double]) -> [MovementMode] {
+        points.indices.map { index in
             let speed = speeds[index]
             if speed >= 60 { return .flying }
-            switch said {
-            case .walking?, .running?:
-                return speed > Tuning.notOnFoot ? .automotive : said!
+            switch said[index] {
+            case .walking?:
+                return speed > Tuning.notOnFoot ? .automotive : speed > Tuning.notWalking ? .cycling : .walking
+            case .running?:
+                return speed > Tuning.notOnFoot ? .automotive : speed > Tuning.notRunning ? .cycling : .running
             case .cycling?:
                 return speed > Tuning.notOnBike ? .automotive : .cycling
             case let mode?:
@@ -105,6 +114,47 @@ final class MotionClassifier {
                 return mode(forSpeed: speed)
             }
         }
+    }
+
+    /// What the motion chip said at each point's moment, if anything.
+    static func chipModes(for points: [TrackPoint], readings: [Reading]) -> [MovementMode?] {
+        var reading = 0
+        return points.map { point in
+            let time = point.timestamp
+            while reading + 1 < readings.count, readings[reading + 1].start <= time { reading += 1 }
+            return readings.indices.contains(reading) && readings[reading].start <= time ? readings[reading].mode : nil
+        }
+    }
+
+    /// A second look at each leg as a whole. Point by point, a car crawling through town can
+    /// pass for a bicycle; over the whole leg it gives itself away by its quick moments, or by
+    /// sitting between two drives. Legs the motion chip vouched for as a ride are left alone.
+    static func checked(_ runs: [Run], said: [MovementMode?], speeds: [Double]) -> [Run] {
+        var runs = runs
+        func vouched(_ run: Run) -> Bool { said[run.range].contains(.cycling) }
+        func percentile(_ run: Run, _ p: Double) -> Double {
+            let sorted = speeds[run.range].sorted()
+            return sorted[min(sorted.count - 1, Int(Double(sorted.count) * p))]
+        }
+        for index in runs.indices where runs[index].mode == .cycling && !vouched(runs[index]) {
+            let before = index > 0 ? runs[index - 1].mode : nil
+            let after = index + 1 < runs.count ? runs[index + 1].mode : nil
+            let betweenDrives = before == .automotive && after == .automotive
+            let besideDrive = before == .automotive || after == .automotive
+            if percentile(runs[index], 0.85) > Tuning.bikeBursts || betweenDrives
+                || (besideDrive && percentile(runs[index], 0.5) > Tuning.trafficPace) {
+                runs[index].mode = .automotive
+            }
+        }
+        var joined: [Run] = []
+        for run in runs {
+            if let last = joined.last, last.mode == run.mode {
+                joined[joined.count - 1].range = last.range.lowerBound...run.range.upperBound
+            } else {
+                joined.append(run)
+            }
+        }
+        return joined
     }
 
     /// The median speed within the window around each point, from the GPS's own reading where
