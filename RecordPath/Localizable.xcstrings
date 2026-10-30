@@ -7479,6 +7479,116 @@
           }
         }
       }
+    },
+    "选择年份和月份": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a year and month"
+          }
+        }
+      }
+    },
+    "%lld 个月有记录": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld months recorded"
+          }
+        }
+      }
+    },
+    "只允许访问了部分照片": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only some photos are shared"
+          }
+        }
+      }
+    },
+    "漫迹只能看到你选中的照片，其他照片里的地方不会被找到。在“设置 › 隐私与安全性 › 照片”里把漫迹改成“完全访问”，回来再扫描一次即可补全。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waytrace can only see the photos you selected, so places in the others won't be found. In Settings › Privacy & Security › Photos, set Waytrace to Full Access, then come back and scan again to fill in the rest."
+          }
+        }
+      }
+    },
+    "从相册找回以前的旅程": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find past trips in your photos"
+          }
+        }
+      }
+    },
+    "用照片的拍摄地点补上去过的地方，漫迹会从中找出过去的旅程": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where your photos were taken fills in the places you've been, and Waytrace finds your past trips among them"
+          }
+        }
+      }
+    },
+    "重新从相册导入": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import from Photos again"
+          }
+        }
+      }
+    },
+    "从相册导入足迹": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import places from Photos"
+          }
+        }
+      }
+    },
+    "上次导入：%@。再次扫描只会加入新的地方，不会重复。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last imported %@. Scanning again only adds new places; nothing is duplicated."
+          }
+        }
+      }
+    },
+    "上次从相册导入：%@。重新导入只会补上新的地方，不会重复。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last imported from Photos %@. Importing again only adds new places; nothing is duplicated."
+          }
+        }
+      }
+    },
+    "漫迹目前只能访问部分照片，导入可能不完整。可在系统设置里改为“完全访问”后重新导入。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waytrace can only see some of your photos, so the import may be incomplete. Allow Full Access in Settings, then import again."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

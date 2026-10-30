@@ -9,7 +9,6 @@ struct WorldView: View {
     private var stays: [Stay] { summaries.stays }
     private var insights: WorldInsights { summaries.world }
     @State private var importingPhotos = false
-    @AppStorage("photoImport.lastRun") private var photoImportRun: Double = 0
     @State private var selectedStay: Stay?
     @State private var showingMap = false
     @State private var search = ""
@@ -33,7 +32,6 @@ struct WorldView: View {
                     } else {
                         summaryGrid
                         passportCard
-                        if photoImportRun == 0 { PhotoImportCard { importingPhotos = true } }
                         mapCard
                         GalleryPreview()
                         if !insights.countries.isEmpty { countries }

@@ -22,6 +22,7 @@ struct SettingsView: View {
     @State private var retagged = false
     @State private var importing = false
     @State private var importingPhotos = false
+    @AppStorage("photoImport.lastRun") private var photoImportRun: Double = 0
     @State private var importMessage: String?
     private var zones = PrivacyZones.shared
 
@@ -259,7 +260,7 @@ struct SettingsView: View {
             }
             .disabled(stats.chunks == 0)
             Button("导入 GPX 文件", systemImage: "square.and.arrow.down") { importing = true }
-            Button("从相册点亮足迹", systemImage: "photo.stack") { importingPhotos = true }
+            Button(photoImportRun > 0 ? LocalizedStringKey("重新从相册导入") : "从相册导入足迹", systemImage: "photo.stack") { importingPhotos = true }
             Button("重新显示引导", systemImage: "arrow.uturn.backward") {
                 UserDefaults.standard.set(false, forKey: "onboarding.completed")
                 dismiss()
@@ -273,7 +274,16 @@ struct SettingsView: View {
         } header: {
             Text("数据")
         } footer: {
-            Text("GPX 可以导入 AllTrails、Strava、Google Earth 等应用。")
+            VStack(alignment: .leading, spacing: 6) {
+                if photoImportRun > 0 {
+                    Text("上次从相册导入：\(Date(timeIntervalSince1970: photoImportRun).formatted(date: .abbreviated, time: .omitted))。重新导入只会补上新的地方，不会重复。")
+                }
+                if PhotoFootprints.authorization == .limited {
+                    Text("漫迹目前只能访问部分照片，导入可能不完整。可在系统设置里改为“完全访问”后重新导入。")
+                        .foregroundStyle(.orange)
+                }
+                Text("GPX 可以导入 AllTrails、Strava、Google Earth 等应用。")
+            }
         }
     }
 

@@ -18,6 +18,7 @@ struct PhotoImportSheet: View {
     @State private var adding = 0
     @State private var toAdd = 0
     @State private var appeared = false
+    @State private var access = PhotoFootprints.authorization
 
     enum Phase { case intro, denied, scanning, done }
 
@@ -41,6 +42,10 @@ struct PhotoImportSheet: View {
         }
         .interactiveDismissDisabled(phase == .scanning)
         .onAppear { withAnimation(.spring(response: 0.7, dampingFraction: 0.75).delay(0.1)) { appeared = true } }
+        // Coming back from Settings with "All Photos" allowed.
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            access = PhotoFootprints.authorization
+        }
     }
 
     // MARK: Phases
@@ -77,7 +82,13 @@ struct PhotoImportSheet: View {
             .padding(.horizontal, 28)
             Label("只读取时间和地点，照片不会被上传或复制", systemImage: "lock.fill")
                 .font(.footnote).foregroundStyle(.secondary)
+            if lastRun > 0 {
+                Text("上次导入：\(Date(timeIntervalSince1970: lastRun).formatted(date: .abbreviated, time: .shortened))。再次扫描只会加入新的地方，不会重复。")
+                    .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
+            }
             Spacer()
+            if access == .limited { LimitedAccessNotice().padding(.horizontal, 24) }
             Button(action: start) {
                 Text(lastRun > 0 ? "再次扫描相册" : "开始扫描")
                     .font(.headline).frame(maxWidth: .infinity).frame(height: 52)
@@ -142,6 +153,7 @@ struct PhotoImportSheet: View {
                     Text(newCountries.map { String.flag(for: $0) }.joined(separator: " "))
                         .font(.system(size: 34))
                 }
+                if access == .limited { LimitedAccessNotice() }
                 if summary.visits > 0 {
                     Label("城市和国家正在后台识别，几分钟内会陆续点亮。", systemImage: "clock.arrow.circlepath")
                         .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
@@ -170,6 +182,7 @@ struct PhotoImportSheet: View {
         Task {
             var status = PhotoFootprints.authorization
             if status == .notDetermined { status = await PHPhotoLibrary.requestAuthorization(for: .readWrite) }
+            access = status
             guard status == .authorized || status == .limited else {
                 phase = .denied
                 return
@@ -197,8 +210,32 @@ struct PhotoImportSheet: View {
     }
 }
 
-/// The invitation on the Places tab.
+/// When only some photos are shared with the app, an import can only find the places in
+/// those, which reads as "it didn't import everything". Say so, and how to share them all.
+struct LimitedAccessNotice: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("只允许访问了部分照片", systemImage: "exclamationmark.triangle.fill")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.orange)
+            Text("漫迹只能看到你选中的照片，其他照片里的地方不会被找到。在“设置 › 隐私与安全性 › 照片”里把漫迹改成“完全访问”，回来再扫描一次即可补全。")
+                .font(.footnote).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Button("去设置") {
+                if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+            }
+            .font(.footnote.weight(.semibold))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(Color.orange.opacity(0.1), in: .rect(cornerRadius: 18, style: .continuous))
+    }
+}
+
+/// The invitation to import, shown until the library has been scanned once.
 struct PhotoImportCard: View {
+    var title: LocalizedStringKey = "从相册点亮足迹"
+    var subtitle: LocalizedStringKey = "用照片的拍摄地点，补上以前去过的地方"
     let action: () -> Void
 
     var body: some View {
@@ -211,8 +248,9 @@ struct PhotoImportCard: View {
                 }
                 .frame(width: 52, height: 52)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("从相册点亮足迹").font(.headline).foregroundStyle(.primary)
-                    Text("用照片的拍摄地点，补上以前去过的地方").font(.subheadline).foregroundStyle(.secondary)
+                    Text(title).font(.headline).foregroundStyle(.primary)
+                    Text(subtitle).font(.subheadline).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.forward").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
