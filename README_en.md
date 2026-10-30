@@ -39,6 +39,7 @@
   <a href="#-trips">Trips</a> ·
   <a href="#-the-world-youve-seen">Places</a> ·
   <a href="#-passport-and-stamps">Passport and stamps</a> ·
+  <a href="#-places-for-a-lifetime">Places for a lifetime</a> ·
   <a href="#-moments-that-make-you-pause">Moments</a> ·
   <a href="#-apple-watch">Apple Watch</a> ·
   <a href="#privacy">Privacy</a> ·
@@ -63,7 +64,7 @@
 | **Easy on the battery** | Location sleeps while the phone is still. After ten minutes in one place GPS turns off entirely, replaced by a 150 m geofence that wakes it when you leave. |
 | **Timeline** | Each day reads stay → journey → stay, every place with the photos you took there. |
 
-**Bring back the past from Photos**: the places your photos and videos were taken fill in where you went before the app existed. New users can do it in the last step of onboarding, and the passport opens as the years of stamps land. Everything is read on the phone; photos are never uploaded.
+**Bring back the past from Photos**: the places your photos and videos were taken fill in where you went before the app existed. New users can do it in the last step of onboarding or from the Trips tab, and the passport opens as the years of stamps land. Run it again any time from Settings; only new places are added. Everything is read on the phone; photos are never uploaded.
 
 ---
 
@@ -120,6 +121,23 @@ The places you've been aren't a number. They're stamps, pressed one by one into 
 | Keepsakes and sets | Gold foil | A line of light runs across it; a set's cities gather into its stamp |
 
 Stamps not yet earned are **blind-embossed**: paper-coloured, in relief, every character readable but uninked.
+
+---
+
+## 🌟 Places for a lifetime
+
+<p align="center">
+  <img src="docs/images/must-see.jpg" width="190" alt="Places for a lifetime">
+</p>
+
+Two lists of Waytrace's own: **China 100** (Hong Kong, Macao and Taiwan included) and **World 100**, drawn from the World Heritage List, China's 5A scenic areas and the places travellers name most.
+
+- **A night map**: places not yet reached are faint stars; places you've been glow warm gold.
+- **A hundred small squares**: one fills for each place reached, so you can see how far you've come. The words change as you go, from "the first light is waiting for you" to "all one hundred".
+- **No checking in**: stay nearby or take a photo there (imported photos count too) and it lights up on its own. A park is as big as the park.
+- **Back to that day**: tap a place you've been to open the day you first got there, with that day's route and photos.
+- **Want to go**: tap ♡ to keep a place for later, and see **your nearest next stop** and how far it is.
+- **Newly lit**: places reached since you last looked get a moment of their own.
 
 ---
 
