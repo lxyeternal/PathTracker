@@ -55,11 +55,12 @@ struct MustSeePlaceView: View {
                     if firstVisit != nil {
                         yours.reveal(appeared, delay: 0.6)
                     }
-                    if lookAround != nil || mapItem != nil {
-                        elsewhere.reveal(appeared, delay: 0.65)
-                    }
+                    elsewhere.reveal(appeared, delay: 0.65)
                     if firstVisit == nil {
                         wishButton.reveal(appeared, delay: 0.7)
+                    }
+                    if let credit = MustSeePhotos.credit(place.id) {
+                        creditLine(credit)
                     }
                 }
                 .padding(.horizontal, 20)
@@ -87,14 +88,18 @@ struct MustSeePlaceView: View {
 
     // MARK: Hero
 
+    /// The place at its best first, then what you saw there yourself.
+    private var slides: [ReelSlide] {
+        (MustSeePhotos.credit(place.id) != nil ? [.cover(place.id)] : []) + photos.prefix(8).map { .asset($0) }
+    }
+
     private var hero: some View {
         ZStack(alignment: .bottomLeading) {
             Group {
-                if photos.isEmpty {
+                if slides.isEmpty {
                     Flyover(place: place)
                 } else {
-                    PhotoReel(assets: Array(photos.prefix(8)))
-                        .transition(.opacity)
+                    PhotoReel(slides: slides)
                 }
             }
             .frame(height: heroHeight)
@@ -229,6 +234,19 @@ struct MustSeePlaceView: View {
     private var elsewhere: some View {
         VStack(alignment: .leading, spacing: 12) {
             sectionTitle(firstVisit == nil ? "先替你看一眼" : "再看一眼", subtitle: nil)
+            if !slides.isEmpty {
+                // With a photo on top, the flight around it is a view of its own.
+                Flyover(place: place)
+                    .frame(height: 210)
+                    .clipShape(.rect(cornerRadius: 22, style: .continuous))
+                    .overlay(alignment: .topLeading) {
+                        Label("从空中看", systemImage: "airplane")
+                            .font(.caption.weight(.semibold))
+                            .padding(.horizontal, 10).padding(.vertical, 6)
+                            .glassEffect(.regular, in: .capsule)
+                            .padding(10)
+                    }
+            }
             if lookAround != nil {
                 LookAroundPreview(initialScene: lookAround, allowsNavigation: true, badgePosition: .bottomTrailing)
                     .frame(height: 230)
@@ -297,6 +315,19 @@ struct MustSeePlaceView: View {
                 .font(.footnote)
                 .foregroundStyle(.white.opacity(0.5))
                 .contentTransition(.opacity)
+        }
+    }
+
+    /// Who took the cover photo, and on what terms it may be shown.
+    private func creditLine(_ credit: MustSeePhotos.Credit) -> some View {
+        Link(destination: credit.page) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Image(systemName: "camera")
+                Text("封面照片：\(credit.artist)，\(credit.license)，来自 Wikimedia Commons")
+                    .multilineTextAlignment(.leading)
+            }
+            .font(.caption2)
+            .foregroundStyle(.white.opacity(0.4))
         }
     }
 
@@ -400,22 +431,35 @@ private struct Flyover: View {
     }
 }
 
-/// Your photos one after another, each drifting slowly as it fades into the next.
+private enum ReelSlide: Identifiable {
+    case cover(String)
+    case asset(PHAsset)
+
+    var id: String {
+        switch self {
+        case .cover(let id): "cover-\(id)"
+        case .asset(let asset): asset.localIdentifier
+        }
+    }
+}
+
+/// Photos one after another, each drifting slowly as it fades into the next.
 private struct PhotoReel: View {
-    let assets: [PHAsset]
+    let slides: [ReelSlide]
     @State private var index = 0
 
     var body: some View {
         ZStack {
-            DriftingPhoto(asset: assets[index], toward: index.isMultiple(of: 2) ? .topLeading : .bottomTrailing)
-                .id(assets[index].localIdentifier)
+            let slide = slides[min(index, slides.count - 1)]
+            DriftingPhoto(slide: slide, toward: index.isMultiple(of: 2) ? .topLeading : .bottomTrailing)
+                .id(slide.id)
                 .transition(.opacity)
         }
-        .task(id: assets.count) {
-            guard assets.count > 1 else { return }
+        .task(id: slides.count) {
+            guard slides.count > 1 else { return }
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(6))
-                withAnimation(.easeInOut(duration: 1.8)) { index = (index + 1) % assets.count }
+                try? await Task.sleep(for: .seconds(7))
+                withAnimation(.easeInOut(duration: 1.8)) { index = (index + 1) % slides.count }
             }
         }
         .accessibilityHidden(true)
@@ -423,7 +467,7 @@ private struct PhotoReel: View {
 }
 
 private struct DriftingPhoto: View {
-    let asset: PHAsset
+    let slide: ReelSlide
     let toward: UnitPoint
     @State private var image: UIImage?
     @State private var drift = false
@@ -440,8 +484,11 @@ private struct DriftingPhoto: View {
             }
         }
         .task {
-            image = await AssetLoader.image(for: asset, size: CGSize(width: 1600, height: 1600), exact: false)
-            withAnimation(.linear(duration: 10)) { drift = true }
+            switch slide {
+            case .cover(let id): image = await MustSeePhotos.cover(id)
+            case .asset(let asset): image = await AssetLoader.image(for: asset, size: CGSize(width: 1600, height: 1600), exact: false)
+            }
+            withAnimation(.linear(duration: 12)) { drift = true }
         }
     }
 }

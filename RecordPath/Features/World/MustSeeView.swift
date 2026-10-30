@@ -324,7 +324,7 @@ struct MustSeeView: View {
             VStack(spacing: 0) {
                 ForEach(members) { place in
                     row(place)
-                    if place.id != members.last?.id { Divider().padding(.leading, 70) }
+                    if place.id != members.last?.id { Divider().padding(.leading, 82) }
                 }
             }
             .background(.background.secondary, in: .rect(cornerRadius: 22, style: .continuous))
@@ -336,16 +336,7 @@ struct MustSeeView: View {
         return HStack(spacing: 0) {
             NavigationLink(value: MustSeePlaceRoute(id: place.id)) {
                 HStack(spacing: 14) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(date != nil
-                                  ? AnyShapeStyle(LinearGradient(colors: [Color(red: 1, green: 0.78, blue: 0.35), .orange], startPoint: .topLeading, endPoint: .bottomTrailing))
-                                  : AnyShapeStyle(Color.secondary.opacity(0.12)))
-                        Image(systemName: place.kind.symbol)
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(date != nil ? Color.white : Color.secondary)
-                    }
-                    .frame(width: 42, height: 42)
+                    MustSeeThumb(place: place, lit: date != nil)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(verbatim: place.localizedName)
                             .font(.body.weight(date != nil ? .semibold : .regular))
@@ -564,5 +555,45 @@ private struct MiniLitGrid: View {
         }
         .frame(height: 30)
         .accessibilityHidden(true)
+    }
+}
+
+/// A place's photo, small, with a gold ring and tick once it's lit.
+struct MustSeeThumb: View {
+    let place: MustSeePlace
+    let lit: Bool
+    @State private var image: UIImage?
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(lit ? AnyShapeStyle(LinearGradient(colors: [Color(red: 1, green: 0.78, blue: 0.35), .orange], startPoint: .topLeading, endPoint: .bottomTrailing))
+                          : AnyShapeStyle(Color.secondary.opacity(0.12)))
+            Image(systemName: place.kind.symbol)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(lit ? Color.white : Color.secondary)
+            if let image {
+                Image(uiImage: image).resizable().scaledToFill().transition(.opacity)
+            }
+        }
+        .frame(width: 54, height: 54)
+        .clipShape(.rect(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(lit ? Color.orange : .clear, lineWidth: 2)
+        }
+        .overlay(alignment: .bottomTrailing) {
+            if lit {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 16))
+                    .foregroundStyle(.white, .orange)
+                    .background(Circle().fill(.white).padding(2))
+                    .offset(x: 5, y: 5)
+            }
+        }
+        .task(id: place.id) {
+            let found = await MustSeePhotos.thumb(place.id)
+            withAnimation(.easeOut(duration: 0.25)) { image = found }
+        }
     }
 }

@@ -27,6 +27,19 @@ struct TodayView: View {
                             shift(by: dx > 0 ? -1 : 1)
                         }
                 )
+                .overlay(alignment: .bottom) {
+                    // Wherever the days have led, one tap back to today.
+                    if !Calendar.current.isDateInToday(day) {
+                        Button("回到今天", systemImage: "arrow.uturn.forward") { backToToday() }
+                            .font(.subheadline.weight(.semibold))
+                            .buttonStyle(.glassProminent)
+                            .controlSize(.large)
+                            .padding(.bottom, 10)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                }
+                .animation(.spring(response: 0.45, dampingFraction: 0.82), value: Calendar.current.isDateInToday(day))
+                .navigationDestination(for: DayRoute.self) { DayPage(day: $0.day) }
                 .navigationTitle(Format.dayTitle(day))
                 .navigationSubtitle(Format.daySubtitle(day))
                 .toolbar {
@@ -60,6 +73,11 @@ struct TodayView: View {
     }
 
     private var day: Date { navigator.day }
+
+    private func backToToday() {
+        swipeEdge = .trailing
+        withAnimation(.smooth) { navigator.day = Calendar.current.startOfDay(for: Date()) }
+    }
 
     private func shift(by days: Int) {
         guard let next = Calendar.current.date(byAdding: .day, value: days, to: day), next <= Date() else { return }

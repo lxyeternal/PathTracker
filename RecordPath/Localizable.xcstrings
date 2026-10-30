@@ -8019,6 +8019,36 @@
           }
         }
       }
+    },
+    "回到今天": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to today"
+          }
+        }
+      }
+    },
+    "从空中看": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From the air"
+          }
+        }
+      }
+    },
+    "封面照片：%@，%@，来自 Wikimedia Commons": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cover photo: %1$@, %2$@, via Wikimedia Commons"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
