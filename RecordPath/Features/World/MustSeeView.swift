@@ -54,6 +54,7 @@ struct MustSeeView: View {
     @State private var justLit: [MustSeePlace] = []
     @AppStorage("mustSee.wishes") private var wishesRaw = ""
     @AppStorage("mustSee.seen") private var seenRaw = ""
+    @Namespace private var zoom
 
     enum Filter: Hashable { case all, lit, wished, unlit }
 
@@ -89,13 +90,13 @@ struct MustSeeView: View {
     }
 
     var body: some View {
-        ScrollViewReader { proxy in
+        ScrollViewReader { _ in
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     listPicker
                     hero.id("top")
                     if !justLit.isEmpty { litBanner }
-                    if let next = nearestUnlit { nextCard(next) { focus(next, proxy: proxy) } }
+                    if let next = nearestUnlit { nextCard(next) }
                     FilterChips(options: [
                         .init(value: Filter.all, title: String(localized: "全部", bundle: .appLanguage), count: places.count),
                         .init(value: Filter.lit, title: String(localized: "已点亮", bundle: .appLanguage), count: litCount),
@@ -109,7 +110,7 @@ struct MustSeeView: View {
                     } else {
                         LazyVStack(alignment: .leading, spacing: 18) {
                             ForEach(regions, id: \.name) { region in
-                                regionSection(region.name, region.places, proxy: proxy)
+                                regionSection(region.name, region.places)
                             }
                         }
                     }
@@ -133,6 +134,12 @@ struct MustSeeView: View {
             withAnimation(.smooth(duration: 0.8)) { position = Self.overview(list) }
         }
         .sensoryFeedback(.selection, trigger: list)
+        .navigationDestination(for: MustSeePlaceRoute.self) { route in
+            if let place = (MustSee.china + MustSee.world).first(where: { $0.id == route.id }) {
+                MustSeePlaceView(place: place)
+                    .navigationTransition(.zoom(sourceID: route.id, in: zoom))
+            }
+        }
     }
 
     // MARK: Pieces
@@ -227,6 +234,7 @@ struct MustSeeView: View {
     }
 
     private func selectedChip(_ place: MustSeePlace) -> some View {
+        NavigationLink(value: MustSeePlaceRoute(id: place.id)) {
         HStack(spacing: 8) {
             Image(systemName: place.kind.symbol).foregroundStyle(visited(place) != nil ? .yellow : .white.opacity(0.7))
             VStack(alignment: .leading, spacing: 1) {
@@ -237,10 +245,14 @@ struct MustSeeView: View {
                     Text("还没去过").font(.caption2).opacity(0.7)
                 }
             }
+            Image(systemName: "chevron.forward").font(.caption.weight(.bold)).opacity(0.6)
         }
         .foregroundStyle(.white)
         .padding(.horizontal, 12).padding(.vertical, 8)
-        .glassEffect(.regular.tint(.black.opacity(0.3)), in: .capsule)
+        .glassEffect(.regular.tint(.black.opacity(0.3)).interactive(), in: .capsule)
+        }
+        .buttonStyle(.plain)
+        .matchedTransitionSource(id: place.id, in: zoom)
         .transition(.scale(scale: 0.9).combined(with: .opacity))
     }
 
@@ -271,9 +283,9 @@ struct MustSeeView: View {
                 < here.distance(from: CLLocation(latitude: $1.latitude, longitude: $1.longitude)) }
     }
 
-    private func nextCard(_ place: MustSeePlace, action: @escaping () -> Void) -> some View {
+    private func nextCard(_ place: MustSeePlace) -> some View {
         let km = summaries.stays.first.map { $0.location.distance(from: CLLocation(latitude: place.latitude, longitude: place.longitude)) / 1000 } ?? 0
-        return Button(action: action) {
+        return NavigationLink(value: MustSeePlaceRoute(id: place.id)) {
             HStack(spacing: 14) {
                 ZStack {
                     Circle().fill(Color.indigo.opacity(0.15))
@@ -286,7 +298,7 @@ struct MustSeeView: View {
                     Text("\(place.localizedRegion) · 约 \(Int(km.rounded()).formatted()) 公里").font(.subheadline).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
-                Image(systemName: "scope").foregroundStyle(.tertiary)
+                Image(systemName: "chevron.forward").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
             }
             .padding(14)
             .background(.background.secondary, in: .rect(cornerRadius: 22, style: .continuous))
@@ -294,7 +306,7 @@ struct MustSeeView: View {
         .buttonStyle(PressableStyle())
     }
 
-    private func regionSection(_ name: String, _ members: [MustSeePlace], proxy: ScrollViewProxy) -> some View {
+    private func regionSection(_ name: String, _ members: [MustSeePlace]) -> some View {
         let all = places.filter { $0.localizedRegion == name }
         let lit = all.filter { visited($0) != nil }.count
         return VStack(alignment: .leading, spacing: 8) {
@@ -311,7 +323,7 @@ struct MustSeeView: View {
             .padding(.horizontal, 4)
             VStack(spacing: 0) {
                 ForEach(members) { place in
-                    row(place, proxy: proxy)
+                    row(place)
                     if place.id != members.last?.id { Divider().padding(.leading, 70) }
                 }
             }
@@ -319,35 +331,47 @@ struct MustSeeView: View {
         }
     }
 
-    @ViewBuilder
-    private func row(_ place: MustSeePlace, proxy: ScrollViewProxy) -> some View {
+    private func row(_ place: MustSeePlace) -> some View {
         let date = visited(place)
-        let content = HStack(spacing: 14) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(date != nil
-                          ? AnyShapeStyle(LinearGradient(colors: [Color(red: 1, green: 0.78, blue: 0.35), .orange], startPoint: .topLeading, endPoint: .bottomTrailing))
-                          : AnyShapeStyle(Color.secondary.opacity(0.12)))
-                Image(systemName: place.kind.symbol)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(date != nil ? Color.white : Color.secondary)
-            }
-            .frame(width: 42, height: 42)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(verbatim: place.localizedName)
-                    .font(.body.weight(date != nil ? .semibold : .regular))
-                    .foregroundStyle(.primary)
-                if let date {
-                    Text("\(date.formatted(.dateTime.year().month().day().locale(appLocale))) · \(Self.ago(date))")
-                        .font(.caption).foregroundStyle(.orange)
-                } else if wishes.contains(place.id) {
-                    Text("想去").font(.caption).foregroundStyle(.pink)
+        return HStack(spacing: 0) {
+            NavigationLink(value: MustSeePlaceRoute(id: place.id)) {
+                HStack(spacing: 14) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(date != nil
+                                  ? AnyShapeStyle(LinearGradient(colors: [Color(red: 1, green: 0.78, blue: 0.35), .orange], startPoint: .topLeading, endPoint: .bottomTrailing))
+                                  : AnyShapeStyle(Color.secondary.opacity(0.12)))
+                        Image(systemName: place.kind.symbol)
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(date != nil ? Color.white : Color.secondary)
+                    }
+                    .frame(width: 42, height: 42)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(verbatim: place.localizedName)
+                            .font(.body.weight(date != nil ? .semibold : .regular))
+                            .foregroundStyle(.primary)
+                        if let date {
+                            Text("\(date.formatted(.dateTime.year().month().day().locale(appLocale))) · \(Self.ago(date))")
+                                .font(.caption).foregroundStyle(.orange)
+                        } else if wishes.contains(place.id) {
+                            Text("想去").font(.caption).foregroundStyle(.pink)
+                        } else if let season = MustSee.story(place.id)?.localizedSeason {
+                            Text(verbatim: season).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        }
+                    }
+                    Spacer(minLength: 0)
+                    if date != nil {
+                        Image(systemName: "chevron.forward").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+                            .padding(.trailing, 8)
+                    }
                 }
+                .padding(.leading, 14).padding(.vertical, 10)
+                .contentShape(.rect)
             }
-            Spacer(minLength: 0)
-            if date != nil {
-                Image(systemName: "chevron.forward").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
-            } else {
+            .buttonStyle(.plain)
+            .matchedTransitionSource(id: place.id, in: zoom)
+
+            if date == nil {
                 Button {
                     toggleWish(place)
                 } label: {
@@ -359,18 +383,9 @@ struct MustSeeView: View {
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
+                .padding(.trailing, 6)
                 .accessibilityLabel(wishes.contains(place.id) ? Text("取消想去") : Text("想去"))
             }
-        }
-        .padding(.leading, 14).padding(.trailing, 6).padding(.vertical, 10)
-        .contentShape(.rect)
-
-        if let date {
-            // Back to the day it first happened.
-            NavigationLink(value: DayRoute(day: Calendar.current.startOfDay(for: date))) { content }
-                .buttonStyle(.plain)
-        } else {
-            content.onTapGesture { focus(place, proxy: proxy) }
         }
     }
 
@@ -385,15 +400,6 @@ struct MustSeeView: View {
     }
 
     // MARK: Actions
-
-    private func focus(_ place: MustSeePlace, proxy: ScrollViewProxy) {
-        withAnimation(.smooth) { proxy.scrollTo("top", anchor: .top) }
-        withAnimation(.smooth(duration: 0.9)) {
-            selected = place
-            position = .camera(MapCamera(centerCoordinate: ChinaCoordinates.mapCoordinate(for: place.coordinate),
-                                         distance: max(place.radius * 6_000, 60_000)))
-        }
-    }
 
     private func toggleWish(_ place: MustSeePlace) {
         var set = wishes
