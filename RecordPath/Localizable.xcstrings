@@ -7849,6 +7849,176 @@
           }
         }
       }
+    },
+    "在你的想去清单里": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On your wish list"
+          }
+        }
+      }
+    },
+    "还在远方等你": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Still out there, waiting for you"
+          }
+        }
+      }
+    },
+    "最好的时节": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Best time"
+          }
+        }
+      }
+    },
+    "第一次来": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First visit"
+          }
+        }
+      }
+    },
+    "离你": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From you"
+          }
+        }
+      }
+    },
+    "约 %@ 公里": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About %@ km"
+          }
+        }
+      }
+    },
+    "你在这里留下的": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you left here"
+          }
+        }
+      }
+    },
+    "回到第一次来的那一天": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to your first day here"
+          }
+        }
+      }
+    },
+    "先替你看一眼": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A first look"
+          }
+        }
+      }
+    },
+    "再看一眼": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another look"
+          }
+        }
+      }
+    },
+    "街景漫步，可拖动": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Look Around, drag to explore"
+          }
+        }
+      }
+    },
+    "在 Apple 地图中看看": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See it in Apple Maps"
+          }
+        }
+      }
+    },
+    "介绍、开放时间与路线": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About, hours and directions"
+          }
+        }
+      }
+    },
+    "已收进想去清单": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added to your wish list"
+          }
+        }
+      }
+    },
+    "想去这里": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I want to go"
+          }
+        }
+      }
+    },
+    "它会在夜空地图上亮成一颗粉色的星，等你出发。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It now glows as a pink star on the night map, waiting for you to go."
+          }
+        }
+      }
+    },
+    "收进清单，等一个出发的理由。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save it, and wait for a reason to go."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
