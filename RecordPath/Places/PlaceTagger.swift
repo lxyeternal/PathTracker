@@ -21,6 +21,23 @@ final class PlaceTagger {
     init(context: ModelContext) {
         self.context = context
         retagMisnamedCities()
+        retryFailedIfDue()
+    }
+
+    /// A place that couldn't be named (no network abroad, Apple's limit reached during a big
+    /// photo import) used to stay unnamed until the user found the button in Settings, so a
+    /// trip to Thailand could leave no country and no stamp. They're tried again twice a day.
+    private func retryFailedIfDue() {
+        let key = "tagger.lastFailedRetry"
+        let last = UserDefaults.standard.double(forKey: key)
+        guard Date().timeIntervalSince1970 - last > 12 * 3600 else { return }
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: key)
+        let failed = TagState.failed.rawValue
+        let stays = (try? context.fetch(FetchDescriptor<Stay>(predicate: #Predicate { $0.tagStateRaw == failed }))) ?? []
+        guard !stays.isEmpty else { return }
+        for stay in stays { stay.tagState = .pending }
+        try? context.save()
+        Diagnostics.record("tagger retry failed=\(stays.count)")
     }
 
     /// Earlier versions stored a whole Chinese address ("中国上海市上海") or a Hong Kong district
@@ -57,9 +74,9 @@ final class PlaceTagger {
         guard let stays = try? context.fetch(descriptor), !stays.isEmpty else { return }
 
         for stay in stays {
-            let outcome = await tag(stay)
+            let outcome = await tagPatiently(stay)
             try? context.save()
-            if outcome == .offline { return }
+            if outcome != .done { return }
             onTagged?(stay)
             // Up to three map requests per place; stay well under Apple's rate limit.
             try? await Task.sleep(for: .milliseconds(2000))
@@ -111,8 +128,8 @@ final class PlaceTagger {
                 stay.copyPlace(from: neighbour)
                 continue
             }
-            let outcome = await tag(stay, lookForNeighbour: false)
-            if outcome == .offline { break }
+            let outcome = await tagPatiently(stay, lookForNeighbour: false)
+            if outcome != .done { break }
             if stay.countryCode != nil { grid.add(stay) }
             geocoded += 1
             // Every save redraws whatever shows places; a dozen at a time is plenty.
@@ -126,7 +143,27 @@ final class PlaceTagger {
         Diagnostics.record("photoTag named=\(waiting.count - unnamed.count) geocoded=\(unnamed.count)")
     }
 
-    private enum Outcome { case done, offline }
+    private enum Outcome { case done, offline, throttled }
+
+    /// Apple allows about fifty lookups a minute. Past that it refuses for a while, which
+    /// isn't a reason to give up on a place: wait a minute and ask again.
+    private func tagPatiently(_ stay: Stay, lookForNeighbour: Bool = true) async -> Outcome {
+        var outcome = await tag(stay, lookForNeighbour: lookForNeighbour)
+        var attempts = 0
+        while outcome == .throttled, attempts < 5 {
+            attempts += 1
+            try? await Task.sleep(for: .seconds(60))
+            outcome = await tag(stay, lookForNeighbour: lookForNeighbour)
+        }
+        return outcome
+    }
+
+    private static func isThrottled(_ error: NSError) -> Bool {
+        if error.domain == MKErrorDomain, error.code == Int(MKError.loadingThrottled.rawValue) { return true }
+        if error.domain == "GEOErrorDomain", error.code == -3 { return true }
+        if let underlying = error.userInfo[NSUnderlyingErrorKey] as? NSError { return isThrottled(underlying) }
+        return false
+    }
 
     /// Places that came only from photos carry just their city's name, so several frequent
     /// spots in one city would all read "新加坡". The few shown as frequent places get a real
@@ -142,7 +179,7 @@ final class PlaceTagger {
                                                            excluding: PlaceCategory.utilityCategories) {
                     stay.placeName = item.name
                     if stay.categoryRaw == nil { stay.categoryRaw = item.pointOfInterestCategory?.rawValue }
-                } else if await tag(stay, lookForNeighbour: false) == .offline {
+                } else if await tagPatiently(stay, lookForNeighbour: false) != .done {
                     return
                 }
                 try? context.save()
@@ -179,6 +216,9 @@ final class PlaceTagger {
                 stay.region = address.cityWithContext
                 stay.street = item.address?.shortAddress ?? item.name
             }
+        } catch let error as NSError where Self.isThrottled(error) {
+            Diagnostics.record("geocode throttled")
+            return .throttled
         } catch let error as NSError where error.domain == NSURLErrorDomain
                     || (error.domain == MKErrorDomain && error.code == Int(MKError.serverFailure.rawValue)) {
             Diagnostics.record("geocode offline")
