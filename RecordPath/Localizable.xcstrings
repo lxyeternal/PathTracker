@@ -7589,6 +7589,266 @@
           }
         }
       }
+    },
+    "第一盏灯，等你去点亮": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The first light is waiting for you"
+          }
+        }
+      }
+    },
+    "已经出发了，前面还有很多风景": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've set out, and there's so much ahead"
+          }
+        }
+      }
+    },
+    "走过的地方，都成了你的一部分": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every place you've been is part of you now"
+          }
+        }
+      }
+    },
+    "你看过的世界，比大多数人都辽阔": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've seen more of the world than most"
+          }
+        }
+      }
+    },
+    "剩下的，是留给未来的惊喜": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What's left is saved for the future"
+          }
+        }
+      }
+    },
+    "一百处，你都去过了": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All one hundred. You've been to every one"
+          }
+        }
+      }
+    },
+    "已点亮": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lit"
+          }
+        }
+      }
+    },
+    "想去": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Want to go"
+          }
+        }
+      }
+    },
+    "还没去": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not yet"
+          }
+        }
+      }
+    },
+    "清单由漫迹整理，参考世界遗产名录与国家 5A 级景区。在附近停留过，或在那里拍过照片，就会点亮。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lists curated by Waytrace from the World Heritage List and China's 5A scenic areas. A place lights up when you've stayed nearby or taken photos there."
+          }
+        }
+      }
+    },
+    "此生必去": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Places for a Lifetime"
+          }
+        }
+      }
+    },
+    "中国 100": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "China 100"
+          }
+        }
+      }
+    },
+    "世界 100": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "World 100"
+          }
+        }
+      }
+    },
+    "%lld 处已点亮": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld lit"
+          }
+        }
+      }
+    },
+    "%@ 第一次到这里": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First here %@"
+          }
+        }
+      }
+    },
+    "新点亮了 %lld 处": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld newly lit"
+          }
+        }
+      }
+    },
+    "离你最近的下一站": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your nearest next stop"
+          }
+        }
+      }
+    },
+    "%@ · 约 %@ 公里": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · about %2$@ km"
+          }
+        }
+      }
+    },
+    "取消想去": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from Want to Go"
+          }
+        }
+      }
+    },
+    "点一下 ♡，把想去的地方收进来": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap ♡ to keep the places you want to go"
+          }
+        }
+      }
+    },
+    "还没有点亮的地方，出发吧": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing lit yet. Time to go"
+          }
+        }
+      }
+    },
+    "%lld 天前": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld days ago"
+          }
+        }
+      }
+    },
+    "%lld 个月前": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld months ago"
+          }
+        }
+      }
+    },
+    "%lld 年前": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld years ago"
+          }
+        }
+      }
+    },
+    "中国与世界，各一百处值得一去的地方": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A hundred places in China and a hundred in the world"
+          }
+        }
+      }
+    },
+    "世界": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "World"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

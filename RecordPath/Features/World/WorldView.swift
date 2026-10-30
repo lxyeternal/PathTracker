@@ -32,6 +32,8 @@ struct WorldView: View {
                     } else {
                         summaryGrid
                         passportCard
+                        NavigationLink(value: MustSeeRoute()) { MustSeeCard() }
+                            .buttonStyle(PressableStyle())
                         mapCard
                         GalleryPreview()
                         if !insights.countries.isEmpty { countries }
@@ -66,6 +68,7 @@ struct WorldView: View {
                 StampBookView()
             }
             .navigationDestination(for: GalleryRoute.self) { _ in GalleryView() }
+            .navigationDestination(for: MustSeeRoute.self) { MustSeeView(list: $0.list) }
             .navigationDestination(for: Province.self) { ProvinceDetailView(province: $0) }
             .navigationDestination(for: CityStint.self) { CityStintView(stint: $0) }
             .navigationDestination(for: DayRoute.self) { DayPage(day: $0.day) }
