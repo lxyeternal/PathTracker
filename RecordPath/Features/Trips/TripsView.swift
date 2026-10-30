@@ -10,6 +10,8 @@ struct TripsView: View {
     @AppStorage("trips.list") private var list = ListKind.trips
     /// The year shown, or 0 for every year.
     @State private var year = 0
+    @State private var importingPhotos = false
+    @AppStorage("photoImport.lastRun") private var photoImportRun: Double = 0
 
     enum ListKind: String { case trips, recordings }
 
@@ -40,6 +42,13 @@ struct TripsView: View {
                     .pickerStyle(.segmented)
                     .padding(.top, 4)
 
+                    // Until the library has been scanned, past trips can only come from it.
+                    if list == .trips && photoImportRun == 0 {
+                        PhotoImportCard(title: "从相册找回以前的旅程",
+                                        subtitle: "用照片的拍摄地点补上去过的地方，漫迹会从中找出过去的旅程") {
+                            importingPhotos = true
+                        }
+                    }
                     if list == .trips { FoundTripsSection(trips: all.filter { !$0.isRecording }) }
 
                     let items = list == .trips ? trips : recordings
@@ -86,6 +95,7 @@ struct TripsView: View {
             .navigationDestination(for: Trip.self) { TripDetailView(trip: $0) }
             .sheet(isPresented: $showingNewTrip) { NewTripSheet() }
             .sheet(isPresented: $showingNewRecording) { NewRecordingSheet() }
+            .sheet(isPresented: $importingPhotos) { PhotoImportSheet() }
         }
     }
 
