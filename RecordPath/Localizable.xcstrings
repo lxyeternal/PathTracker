@@ -25,7 +25,14 @@
       }
     },
     "%@ · %@": {
-      "shouldTranslate": false
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · %2$@"
+          }
+        }
+      }
     },
     "%@ · %lld 天": {
       "localizations": {
@@ -1074,16 +1081,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "The line in the middle is the path you walked on your first day there"
-          }
-        }
-      }
-    },
-    "为了显示地点名称、城市和国家，App 会把停留地点的坐标发送给 Apple 地图服务进行反向地理编码和兴趣点查询。这一过程由 Apple 处理，受 Apple 隐私政策约束，不包含你的身份信息。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To show place names, cities and countries, the app sends the coordinates of places you stay to Apple Maps for reverse geocoding and point-of-interest lookups. Apple handles this under its privacy policy, and no information about who you are is included."
           }
         }
       }
@@ -8296,6 +8293,976 @@
           "stringUnit": {
             "state": "translated",
             "value": "Plus flights"
+          }
+        }
+      }
+    },
+    "%lld 个": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
+          }
+        }
+      }
+    },
+    "这些第一次，是你自己一步一步走出来的。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every one of these firsts, you got to on your own two feet."
+          }
+        }
+      }
+    },
+    "你到过的天涯海角": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The ends of your map"
+          }
+        }
+      }
+    },
+    "离家最远": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Farthest from home"
+          }
+        }
+      }
+    },
+    "最北": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Northernmost"
+          }
+        }
+      }
+    },
+    "最南": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Southernmost"
+          }
+        }
+      }
+    },
+    "最东": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Easternmost"
+          }
+        }
+      }
+    },
+    "最西": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Westernmost"
+          }
+        }
+      }
+    },
+    "故事从这里开始": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where the story begins"
+          }
+        }
+      }
+    },
+    "第一次到%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First time in %@"
+          }
+        }
+      }
+    },
+    "第一次出国，去了%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First time abroad: %@"
+          }
+        }
+      }
+    },
+    "记下的第一段飞行": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The first flight on record"
+          }
+        }
+      }
+    },
+    "飞了 %@ 公里": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ km in the air"
+          }
+        }
+      }
+    },
+    "第一次一天走了 %lld 公里": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First %lld km on foot in a day"
+          }
+        }
+      }
+    },
+    "第一次凌晨 %lld 点还在路上": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First time out on the road at %lld a.m."
+          }
+        }
+      }
+    },
+    "第一次在外过夜": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First night away"
+          }
+        }
+      }
+    },
+    "夜行的散步者": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Night walker"
+          }
+        }
+      }
+    },
+    "早起的人": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Early riser"
+          }
+        }
+      }
+    },
+    "城市收藏家": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "City collector"
+          }
+        }
+      }
+    },
+    "世界旅人": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Globetrotter"
+          }
+        }
+      }
+    },
+    "好奇的探索者": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Curious explorer"
+          }
+        }
+      }
+    },
+    "恋家的人": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Homebody"
+          }
+        }
+      }
+    },
+    "风一样的骑行者": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rider on the wind"
+          }
+        }
+      }
+    },
+    "用双脚丈量的人": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Walker of the world"
+          }
+        }
+      }
+    },
+    "城市的通勤者": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "City commuter"
+          }
+        }
+      }
+    },
+    "慢慢走的人": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unhurried walker"
+          }
+        }
+      }
+    },
+    "这一年 %@ 的路，是晚上九点以后走的。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ of this year's travel came after 9 p.m."
+          }
+        }
+      }
+    },
+    "这一年 %@ 的路，是早上八点以前走的。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ of this year's travel came before 8 a.m."
+          }
+        }
+      }
+    },
+    "这一年去了 %lld 座城市，每一座都留下了你的名字。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld cities this year, and you left your mark on each."
+          }
+        }
+      }
+    },
+    "这一年走过 %lld 个国家和地区，世界在你脚下变小了。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld countries and regions this year; the world got smaller under your feet."
+          }
+        }
+      }
+    },
+    "最近三个月去的地方，%@ 是第一次去。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ of the places you went in the past three months were new to you."
+          }
+        }
+      }
+    },
+    "最近三个月，%@ 的时间在家。家是最好的地方。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ of the past three months at home. There's no place like it."
+          }
+        }
+      }
+    },
+    "这一年 %@ 的路是骑车走的，风一直在你身边。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ of this year's travel was by bike, the wind beside you."
+          }
+        }
+      }
+    },
+    "这一年 %@ 的路是一步一步走出来的。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ of this year's travel was step by step."
+          }
+        }
+      }
+    },
+    "这一年 %@ 的路在车上和地铁里，城市在窗外流过。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ of this year's travel was in cars and trains, the city passing by the window."
+          }
+        }
+      }
+    },
+    "不急不忙，每一段路都慢慢走。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hurry; every stretch taken slowly."
+          }
+        }
+      }
+    },
+    "去年的这个时候，你也在%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This time last year, you were in %@ too"
+          }
+        }
+      }
+    },
+    "这是你连续第 %lld 年在这个时节来%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld years in a row in %2$@ around this time"
+          }
+        }
+      }
+    },
+    "有些地方，会在每年差不多的时候把你叫回来。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some places call you back around the same time each year."
+          }
+        }
+      }
+    },
+    "你已经 %lld 个月没去%@了": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld months since you last went to %2$@"
+          }
+        }
+      }
+    },
+    "以前你常去，一共去过 %lld 次。最后一次是 %@。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You used to go often, %1$lld times in all. The last was %2$@."
+          }
+        }
+      }
+    },
+    "看看那天": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See that day"
+          }
+        }
+      }
+    },
+    "这一年，你是": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This year, you're"
+          }
+        }
+      }
+    },
+    "也是": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Also"
+          }
+        }
+      }
+    },
+    "你的这一年": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your year"
+          }
+        }
+      }
+    },
+    "夜里九点以后走的路": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After 9 p.m."
+          }
+        }
+      }
+    },
+    "早上八点以前走的路": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Before 8 a.m."
+          }
+        }
+      }
+    },
+    "步行和跑步": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Walking and running"
+          }
+        }
+      }
+    },
+    "乘车和地铁": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cars and trains"
+          }
+        }
+      }
+    },
+    "最近三个月的新地方": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New places, past three months"
+          }
+        }
+      }
+    },
+    "最近三个月在家的时间": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time at home, past three months"
+          }
+        }
+      }
+    },
+    "%lld 个国家和地区": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld countries and regions"
+          }
+        }
+      }
+    },
+    "画像根据过去一年的轨迹和地点算出，只在你的手机上计算。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Worked out on your phone from the past year's tracks and places."
+          }
+        }
+      }
+    },
+    "旅人画像": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traveller portrait"
+          }
+        }
+      }
+    },
+    "你已经走到了哪里": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How far you've come"
+          }
+        }
+      }
+    },
+    "你走完了%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You finished %@"
+          }
+        }
+      }
+    },
+    "一共 %@。换一条路，继续走吧。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ in all. Pick another road and keep going."
+          }
+        }
+      }
+    },
+    "沿着%@，你走到了%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Along %1$@, you've reached %2$@"
+          }
+        }
+      }
+    },
+    "离下一站%@还有 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%2$@ to the next stop, %1$@"
+          }
+        }
+      }
+    },
+    "你在地面上走过的 %@，铺在%@上。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The %1$@ you've travelled on the ground, laid along %2$@."
+          }
+        }
+      }
+    },
+    "路线": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Route"
+          }
+        }
+      }
+    },
+    "换一条路": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change route"
+          }
+        }
+      }
+    },
+    "常在的城市": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home city"
+          }
+        }
+      }
+    },
+    "所有足迹": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everywhere"
+          }
+        }
+      }
+    },
+    "我的城市": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My city"
+          }
+        }
+      }
+    },
+    "我的足迹": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My footprints"
+          }
+        }
+      }
+    },
+    "光绘": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Light painting"
+          }
+        }
+      }
+    },
+    "把走过的路画成一张光的海报，常走的路最亮。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your paths drawn as light; the ones you take most shine brightest."
+          }
+        }
+      }
+    },
+    "这段时间还没有轨迹。开着自动记录走一走，光就会出现。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No tracks for this time yet. Go out with recording on and the light will appear."
+          }
+        }
+      }
+    },
+    "按出行方式上色": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colour by how you travelled"
+          }
+        }
+      }
+    },
+    "分享这张海报": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share this poster"
+          }
+        }
+      }
+    },
+    "你的故事": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your story"
+          }
+        }
+      }
+    },
+    "新月": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New moon"
+          }
+        }
+      }
+    },
+    "峨眉月": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waxing crescent"
+          }
+        }
+      }
+    },
+    "上弦月": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First quarter"
+          }
+        }
+      }
+    },
+    "盈凸月": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waxing gibbous"
+          }
+        }
+      }
+    },
+    "满月": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full moon"
+          }
+        }
+      }
+    },
+    "亏凸月": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waning gibbous"
+          }
+        }
+      }
+    },
+    "下弦月": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last quarter"
+          }
+        }
+      }
+    },
+    "残月": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waning crescent"
+          }
+        }
+      }
+    },
+    "日落 %@ 时，你正在这里": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You were here at sunset, %@"
+          }
+        }
+      }
+    },
+    "日出 %@ 时，你已经在这里": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You were already here at sunrise, %@"
+          }
+        }
+      }
+    },
+    "%@ – %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ – %2$@"
+          }
+        }
+      }
+    },
+    "日出 – 日落": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunrise – sunset"
+          }
+        }
+      }
+    },
+    "那晚的月亮": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That night's moon"
+          }
+        }
+      }
+    },
+    "那天的天空": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That day's sky"
+          }
+        }
+      }
+    },
+    "天气": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weather"
+          }
+        }
+      }
+    },
+    "数据来源": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data sources"
+          }
+        }
+      }
+    },
+    "%@ · %@ – %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · %2$@ – %3$@"
+          }
+        }
+      }
+    },
+    "京杭大运河": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Grand Canal"
+          }
+        }
+      }
+    },
+    "看看它的此生必去页面": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See its page in Places for a Lifetime"
+          }
+        }
+      }
+    },
+    "北纬 %@°": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@° N"
+          }
+        }
+      }
+    },
+    "南纬 %@°": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@° S"
+          }
+        }
+      }
+    },
+    "东经 %@°": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@° E"
+          }
+        }
+      }
+    },
+    "西经 %@°": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@° W"
+          }
+        }
+      }
+    },
+    "起点": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start"
+          }
+        }
+      }
+    },
+    "为了显示地点名称、城市和国家，App 会把停留地点的坐标发送给 Apple 地图服务进行反向地理编码和兴趣点查询。这一过程由 Apple 处理，受 Apple 隐私政策约束，不包含你的身份信息。查看一个地点“那天的天空”时，App 会把那里的大致坐标（约 1 公里精度）和日期发送给 Apple 天气服务，取回当天的天气，并只保存在你的设备上。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To show place names, cities and countries, the app sends the coordinates of places you stay to Apple Maps for reverse geocoding and point-of-interest lookups. Apple handles this under its privacy policy, and no information about who you are is included. When you look at a place's \"That day's sky\", the app sends its rough coordinates (to about 1 km) and the date to Apple Weather to fetch that day's weather, which is kept only on your device."
           }
         }
       }

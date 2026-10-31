@@ -169,6 +169,7 @@ struct DayContentView: View {
                 if isToday {
                     TrackingStatusCard()
                     TripSuggestionCard(todayStays: stays, home: home)
+                    EchoCard()
                     if !memories.isEmpty {
                         OnThisDayCard(memories: memories)
                             .transition(.move(edge: .top).combined(with: .opacity))

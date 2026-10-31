@@ -90,6 +90,7 @@ struct StatsView: View {
                     distanceCard
                     if !groundModeTotals.isEmpty { modesCard }
                     lifetimeCard
+                    storiesSection
                     milestonesCard
                 }
                 .padding(.horizontal)
@@ -108,6 +109,10 @@ struct StatsView: View {
             }
             .fullScreenCover(isPresented: $showingYearReport) { YearReportView() }
             .navigationDestination(for: MilestonesRoute.self) { _ in MilestonesView(progress: milestones) }
+            .navigationDestination(for: FirstsRoute.self) { _ in FirstsView(firsts: summaries.firsts, extremes: summaries.extremes) }
+            .navigationDestination(for: JourneyRoute.self) { _ in JourneyView(distance: groundLifetime, home: summaries.home) }
+            .navigationDestination(for: LightPaintingRoute.self) { _ in LightPaintingView(home: summaries.home) }
+            .navigationDestination(for: DayRoute.self) { DayPage(day: $0.day) }
             .refreshable { await load() }
         }
     }
@@ -404,6 +409,24 @@ struct StatsView: View {
             .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
         }
         .buttonStyle(PressableStyle())
+    }
+
+    /// Every metre travelled on the ground, ever, as the distance milestones count it.
+    private var groundLifetime: Double {
+        (milestones.all.first { $0.milestone.kind == .distance }?.current ?? 0) * 1000
+    }
+
+    /// The portrait, the virtual road, the firsts and the light painting.
+    @ViewBuilder private var storiesSection: some View {
+        if !summaries.stays.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionHeader(title: "你的故事")
+                if summaries.portrait.distance > 0 { PortraitCard(portrait: summaries.portrait) }
+                JourneyCard(distance: groundLifetime, home: summaries.home)
+                if !summaries.firsts.isEmpty { FirstsCard(firsts: summaries.firsts) }
+                LightPaintingCard()
+            }
+        }
     }
 
     private var lifetimeCard: some View {

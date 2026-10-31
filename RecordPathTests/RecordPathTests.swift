@@ -1313,3 +1313,29 @@ struct TravelModeTests {
         #expect(Timeline.legs(of: [walk1, blip]).count == 1)
     }
 }
+
+struct SkyTests {
+    @Test func midsummerInBeijing() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(identifier: "Asia/Shanghai"))
+        let day = try #require(calendar.date(from: DateComponents(year: 2026, month: 6, day: 21, hour: 12)))
+        let sun = Sky.sun(on: day, at: CLLocationCoordinate2D(latitude: 39.90, longitude: 116.40))
+        let rise = try #require(sun.rise), set = try #require(sun.set)
+        // Beijing's longest day: about 04:46 to 19:46.
+        #expect(abs(rise.timeIntervalSince(try #require(calendar.date(bySettingHour: 4, minute: 46, second: 0, of: day)))) < 5 * 60)
+        #expect(abs(set.timeIntervalSince(try #require(calendar.date(bySettingHour: 19, minute: 46, second: 0, of: day)))) < 5 * 60)
+    }
+
+    @Test func theFirstFullMoonOf2026() {
+        // Full moon on 3 January 2026, 10:03 UTC.
+        let moment = Date(timeIntervalSince1970: 1_767_434_580)
+        let moon = Sky.moon(at: moment)
+        #expect(moon.phase == .full)
+        #expect(moon.illumination > 0.97)
+    }
+
+    @Test func noSunsetAboveTheArcticCircleInJune() {
+        let day = Date(timeIntervalSince1970: 1_782_043_200) // 21 June 2026
+        #expect(Sky.sun(on: day, at: CLLocationCoordinate2D(latitude: 78.2, longitude: 15.6)).set == nil)
+    }
+}

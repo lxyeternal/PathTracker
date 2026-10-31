@@ -56,6 +56,22 @@ enum MustSee {
         let countryCode: String?
     }
 
+    /// The place worth a lifetime a stay was at: the nearest whose area holds it. Country-sized
+    /// places don't tag single visits, and city-sized ones only tag sights, not every hotel and
+    /// café in town.
+    static func place(for stay: Stay) -> MustSeePlace? {
+        let location = stay.location
+        return (china + world)
+            .filter { place in
+                guard place.countryCode == nil, place.radius <= 3 || stay.isLandmark else { return false }
+                let span = place.radius / 111 + 0.01
+                return abs(place.latitude - stay.latitude) <= span && abs(place.longitude - stay.longitude) <= span * 3
+            }
+            .map { ($0, location.distance(from: CLLocation(latitude: $0.latitude, longitude: $0.longitude))) }
+            .filter { $0.1 <= $0.0.radius * 1000 }
+            .min { $0.1 < $1.1 }?.0
+    }
+
     /// When each place was first visited.
     static func firstVisits(_ places: [MustSeePlace], visits: [Visit]) -> [String: Date] {
         let byLatitude = visits.sorted { $0.latitude < $1.latitude }

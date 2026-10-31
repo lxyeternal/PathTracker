@@ -5,8 +5,11 @@ import Photos
 /// A place's picture: a photo you posted there, else one you took there, else a small map.
 struct PlacePicture: View {
     let stay: Stay
+    /// A place worth a lifetime with no photo of yours shows its own photograph, not a map.
+    var coverID: String? = nil
     @State private var asset: PHAsset?
     @State private var snapshot: UIImage?
+    @State private var cover: UIImage?
     @Environment(\.colorScheme) private var colorScheme
 
     private static let cache = NSCache<NSString, UIImage>()
@@ -24,6 +27,8 @@ struct PlacePicture: View {
                     AssetThumbnail(asset: asset, side: max(proxy.size.width, proxy.size.height))
                         .frame(width: proxy.size.width, height: proxy.size.height)
                         .clipped()
+                } else if let cover {
+                    Image(uiImage: cover).resizable().scaledToFill().transition(.opacity)
                 } else if let snapshot {
                     Image(uiImage: snapshot).resizable().scaledToFill()
                         .overlay {
@@ -40,6 +45,8 @@ struct PlacePicture: View {
                 let interval = DayPhotos.interval(of: stay)
                 if let first = await Task.detached(priority: .userInitiated, operation: { DayPhotos.assets(in: interval).first }).value {
                     asset = first
+                } else if (stay.photos ?? []).isEmpty, let coverID, let image = await MustSeePhotos.cover(coverID) {
+                    withAnimation(.easeOut(duration: 0.25)) { cover = image }
                 } else if (stay.photos ?? []).isEmpty {
                     let image = await Self.snapshot(of: stay, size: proxy.size, dark: colorScheme == .dark)
                     withAnimation(.easeOut(duration: 0.25)) { snapshot = image }
@@ -73,9 +80,13 @@ struct SightCard: View {
     var width: CGFloat? = 170
 
     var body: some View {
+        let must = MustSee.place(for: stay)
         VStack(alignment: .leading, spacing: 0) {
-            PlacePicture(stay: stay)
+            PlacePicture(stay: stay, coverID: must?.id)
                 .frame(height: 120)
+                .overlay(alignment: .topLeading) {
+                    if must != nil { MustSeeTag(compact: true).padding(8) }
+                }
             VStack(alignment: .leading, spacing: 2) {
                 Text(stay.displayName)
                     .font(.subheadline.weight(.semibold))
@@ -92,6 +103,14 @@ struct SightCard: View {
         .frame(maxWidth: width == nil ? .infinity : nil, alignment: .leading)
         .background(.background.secondary)
         .clipShape(.rect(cornerRadius: 20, style: .continuous))
+        // A thin gold edge for the places worth a lifetime.
+        .overlay {
+            if must != nil {
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .strokeBorder(LinearGradient(colors: [Color(red: 1, green: 0.85, blue: 0.45), Color(red: 0.85, green: 0.6, blue: 0.2)],
+                                                 startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1.5)
+            }
+        }
         .contentShape(.rect(cornerRadius: 20, style: .continuous))
     }
 }
