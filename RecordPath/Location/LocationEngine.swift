@@ -2,6 +2,7 @@ import Foundation
 import CoreLocation
 import SwiftData
 import UIKit
+import UserNotifications
 import os
 
 /// The always-on recorder. It listens to Core Location's live updates (which pause by
@@ -231,8 +232,8 @@ final class LocationEngine {
         }
     }
 
-    /// `keepingSession` is for a pause: GPS stops, but the background session stays so the
-    /// recording can start again from the background when the pause ends.
+    /// `keepingSession` leaves the background session running while GPS stops. Nothing uses it
+    /// now: a session left open keeps the location indicator showing.
     private func stop(keepingSession: Bool = false) {
         Diagnostics.record("stop paused=\(isPaused)")
         updatesTask?.cancel()
@@ -297,13 +298,33 @@ final class LocationEngine {
         Diagnostics.record("pause until=\(date.formatted(.iso8601))")
         pausedUntil = date
         UserDefaults.standard.set(date, forKey: Keys.pausedUntil)
-        if activeTripID == nil { stop(keepingSession: true) }
+        // The background session goes too: while it lives, iOS keeps the location indicator
+        // in the Dynamic Island, which reads as "still recording" during a pause.
+        if activeTripID == nil { stop() }
         schedulePauseEnd()
+        Self.remindWhenPauseEnds(at: date)
+    }
+
+    /// iOS may not let recording start again from the background once the pause is over, so
+    /// a notification at that time asks for a tap. Opening the app resumes it.
+    private static func remindWhenPauseEnds(at date: Date) {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: ["pause.end"])
+        guard date.timeIntervalSinceNow > 60 else { return }
+        let content = UNMutableNotificationContent()
+        content.title = String(localized: "暂停结束了", bundle: .appLanguage)
+        content.body = String(localized: "打开漫迹，继续记录你的足迹。", bundle: .appLanguage)
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: date.timeIntervalSinceNow, repeats: false)
+        center.add(UNNotificationRequest(identifier: "pause.end", content: content, trigger: trigger))
     }
 
     func resume() {
         Diagnostics.record("resume")
         resumeTask?.cancel()
+        // Resumed by hand, or with the app open: no need to ask.
+        if UIApplication.shared.applicationState == .active || pausedUntil.map({ $0 > Date() }) == true {
+            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["pause.end"])
+        }
         pausedUntil = nil
         UserDefaults.standard.removeObject(forKey: Keys.pausedUntil)
         if isRecording, updatesTask == nil || !usesLiveUpdates { start() }
@@ -353,7 +374,7 @@ final class LocationEngine {
         activeTripID = nil
         UserDefaults.standard.removeObject(forKey: Keys.tripID)
         // Back to all-day recording if it is on; otherwise a manual recording simply stops.
-        if isRecording { restart() } else { stop(keepingSession: isPaused) }
+        if isRecording { restart() } else { stop() }
         try? context.save()
     }
 
