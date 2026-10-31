@@ -8957,16 +8957,6 @@
         }
       }
     },
-    "光绘": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Light painting"
-          }
-        }
-      }
-    },
     "把走过的路画成一张光的海报，常走的路最亮。": {
       "localizations": {
         "en": {
@@ -9553,16 +9543,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gold"
-          }
-        }
-      }
-    },
-    "月光": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Moonlight"
           }
         }
       }

@@ -117,7 +117,6 @@ struct StatsView: View {
             .navigationDestination(for: MilestonesRoute.self) { _ in MilestonesView(progress: milestones) }
             .navigationDestination(for: FirstsRoute.self) { _ in FirstsView(firsts: summaries.firsts, extremes: summaries.extremes) }
             .navigationDestination(for: JourneyRoute.self) { _ in JourneyView(distance: groundLifetime, home: summaries.home) }
-            .navigationDestination(for: LightPaintingRoute.self) { _ in LightPaintingView(home: summaries.home) }
             .navigationDestination(for: DayRoute.self) { DayPage(day: $0.day) }
             .refreshable { await load() }
         }
@@ -435,7 +434,6 @@ struct StatsView: View {
                 }
                 JourneyCard(distance: groundLifetime, home: summaries.home)
                 if !summaries.firsts.isEmpty { FirstsCard(firsts: summaries.firsts) }
-                LightPaintingCard()
             }
         }
     }
