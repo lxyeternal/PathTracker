@@ -146,7 +146,14 @@ struct PlaceVisitsView: View {
     private var sortedVisits: [Stay] { place.visits.sorted { $0.arrival > $1.arrival } }
 
     var body: some View {
+        let must = MustSee.place(for: place.latest)
         List {
+            if let must {
+                Section {
+                    MustSeePlaceHeader(must: must, name: place.name)
+                        .listRowInsets(EdgeInsets())
+                }
+            }
             Section {
                 Map(initialPosition: .camera(MapCamera(centerCoordinate: place.latest.coordinate.onMap, distance: 1500))) {
                     Annotation(place.name, coordinate: place.latest.coordinate.onMap) {

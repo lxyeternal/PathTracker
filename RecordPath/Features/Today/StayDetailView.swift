@@ -143,6 +143,8 @@ struct StayDetailView: View {
                     LabeledContent("停留", value: Format.duration(stay.duration))
                 }
 
+                if !isEditing { SkySection(stay: stay) }
+
                 Section("位置") {
                     if let placeName = stay.placeName { LabeledContent("地点名称", value: placeName) }
                     if let street = stay.street { LabeledContent("街道", value: street) }

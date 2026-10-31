@@ -139,6 +139,7 @@ Two lists of Waytrace's own: **China 100** (Hong Kong, Macao and Taiwan included
 - **Back to that day**: from a place you've been, one tap opens the day you first got there, with that day's route and photos.
 - **Want to go**: tap ♡ to keep a place for later, and see **your nearest next stop** and how far it is.
 - **Newly lit**: places reached since you last looked get a moment of their own.
+- **Recognised in Places**: wherever one of these places turns up among your footprints it carries a gold "Place for a lifetime" tag and a gold edge, with its real photograph as the cover if you have none of your own. Its page opens on that photograph and its story.
 
 The photos are freely licensed works from Wikimedia Commons, shipped inside the app so they show everywhere, mainland China included. Each page credits the photographer and licence.
 
@@ -149,7 +150,18 @@ The photos are freely licensed works from Wikimedia Commons, shipped inside the 
 - **Back again**: return somewhere after more than a year and you're told gently, "you were last here on 12 April 2023", the days counting up, with your first visit, last visit and today in a line.
 - **On this day**: on the Today page, where you were on this date in earlier years, the photo developing like a Polaroid.
 - **Travel postcards**: every finished trip makes a postcard, a photo on the front, your words on the back, the city stamp as the postmark. Share it, or **send it to yourself a year from now**: when the day comes it drops onto the screen and turns over.
-- **Milestone medals**: 23 illustrated medals in bronze, silver, gold and platinum, lit by pressing and holding.
+- **Milestone medals**: 23 illustrated medals in bronze, silver, gold and platinum. The newest leads the page; in each kind the one you're working towards is lit and says how far is left; open a medal to see which country or city earned it.
+- **Seasonal echoes**: "three years in a row in Beijing around this time", or "five months since you last went to your usual café". At most once a week, each said only once.
+- **That day's sky**: every place shows that day's sunrise and sunset and that night's moon; catch a sunset there and it says "you were here at sunset, 17:08". With the day's weather from Apple Weather.
+
+### Your story
+
+At the bottom of Stats, a set of cards about you:
+
+- **Traveller portrait**: from the past year, are you a night walker, a city collector or a curious explorer? With your own numbers, ready to share.
+- **How far you've come**: the distance you've travelled on the ground laid along the Grand Canal, China's Highway 318, the Silk Road or Route 66, lighting up each town you pass, each with a line about it.
+- **Firsts**: first time abroad, first night away, first time out at 3 a.m., first time in each city and at each place for a lifetime, year by year; and the ends of your map: furthest north, south, east, west and from home.
+- **Light painting**: every path you've taken drawn as light on black, the ones you take most burning brightest, like a long exposure. Your city or everywhere, this year or all time, as a poster to share.
 - **Your year**: page by page like a story, with glowing city maps, a turning dotted globe, your longest day's route, a wall of photos and a page of **this year's passport**, ending in a poster to share.
 
 <p align="center">

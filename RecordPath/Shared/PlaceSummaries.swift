@@ -24,6 +24,12 @@ final class PlaceSummaries {
     private(set) var dots: [MapDot] = []
     /// Trips found in the history, newest first.
     private(set) var foundTrips: [TripFinder.Found] = []
+    private(set) var home: HomeBase?
+    /// Life's firsts, oldest first, and the furthest places in each direction.
+    private(set) var firsts: [LifeFirst] = []
+    private(set) var extremes = LifeExtremes()
+    private(set) var portrait = TravellerPortrait()
+    private(set) var echoes: [Echo] = []
 
     /// Told whenever the stamps have been worked out again, to notice new ones.
     @ObservationIgnored var onStamps: ((StampBook) -> Void)?
@@ -74,6 +80,11 @@ final class PlaceSummaries {
             milestones = result.milestones
             dots = result.dots
             foundTrips = result.foundTrips
+            home = result.home
+            firsts = result.firsts
+            extremes = result.extremes
+            portrait = result.portrait
+            echoes = result.echoes
             #if DEBUG
             Diagnostics.record("summaries background=\(Int(mainStarted.timeIntervalSince(started) * 1000))ms main=\(Int(Date().timeIntervalSince(mainStarted) * 1000))ms")
             #endif
@@ -107,6 +118,11 @@ final class PlaceSummaries {
         var milestones = MilestoneProgress()
         var dots: [MapDot] = []
         var foundTrips: [TripFinder.Found] = []
+        var home: HomeBase?
+        var firsts: [LifeFirst] = []
+        var extremes = LifeExtremes()
+        var portrait = TravellerPortrait()
+        var echoes: [Echo] = []
 
         init(container: ModelContainer) {
             let context = ModelContext(container)
@@ -124,6 +140,10 @@ final class PlaceSummaries {
                                  longitude: $0.longitude, city: CityNames.key($0).flatMap { cityNames[$0] } ?? $0.city,
                                  countryCode: $0.countryCode)
             })
+            home = HomeBase.find(in: all)
+            (firsts, extremes) = LifeFirsts.find(stays: all, chunks: chunks, home: home)
+            portrait = TravellerPortrait(stays: all, chunks: chunks, home: home)
+            echoes = Echoes.find(stays: all, home: home)
         }
     }
 }

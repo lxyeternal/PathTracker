@@ -72,6 +72,9 @@ struct WorldView: View {
             .navigationDestination(for: Province.self) { ProvinceDetailView(province: $0) }
             .navigationDestination(for: CityStint.self) { CityStintView(stint: $0) }
             .navigationDestination(for: DayRoute.self) { DayPage(day: $0.day) }
+            .navigationDestination(for: MustSeeFromPlaceRoute.self) { route in
+                if let place = (MustSee.china + MustSee.world).first(where: { $0.id == route.id }) { MustSeePlaceView(place: place) }
+            }
             .sheet(isPresented: $importingPhotos) { PhotoImportSheet() }
             .sheet(item: $selectedStay) { StayDetailView(stay: $0) }
             .task(id: insights.frequentPlaces.map(\.id)) {
@@ -249,7 +252,10 @@ struct PlaceRow: View {
         HStack(spacing: 14) {
             PlaceThumb(stay: stay)
             VStack(alignment: .leading, spacing: 2) {
-                Text(stay.displayName).font(.body.weight(.semibold)).lineLimit(1)
+                HStack(spacing: 6) {
+                    Text(stay.displayName).font(.body.weight(.semibold)).lineLimit(1)
+                    if MustSee.place(for: stay) != nil { MustSeeTag(compact: true) }
+                }
                 Text([stay.city, timeOnly ? timeRange : stay.arrival.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: appLocale))].compactMap { $0 }.joined(separator: " · "))
                     .font(.subheadline).foregroundStyle(.secondary)
             }
