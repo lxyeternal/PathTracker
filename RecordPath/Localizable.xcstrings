@@ -10266,6 +10266,26 @@
           }
         }
       }
+    },
+    "暂停结束了": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your pause is over"
+          }
+        }
+      }
+    },
+    "打开漫迹，继续记录你的足迹。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Waytrace to keep recording your footprints."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
