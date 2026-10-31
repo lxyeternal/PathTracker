@@ -66,11 +66,20 @@ final class ParallelSharing {
             _ = try zones.saveResults[zoneID]?.get()
             let share: CKShare
             if let existing = try? await privateDB.record(for: CKRecord.ID(recordName: CKRecordNameZoneWideShare, zoneID: zoneID)) as? CKShare {
-                share = existing
+                if existing.publicPermission == .none {
+                    // Shares from before invitations went through a link anyone can forward.
+                    existing.publicPermission = .readOnly
+                    let saved = try await privateDB.modifyRecords(saving: [existing], deleting: [])
+                    share = try saved.saveResults[existing.recordID]?.get() as? CKShare ?? existing
+                } else {
+                    share = existing
+                }
             } else {
                 let made = CKShare(recordZoneID: zoneID)
                 made[CKShare.SystemFieldKey.title] = String(localized: "漫迹 · 平行足迹", bundle: .appLanguage)
-                made.publicPermission = .none
+                // The invitation is a link that can be forwarded in any chat app. Whoever opens it
+                // can accept, but nobody appears in the app until both have shared.
+                made.publicPermission = .readOnly
                 let saved = try await privateDB.modifyRecords(saving: [made], deleting: [])
                 // The share as the server keeps it, with the link the invitation needs.
                 guard let result = saved.saveResults[made.recordID], let stored = try result.get() as? CKShare else {
@@ -179,6 +188,21 @@ final class ParallelSharing {
             try? FileManager.default.createDirectory(at: URL.applicationSupportDirectory, withIntermediateDirectories: true)
             try? JSONEncoder().encode(newValue).write(to: fingerprintsFile, options: .atomic)
         }
+    }
+
+    /// The invite page on Waytrace's own site. Nil until the site has its domain: until then
+    /// invitations go out as plain iCloud links.
+    static let invitePage: URL? = nil
+
+    /// The invitation as a page of our own site, which WeChat and others show as a Waytrace
+    /// card, and which passes on to the iCloud link. Nil when the share has no link yet.
+    func inviteURL(for share: CKShare, from name: String?) -> URL? {
+        guard let page = Self.invitePage,
+              let token = share.url?.pathComponents.last, !token.isEmpty, token != "/" else { return nil }
+        var components = URLComponents(url: page, resolvingAgainstBaseURL: false)
+        components?.queryItems = [URLQueryItem(name: "s", value: token)]
+            + (name.map { [URLQueryItem(name: "n", value: String($0.prefix(30)))] } ?? [])
+        return components?.url
     }
 
     // MARK: Friends

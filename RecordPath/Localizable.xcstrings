@@ -10047,16 +10047,6 @@
         }
       }
     },
-    "摘要存在你自己的 iCloud 里，只给你邀请的人看。比对在各自的手机上进行，不经过我们的服务器。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The summary is kept in your own iCloud and only the people you invite can see it. The comparing happens on each phone, never on a server of ours."
-          }
-        }
-      }
-    },
     "擦肩而过": {
       "localizations": {
         "en": {
@@ -10207,16 +10197,6 @@
         }
       }
     },
-    "只有当你在“平行足迹”中邀请朋友并同意共享时，App 才会把一份足迹摘要保存在你自己的 iCloud 中，并只共享给你邀请且接受了的人：每天到过的大致区域（约 20 公里）和每小时所在的约 1 公里方格。家、公司、学校附近 2 公里内的一切、隐私区域、地点名称、具体坐标、路线、照片和文字都不会共享。比对在各自的手机上进行，不经过任何服务器。你可以随时停止共享，摘要会从 iCloud 删除。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Only if you invite a friend in Parallel Footprints and agree to share, the app keeps a footprint summary in your own iCloud and shares it only with the people you invite who accept: the rough areas you were in each day (about 20 km) and the square of about 1 km you were in each hour. Nothing within 2 km of home, work or school, your privacy zones, place names, exact coordinates, routes, photos or notes are shared. The comparing happens on each phone, never on a server. You can stop sharing at any time, and the summary is deleted from iCloud."
-          }
-        }
-      }
-    },
     "App 不包含广告、数据分析或第三方追踪 SDK，不会出售或共享你的任何数据；唯一的例外是你在“平行足迹”中主动共享给朋友的足迹摘要。": {
       "localizations": {
         "en": {
@@ -10283,6 +10263,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Open Waytrace to keep recording your footprints."
+          }
+        }
+      }
+    },
+    "只有当你在“平行足迹”中邀请朋友并同意共享时，App 才会把一份足迹摘要保存在你自己的 iCloud 中，并通过一个邀请链接共享出去，拿到链接的人可以接受（请只发给你想邀请的人）；双方都共享之后才会在 App 里互相看到。共享的内容是：每天到过的大致区域（约 20 公里）和每小时所在的约 1 公里方格。家、公司、学校附近 2 公里内的一切、隐私区域、地点名称、具体坐标、路线、照片和文字都不会共享。比对在各自的手机上进行，不经过任何服务器。你可以随时停止共享，摘要会从 iCloud 删除。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only if you invite a friend in Parallel Footprints and agree to share, the app keeps a footprint summary in your own iCloud and shares it through an invitation link that whoever has it can accept (send it only to people you mean to invite); you see each other in the app only once both have shared. What it shares: the rough areas you were in each day (about 20 km) and the square of about 1 km you were in each hour. Nothing within 2 km of home, work or school, your privacy zones, place names, exact coordinates, routes, photos or notes are shared. The comparing happens on each phone, never on a server. You can stop sharing at any time, and the summary is deleted from iCloud."
+          }
+        }
+      }
+    },
+    "摘要存在你自己的 iCloud 里。邀请是一个链接，拿到的人可以接受，所以请只发给你想邀请的人；双方都共享之后，你们才会在漫迹里互相看到。比对在各自的手机上进行，不经过我们的服务器。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The summary is kept in your own iCloud. The invitation is a link that whoever has it can accept, so send it only to people you mean to invite; you see each other in Waytrace only once both have shared. The comparing happens on each phone, never on a server of ours."
+          }
+        }
+      }
+    },
+    "漫迹 · 平行足迹邀请": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waytrace · Parallel Footprints invitation"
           }
         }
       }
