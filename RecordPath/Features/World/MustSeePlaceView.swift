@@ -355,19 +355,31 @@ struct MustSeePlaceView: View {
         let center = CLLocation(latitude: place.latitude, longitude: place.longitude)
         let radius = place.radius * 1000
         let code = place.countryCode
-        let intervals = summaries.stays
+        let visits = summaries.stays
             .filter { stay in code.map { stay.countryCode == $0 } ?? (stay.location.distance(from: center) <= radius) }
-            .prefix(80)
+            .prefix(120)
             .map { DayPhotos.interval(of: $0) }
-        guard !intervals.isEmpty else { return }
+        guard !visits.isEmpty else { return }
+        // Photos are often taken walking around a place, between the stops recorded there, so
+        // whole days of visits are searched and each photo is placed by where it was taken.
+        let calendar = Calendar.current
+        let days = Set(visits.flatMap { calendar.days(in: $0).prefix(7) }).sorted(by: >).prefix(40)
+        let reach = max(radius * 1.5, 1_500)
         let found = await Task.detached(priority: .userInitiated) { () -> [PHAsset] in
-            var seen = Set<String>()
             var assets: [PHAsset] = []
-            for interval in intervals {
-                for asset in DayPhotos.assets(in: interval) where seen.insert(asset.localIdentifier).inserted {
-                    // A photo that says where it was taken has to have been taken here.
-                    if code == nil, let location = asset.location, location.distance(from: center) > radius * 1.5 { continue }
-                    assets.append(asset)
+            for day in days {
+                for asset in DayPhotos.assets(in: calendar.dayInterval(for: day)) {
+                    let here: Bool
+                    if code != nil {
+                        here = true
+                    } else if let location = asset.location {
+                        here = location.distance(from: center) <= reach
+                    } else {
+                        // Without a location, only while a visit was going on.
+                        let taken = asset.creationDate ?? .distantPast
+                        here = visits.contains { $0.start.addingTimeInterval(-3600) <= taken && taken <= $0.end.addingTimeInterval(3600) }
+                    }
+                    if here { assets.append(asset) }
                 }
                 if assets.count >= 400 { break }
             }
