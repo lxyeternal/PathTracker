@@ -121,7 +121,11 @@ struct ParallelView: View {
             ParallelConsentSheet {
                 sharing.hasConsented = true
                 askingConsent = false
-                invite()
+                // Once the consent sheet has closed, or the sharing screen can't open.
+                Task {
+                    try? await Task.sleep(for: .milliseconds(700))
+                    invite()
+                }
             }
         }
         .confirmationDialog("停止与所有人共享？", isPresented: $confirmingStopAll, titleVisibility: .visible) {
@@ -251,15 +255,19 @@ struct ShareBackSheet: View {
             Text("你也共享给 Ta，你们就能看到彼此的平行足迹：哪天在同一座城市，在哪里擦肩而过。")
                 .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
             Spacer()
+            if let error = sharing.lastError {
+                Text(error).font(.footnote).foregroundStyle(.red).multilineTextAlignment(.center)
+            }
             Button {
                 working = true
                 Task {
                     defer { working = false }
                     sharing.hasConsented = true
-                    if let share = try? await sharing.prepareShare() {
-                        dismiss()
-                        CloudSharing.present(share: share, container: sharing.container) { Task { await sharing.refresh() } }
-                    }
+                    guard let share = try? await sharing.prepareShare() else { return }
+                    dismiss()
+                    // iOS won't show the sharing screen while this sheet is still closing.
+                    try? await Task.sleep(for: .milliseconds(700))
+                    CloudSharing.present(share: share, container: sharing.container) { Task { await sharing.refresh() } }
                 }
             } label: {
                 Group { if working { ProgressView() } else { Text("共享我的足迹给 Ta") } }
