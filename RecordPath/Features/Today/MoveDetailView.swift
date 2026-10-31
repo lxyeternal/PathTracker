@@ -91,8 +91,9 @@ struct MoveDetailView: View {
             .task {
                 if let from, let to { history = RouteHistory.trips(from: from, to: to, in: context) }
             }
-            .onChange(of: mode) { _, newValue in
-                guard newValue != move.mode else { return }
+            .onChange(of: mode) { old, newValue in
+                // The first value is only what the picker shows; a change is the person's own.
+                guard old != .unknown, newValue != move.mode else { return }
                 for chunk in move.chunks { chunk.modeRaw = newValue.rawValue }
                 try? context.save()
             }

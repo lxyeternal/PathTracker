@@ -74,10 +74,11 @@ final class PlaceTagger {
         guard let stays = try? context.fetch(descriptor), !stays.isEmpty else { return }
 
         for stay in stays {
+            if Self.isGone(stay) { continue }
             let outcome = await tagPatiently(stay)
             try? context.save()
             if outcome != .done { return }
-            onTagged?(stay)
+            if !Self.isGone(stay) { onTagged?(stay) }
             // Up to three map requests per place; stay well under Apple's rate limit.
             try? await Task.sleep(for: .milliseconds(2000))
         }
@@ -107,6 +108,7 @@ final class PlaceTagger {
 
         var unnamed: [Stay] = []
         for (index, stay) in waiting.enumerated() {
+            if Self.isGone(stay) { continue }
             // Copies don't go back into the grid, so a name can't creep from one visit to the next.
             if let neighbour = grid.nearest(to: stay, within: 3_000) {
                 stay.copyPlace(from: neighbour)
@@ -123,6 +125,7 @@ final class PlaceTagger {
 
         var geocoded = 0
         for stay in unnamed {
+            if Self.isGone(stay) { continue }
             if let neighbour = grid.nearest(to: stay, within: 3_000) {
                 // Named by a visit geocoded a moment ago.
                 stay.copyPlace(from: neighbour)
@@ -130,7 +133,7 @@ final class PlaceTagger {
             }
             let outcome = await tagPatiently(stay, lookForNeighbour: false)
             if outcome != .done { break }
-            if stay.countryCode != nil { grid.add(stay) }
+            if !Self.isGone(stay), stay.countryCode != nil { grid.add(stay) }
             geocoded += 1
             // Every save redraws whatever shows places; a dozen at a time is plenty.
             if geocoded % 12 == 0 { try? context.save() }
@@ -153,10 +156,14 @@ final class PlaceTagger {
         while outcome == .throttled, attempts < 5 {
             attempts += 1
             try? await Task.sleep(for: .seconds(60))
+            if Self.isGone(stay) { return .done }
             outcome = await tag(stay, lookForNeighbour: lookForNeighbour)
         }
         return outcome
     }
+
+    /// A place can be deleted while a lookup for it is under way; it mustn't be touched after.
+    private static func isGone(_ stay: Stay) -> Bool { stay.modelContext == nil || stay.isDeleted }
 
     private static func isThrottled(_ error: NSError) -> Bool {
         if error.domain == MKErrorDomain, error.code == Int(MKError.loadingThrottled.rawValue) { return true }
@@ -175,8 +182,11 @@ final class PlaceTagger {
         Task {
             defer { isNamingFrequent = false }
             for stay in unnamed {
-                if let item = await nearestPointOfInterest(around: stay.location, radius: 150, filter: .includingAll,
-                                                           excluding: PlaceCategory.utilityCategories) {
+                if Self.isGone(stay) { continue }
+                let item = await nearestPointOfInterest(around: stay.location, radius: 150, filter: .includingAll,
+                                                        excluding: PlaceCategory.utilityCategories)
+                if Self.isGone(stay) { continue }
+                if let item {
                     stay.placeName = item.name
                     if stay.categoryRaw == nil { stay.categoryRaw = item.pointOfInterestCategory?.rawValue }
                 } else if await tagPatiently(stay, lookForNeighbour: false) != .done {
@@ -206,7 +216,9 @@ final class PlaceTagger {
         }
         do {
             guard let request = MKReverseGeocodingRequest(location: location) else { return .done }
-            if let item = try await request.mapItems.first, let address = item.addressRepresentations {
+            let item = try await request.mapItems.first
+            if Self.isGone(stay) { return .done }
+            if let item, let address = item.addressRepresentations {
                 stay.country = address.regionName
                 stay.countryCode = address.region?.identifier
                 stay.city = CityName.normalized(cityName: address.cityName,
@@ -227,6 +239,7 @@ final class PlaceTagger {
             log.error("Geocoding failed: \(error.localizedDescription)")
             Diagnostics.record("geocode failed \(error.localizedDescription)")
         }
+        guard !Self.isGone(stay) else { return .done }
 
         if stay.isFromPhotos {
             stay.tagState = stay.country == nil ? .failed : .tagged
@@ -241,14 +254,17 @@ final class PlaceTagger {
             if stay.categoryRaw == nil { stay.categoryRaw = MKPointOfInterestCategory.landmark.rawValue }
             stay.isLandmark = true
         } else if !personal, !overnight, let landmark = await nearestLandmark(around: location) {
+            guard !Self.isGone(stay) else { return .done }
             stay.placeName = landmark.name
             stay.categoryRaw = landmark.pointOfInterestCategory?.rawValue
             stay.isLandmark = true
         } else if let item = await nearestPointOfInterest(around: location, radius: 90, filter: .includingAll,
                                                           excluding: PlaceCategory.utilityCategories) {
+            guard !Self.isGone(stay) else { return .done }
             stay.placeName = item.name
             if stay.categoryRaw == nil { stay.categoryRaw = item.pointOfInterestCategory?.rawValue }
         }
+        guard !Self.isGone(stay) else { return .done }
         stay.tagState = stay.country == nil ? .failed : .tagged
         return .done
     }
@@ -256,10 +272,12 @@ final class PlaceTagger {
     private func nearestTagged(to stay: Stay, within radius: CLLocationDistance) -> Stay? {
         let tagged = TagState.tagged.rawValue
         let candidates = (try? context.fetch(FetchDescriptor<Stay>(predicate: #Predicate { $0.tagStateRaw == tagged && $0.countryCode != nil }))) ?? []
-        return candidates
+        let near = candidates
             .map { ($0, $0.location.distance(from: stay.location)) }
             .filter { $0.1 <= radius }
-            .min { $0.1 < $1.1 }?.0
+        // Near a border (澳门 beside 珠海, 罗湖 beside 深圳) neighbours disagree; look it up instead.
+        guard Set(near.compactMap { $0.0.countryCode }).count <= 1 else { return nil }
+        return near.min { $0.1 < $1.1 }?.0
     }
 
     /// Nearby-POI search works well in most of the world but returns little in mainland China,
@@ -400,15 +418,19 @@ private struct PhotoGrid {
     func nearest(to stay: Stay, within radius: CLLocationDistance) -> Stay? {
         let c = cell(stay.latitude, stay.longitude)
         var best: (Stay, CLLocationDistance)?
+        var countries = Set<String>()
         for dy in -1...1 {
             for dx in -1...1 {
                 for other in cells[key((c.0 + Int64(dy), c.1 + Int64(dx)))] ?? [] {
                     let d = other.location.distance(from: stay.location)
-                    if d <= radius, d < (best?.1 ?? .infinity) { best = (other, d) }
+                    guard d <= radius else { continue }
+                    if let code = other.countryCode { countries.insert(code) }
+                    if d < (best?.1 ?? .infinity) { best = (other, d) }
                 }
             }
         }
-        return best?.0
+        // Neighbours in two countries means a border nearby: look this one up instead.
+        return countries.count > 1 ? nil : best?.0
     }
 }
 

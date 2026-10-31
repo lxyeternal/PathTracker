@@ -101,8 +101,10 @@ final class WatchBridge: NSObject {
                                 coordinate: .init(lat: $0.latitude, lon: $0.longitude),
                                 arrival: $0.arrival, departure: $0.departure)
         }
-        snapshot.distance = chunks.reduce(0) { $0 + $1.distance } + TrackPoint.distance(of: engine.pendingPoints)
-        snapshot.steps = activity.today.steps
+        snapshot.distance = chunks.reduce(0) { $0 + Self.distance(of: $1, from: start, to: end) }
+            + TrackPoint.distance(of: engine.pendingPoints.filter { $0.timestamp >= start && $0.timestamp < end })
+        // Until Health is read again after midnight, `today` is still yesterday.
+        snapshot.steps = Calendar.current.isDate(activity.today.day, inSameDayAs: now) ? activity.today.steps : 0
         snapshot.isEnabled = engine.isEnabled
         snapshot.isRecording = engine.isRecording
         snapshot.pausedUntil = engine.isPaused ? engine.pausedUntil : nil
@@ -113,6 +115,12 @@ final class WatchBridge: NSObject {
                                                        start: trip.startDate, watchActivity: LiveRecording.watchActivity(for: trip))
         }
         return snapshot
+    }
+
+    /// Only the part of a chunk that falls within the day; one crossing midnight counts in both.
+    private static func distance(of chunk: TrackChunk, from start: Date, to end: Date) -> Double {
+        guard chunk.startDate < start || chunk.endDate > end else { return chunk.distance }
+        return TrackPoint.distance(of: chunk.points.filter { $0.timestamp >= start && $0.timestamp < end })
     }
 
     private func pendingStretch() -> (Date, Date, [TrackPoint]) {

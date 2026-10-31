@@ -30,6 +30,8 @@ final class PlaceSummaries {
     private(set) var extremes = LifeExtremes()
     private(set) var portrait = TravellerPortrait()
     private(set) var echoes: [Echo] = []
+    /// Goes up every time the summaries are worked out again, for screens that derive from them.
+    private(set) var revision = 0
 
     /// Told whenever the stamps have been worked out again, to notice new ones.
     @ObservationIgnored var onStamps: ((StampBook) -> Void)?
@@ -85,6 +87,7 @@ final class PlaceSummaries {
             extremes = result.extremes
             portrait = result.portrait
             echoes = result.echoes
+            revision += 1
             #if DEBUG
             Diagnostics.record("summaries background=\(Int(mainStarted.timeIntervalSince(started) * 1000))ms main=\(Int(Date().timeIntervalSince(mainStarted) * 1000))ms")
             #endif

@@ -39,11 +39,23 @@ struct Provider: TimelineProvider {
         // entry resets today's distance even if nothing arrives.
         Task { @MainActor in
             let now = current()
-            var tomorrow = now
-            tomorrow.date = Calendar.current.startOfDay(for: Date()).addingTimeInterval(86_400)
+            var entries = [now]
+            let calendar = Calendar.current
+            let midnight = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now.date))
+                ?? now.date.addingTimeInterval(86_400)
+            // The pause ends on its own; don't keep saying "paused" after it has.
+            if let until = now.snapshot?.pausedUntil, until > now.date, until < midnight {
+                var resumed = now
+                resumed.date = until
+                resumed.snapshot?.pausedUntil = nil
+                entries.append(resumed)
+            }
+            var tomorrow = entries[entries.count - 1]
+            tomorrow.date = midnight
             tomorrow.snapshot?.distance = 0
             tomorrow.snapshot?.places = []
-            completion(Timeline(entries: [now, tomorrow], policy: .atEnd))
+            entries.append(tomorrow)
+            completion(Timeline(entries: entries, policy: .atEnd))
         }
     }
 
@@ -68,11 +80,11 @@ struct ComplicationView: View {
     /// Where you are, or that recording is paused, which matters more.
     private var status: String {
         guard let snapshot = entry.snapshot else { return String(localized: "打开漫迹", bundle: .appLanguage) }
-        if snapshot.pausedUntil != nil { return String(localized: "记录已暂停", bundle: .appLanguage) }
+        if isPaused { return String(localized: "记录已暂停", bundle: .appLanguage) }
         return snapshot.currentPlace?.name ?? String(localized: "在路上", bundle: .appLanguage)
     }
 
-    private var isPaused: Bool { entry.snapshot?.pausedUntil != nil }
+    private var isPaused: Bool { entry.snapshot?.pausedUntil.map { $0 > entry.date } ?? false }
 
     var body: some View {
         switch family {

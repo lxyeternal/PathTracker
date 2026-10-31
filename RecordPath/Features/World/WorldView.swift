@@ -309,6 +309,8 @@ struct WorldMap: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(onSelect == nil)
+                    .accessibilityHidden(onSelect == nil)
+                    .accessibilityLabel(onSelect == nil ? "" : PlaceSummaries.shared.stay(dot.id)?.displayName ?? "")
                 }
                 .annotationTitles(.hidden)
             }

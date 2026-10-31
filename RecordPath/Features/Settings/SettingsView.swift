@@ -406,12 +406,21 @@ struct SettingsView: View {
            let trip = (try? context.fetch(FetchDescriptor<Trip>()))?.first(where: \.isActive) {
             engine.endTrip(trip)
         }
+        // Nothing on screen should reach for a place that's about to go.
+        PlaceSummaries.shared.forget(Set(PlaceSummaries.shared.stays.map(\.persistentModelID)))
         try? context.delete(model: TrackChunk.self)
         try? context.delete(model: Stay.self)
         try? context.delete(model: TripPhoto.self)
         try? context.delete(model: Trip.self)
         try? context.save()
+        PlaceSummaries.shared.refresh()
         engine.reloadAfterDataChange(discardPending: true)
+        // What was worked out from the old data goes with it.
+        Celebrations.shared.removeAll()
+        notifier.forgetHistory()
+        photoImportRun = 0
+        DeletedPhotoVisits.clear()
+        for key in ["echo.current", "echo.shownAt", "echo.seen"] { UserDefaults.standard.removeObject(forKey: key) }
         #if DEBUG
         UserDefaults.standard.removeObject(forKey: "debug.demoSteps")
         #endif

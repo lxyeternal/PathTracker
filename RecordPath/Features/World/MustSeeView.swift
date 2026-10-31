@@ -15,9 +15,11 @@ final class MustSeeProgress {
     @ObservationIgnored private var computedFor = -1
 
     func update(from stays: [Stay]) async {
-        guard stays.count != computedFor else { return }
-        computedFor = stays.count
-        let visits = stays.map { MustSee.Visit(latitude: $0.latitude, longitude: $0.longitude, arrival: $0.arrival, countryCode: $0.countryCode) }
+        let revision = PlaceSummaries.shared.revision
+        guard revision != computedFor else { return }
+        computedFor = revision
+        // A layover at an airport isn't a visit to the city around it.
+        let visits = stays.filter { $0.category != .airport }.map { MustSee.Visit(latitude: $0.latitude, longitude: $0.longitude, arrival: $0.arrival, countryCode: $0.countryCode) }
         let found = await Task.detached(priority: .utility) {
             MustSee.firstVisits(MustSee.china + MustSee.world, visits: visits)
         }.value
@@ -125,7 +127,7 @@ struct MustSeeView: View {
         .navigationTitle("此生必去")
         .navigationBarTitleDisplayMode(.inline)
         .background(Color(.systemGroupedBackground))
-        .task(id: summaries.stays.count) {
+        .task(id: summaries.revision) {
             await progress.update(from: summaries.stays)
             noticeNewlyLit()
         }
@@ -519,7 +521,7 @@ struct MustSeeCard: View {
                            startPoint: .topLeading, endPoint: .bottomTrailing),
             in: .rect(cornerRadius: 26, style: .continuous)
         )
-        .task(id: summaries.stays.count) { await progress.update(from: summaries.stays) }
+        .task(id: summaries.revision) { await progress.update(from: summaries.stays) }
     }
 
     private func tally(_ title: LocalizedStringKey, count: Int, lit: [Bool]) -> some View {

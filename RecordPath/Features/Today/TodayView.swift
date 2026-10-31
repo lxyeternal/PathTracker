@@ -145,9 +145,8 @@ struct DayContentView: View {
         self.day = day
         let interval = Calendar.current.dayInterval(for: day)
         let start = interval.start, end = interval.end
-        // Stays can begin days earlier (a long hotel stay), so look back and filter below.
-        let lookBack = start.addingTimeInterval(-14 * 86_400)
-        _candidateStays = Query(filter: #Predicate<Stay> { $0.arrival < end && $0.arrival >= lookBack },
+        // Stays can begin days earlier (a long hotel stay); an open one has no departure yet.
+        _candidateStays = Query(filter: #Predicate<Stay> { $0.arrival < end && ($0.departure ?? end) > start },
                                 sort: \Stay.arrival)
         _chunks = Query(filter: #Predicate<TrackChunk> { $0.endDate >= start && $0.startDate < end },
                         sort: \TrackChunk.startDate)
@@ -161,7 +160,17 @@ struct DayContentView: View {
     }
 
     private var entries: [TimelineEntry] { Timeline.entries(stays: stays, chunks: chunks) }
-    private var trackedDistance: Double { chunks.reduce(0) { $0 + $1.distance } + (isToday ? TrackPoint.distance(of: engine.pendingPoints) : 0) }
+    /// The day's share of each track: one that runs past midnight counts on each day for its part.
+    private var trackedDistance: Double {
+        let day = interval
+        let tracked = chunks.reduce(0) { total, chunk in
+            let length = chunk.endDate.timeIntervalSince(chunk.startDate)
+            guard length > 0 else { return total + chunk.distance }
+            let inside = min(chunk.endDate, day.end).timeIntervalSince(max(chunk.startDate, day.start))
+            return total + chunk.distance * min(max(inside / length, 0), 1)
+        }
+        return tracked + (isToday ? TrackPoint.distance(of: engine.pendingPoints) : 0)
+    }
 
     var body: some View {
         ScrollView {

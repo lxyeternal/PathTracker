@@ -9576,6 +9576,126 @@
           }
         }
       }
+    },
+    "过去一年": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Past year"
+          }
+        }
+      }
+    },
+    "过去一年，你是": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Over the past year, you were"
+          }
+        }
+      }
+    },
+    "你的过去一年": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your past year"
+          }
+        }
+      }
+    },
+    "再走一阵子，画像就会出现。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep going a while and your portrait will appear."
+          }
+        }
+      }
+    },
+    "正在整理这一年…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Putting your year together…"
+          }
+        }
+      }
+    },
+    "过去一年 %@ 的路，是晚上九点以后走的。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Over the past year, %@ of your travel was after 9 pm."
+          }
+        }
+      }
+    },
+    "过去一年 %@ 的路，是早上八点以前走的。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Over the past year, %@ of your travel was before 8 am."
+          }
+        }
+      }
+    },
+    "过去一年去了 %lld 座城市，每一座都留下了你的名字。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You went to %lld cities over the past year, and left your name in every one."
+          }
+        }
+      }
+    },
+    "过去一年走过 %lld 个国家和地区，世界在你脚下变小了。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You visited %lld countries and regions over the past year; the world got smaller under your feet."
+          }
+        }
+      }
+    },
+    "过去一年 %@ 的路是骑车走的，风一直在你身边。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Over the past year, %@ of your travel was by bike, with the wind always beside you."
+          }
+        }
+      }
+    },
+    "过去一年 %@ 的路是一步一步走出来的。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Over the past year, %@ of your travel was step by step on foot."
+          }
+        }
+      }
+    },
+    "过去一年 %@ 的路在车上和地铁里，城市在窗外流过。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Over the past year, %@ of your travel was by car and subway, the city flowing past the window."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

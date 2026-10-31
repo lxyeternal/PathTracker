@@ -72,7 +72,10 @@ final class WorkoutRecorder: NSObject {
         guard state == .idle || state == .finished else { return }
         self.activity = activity
         isLinkedToPhone = linkedToPhone
-        linkedTripID = linkedToPhone ? PhoneLink.shared.snapshot?.activeRecording?.tripID : nil
+        // On a cold launch the last snapshot may be from an earlier recording: only trust one
+        // that began moments ago; the iPhone's next snapshot says for sure (see `link(to:)`).
+        let cached = PhoneLink.shared.snapshot?.activeRecording
+        linkedTripID = linkedToPhone && cached.map { Date().timeIntervalSince($0.start) < 5 * 60 } == true ? cached?.tripID : nil
         UserDefaults.standard.set(activity.rawValue, forKey: "watch.lastActivity")
         state = .starting
         errorMessage = nil
@@ -111,9 +114,9 @@ final class WorkoutRecorder: NSObject {
         }
     }
 
-    /// The iPhone said which recording this goes with.
+    /// The iPhone said which recording this goes with. It replaces a guess from a cached snapshot.
     func link(to tripID: UUID) {
-        guard isLinkedToPhone, linkedTripID == nil else { return }
+        guard isLinkedToPhone, linkedTripID != tripID else { return }
         linkedTripID = tripID
     }
 

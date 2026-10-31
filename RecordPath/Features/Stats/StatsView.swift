@@ -45,6 +45,12 @@ struct StatsView: View {
         return Calendar.current.date(byAdding: .day, value: -(period.days - 1), to: today) ?? today
     }
 
+    /// Where the chart's axis starts: for the year, the start of the first month, so its bar
+    /// isn't cut off by the axis.
+    private var chartStart: Date {
+        period == .year ? (Calendar.current.dateInterval(of: .month, for: rangeStart)?.start ?? rangeStart) : rangeStart
+    }
+
     private var rangeEnd: Date {
         let today = Calendar.current.startOfDay(for: Date())
         return Calendar.current.date(byAdding: period == .year ? .month : .day, value: 1,
@@ -207,7 +213,7 @@ struct StatsView: View {
                         AxisValueLabel { if let km = value.as(Double.self) { Text(Measurement(value: km, unit: UnitLength.kilometers).formatted(.measurement(width: .abbreviated, usage: .asProvided, numberFormatStyle: .number.precision(.fractionLength(0))).locale(appLocale))) } }
                     }
                 }
-                .chartXScale(domain: rangeStart...rangeEnd)
+                .chartXScale(domain: chartStart...rangeEnd)
                 .chartXAxis { xAxis }
                 .frame(height: 200)
                 .overlay { if movement.isEmpty && !isLoading { noData("还没有轨迹", detail: "开启自动记录后，这里会显示每天的移动距离。") } }
@@ -421,7 +427,12 @@ struct StatsView: View {
         if !summaries.stays.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
                 SectionHeader(title: "你的故事")
-                if summaries.portrait.distance > 0 { PortraitCard(portrait: summaries.portrait) }
+                // A month of days and some distance before the portrait says who you are.
+                if lifetime.trackedDays >= 30 && summaries.portrait.distance >= 20_000 {
+                    PortraitCard(portrait: summaries.portrait)
+                } else {
+                    PortraitPlaceholderCard()
+                }
                 JourneyCard(distance: groundLifetime, home: summaries.home)
                 if !summaries.firsts.isEmpty { FirstsCard(firsts: summaries.firsts) }
                 LightPaintingCard()
@@ -437,7 +448,7 @@ struct StatsView: View {
                 MetricTile(title: "国家与地区", value: "\(insights.countries.count)", symbol: "flag.fill", tint: .red)
                 MetricTile(title: "城市", value: "\(insights.cityCount)", symbol: "building.2.fill", tint: .indigo)
                 MetricTile(title: "记录天数", value: "\(insights.trackedDays)", symbol: "calendar", tint: .teal)
-                MetricTile(title: "到访地点", value: "\(summaries.stays.count)", symbol: "mappin.and.ellipse", tint: .pink)
+                MetricTile(title: "到访次数", value: "\(summaries.stays.count)", symbol: "mappin.and.ellipse", tint: .pink)
             }
             if let first = insights.firstDay {
                 Text("从 \(first.formatted(Date.FormatStyle(date: .long, time: .omitted, locale: appLocale))) 开始记录")

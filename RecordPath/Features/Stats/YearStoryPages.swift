@@ -149,7 +149,7 @@ struct StoryDistancePage: View {
                 .animation(.spring(response: 1.2, dampingFraction: 0.8), value: isActive)
             PageText {
                 Kicker(text: "这一年你移动了", tint: Color(red: 0.5, green: 0.85, blue: 1)).comesIn(isActive, after: 0.2)
-                StoryNumber(value: isActive ? report.distance / 1000 : 0, unit: String(localized: "公里", bundle: .appLanguage))
+                StoryNumber(value: isActive ? report.groundDistance / 1000 : 0, unit: String(localized: "公里", bundle: .appLanguage))
                     .animation(.easeOut(duration: 1.8).delay(0.3), value: isActive)
                 Text("地面上的路程相当于绕赤道 \(report.shareOfEquator.formatted(.percent.precision(.fractionLength(0...1)).locale(appLocale)))")
                     .font(.title3.weight(.semibold)).foregroundStyle(.white.opacity(0.85))

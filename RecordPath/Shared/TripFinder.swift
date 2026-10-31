@@ -11,6 +11,8 @@ enum TripFinder {
         let title: String
         let cities: [String]
         let countryCode: String?
+        /// Whether its main country isn't the person's own.
+        var abroad = false
         let places: Int
         let latitude: Double
         let longitude: Double
@@ -43,12 +45,18 @@ enum TripFinder {
     static func find(_ visits: [Visit], calendar: Calendar = .current) -> [Found] {
         guard !visits.isEmpty else { return [] }
         let homes = homes(visits, calendar: calendar)
+        // Where home was that year, or in the nearest year that has one.
+        func home(_ year: Int) -> CLLocation? {
+            homes[year] ?? homes.min { (abs($0.key - year), $0.key) < (abs($1.key - year), $1.key) }?.value
+        }
+        let homeCountry = Nationality.code ?? Dictionary(grouping: visits.compactMap(\.countryCode), by: { $0 })
+            .max { ($0.value.count, $1.key) < ($1.value.count, $0.key) }?.key
 
         // The days spent away, with what happened on each.
         var awayDays: [Date: [Visit]] = [:]
         for visit in visits {
             let year = calendar.component(.year, from: visit.arrival)
-            guard let home = homes[year] ?? homes.values.first,
+            guard let home = home(year),
                   visit.location.distance(from: home) > awayDistance else { continue }
             awayDays[calendar.startOfDay(for: visit.arrival), default: []].append(visit)
         }
@@ -56,7 +64,7 @@ enum TripFinder {
         var homeDays = Set<Date>()
         for visit in visits {
             let year = calendar.component(.year, from: visit.arrival)
-            if let home = homes[year] ?? homes.values.first, visit.location.distance(from: home) <= awayDistance {
+            if let home = home(year), visit.location.distance(from: home) <= awayDistance {
                 homeDays.insert(calendar.startOfDay(for: visit.arrival))
             }
         }
@@ -69,7 +77,7 @@ enum TripFinder {
             let members = run.flatMap { awayDays[$0] ?? [] }
             let farthest = members.map { visit -> CLLocationDistance in
                 let year = calendar.component(.year, from: visit.arrival)
-                return (homes[year] ?? homes.values.first).map { visit.location.distance(from: $0) } ?? 0
+                return home(year).map { visit.location.distance(from: $0) } ?? 0
             }.max() ?? 0
             // A day out nearby isn't a trip; a day somewhere far is.
             guard run.count >= 2 || farthest > 300_000 else { return }
@@ -80,8 +88,9 @@ enum TripFinder {
             let lat = members.map(\.latitude).reduce(0, +) / Double(members.count)
             let lon = members.map(\.longitude).reduce(0, +) / Double(members.count)
             let end = calendar.date(byAdding: .day, value: 1, to: last) ?? last
-            found.append(Found(start: first, end: end, title: title(cities: cities, countries: countries),
-                               cities: Array(cities.prefix(4)), countryCode: countries.first, places: members.count,
+            found.append(Found(start: first, end: end, title: title(cities: cities, countries: countries, home: homeCountry),
+                               cities: Array(cities.prefix(4)), countryCode: countries.first,
+                               abroad: countries.first.map { $0 != homeCountry } ?? false, places: members.count,
                                latitude: lat, longitude: lon))
         }
         for day in awayDays.keys.sorted() {
@@ -126,8 +135,8 @@ enum TripFinder {
     }
 
     /// "杭州之旅", or the country for a trip across several of its cities abroad.
-    private static func title(cities: [String], countries: [String]) -> String {
-        if let code = countries.first, code != "CN", cities.count >= 3 || countries.count > 1 {
+    private static func title(cities: [String], countries: [String], home: String?) -> String {
+        if let code = countries.first, code != home, cities.count >= 3 || countries.count > 1 {
             let name = WorldInsights.countryName(code: code, fallback: nil)
             return String(localized: "\(name)之旅", bundle: .appLanguage)
         }

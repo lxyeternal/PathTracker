@@ -61,6 +61,13 @@ struct StampBookView: View {
             } description: {
                 Text("去过\(province.name)之后，这枚印会盖上。")
             }
+            .overlay(alignment: .topTrailing) {
+                Button("关闭", systemImage: "xmark") { openProvince = nil }
+                    .labelStyle(.iconOnly)
+                    .buttonStyle(.glass)
+                    .buttonBorderShape(.circle)
+                    .padding()
+            }
             .presentationDetents([.height(300)])
         }
         .task(id: insights.provinces.count + insights.countries.count) { renderShareImage() }

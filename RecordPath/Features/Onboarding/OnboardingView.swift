@@ -43,6 +43,11 @@ struct OnboardingView: View {
                 .ignoresSafeArea()
         }
         .sensoryFeedback(.impact(weight: .light), trigger: step)
+        .onAppear {
+            // Shown again from Settings: start from how recording is set now, rather than
+            // quietly switching all-day recording on. A new install still starts on all day.
+            if UserDefaults.standard.object(forKey: "tracking.enabled") != nil { recordsAllDay = engine.isEnabled }
+        }
     }
 
     private func advance() {
@@ -186,7 +191,8 @@ struct OnboardingView: View {
             if status == .authorizedAlways || (!needsAlways && status == .authorizedWhenInUse) {
                 Task {
                     try? await Task.sleep(for: .milliseconds(600))
-                    advance()
+                    // "继续" may have been tapped meanwhile; don't skip the step after.
+                    if step == .location { advance() }
                 }
             }
         }
@@ -257,6 +263,9 @@ struct OnboardingView: View {
                     .signInWithAppleButtonStyle(.black)
                     .frame(height: 52)
                     .clipShape(.capsule)
+                    if let error = account.lastError {
+                        Text(error).font(.footnote).foregroundStyle(.red).multilineTextAlignment(.center)
+                    }
                     SecondaryButton(title: "暂不登录", action: finish)
                 }
             }

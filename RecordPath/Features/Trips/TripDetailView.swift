@@ -66,7 +66,7 @@ struct TripDetailView: View {
         }
         .navigationTitle("\(trip.coverEmoji) \(trip.title)")
         .navigationBarTitleDisplayMode(.inline)
-        .task(id: trip.id) {
+        .task(id: trip.interval) {
             guard DayPhotos.canRead else { return }
             let interval = trip.interval
             libraryPhotos = await Task.detached(priority: .userInitiated) { DayPhotos.assets(in: interval) }.value
@@ -109,6 +109,7 @@ struct TripDetailView: View {
         .confirmationDialog("删除“\(trip.title)”？", isPresented: $confirmingDelete, titleVisibility: .visible) {
             Button(trip.isRecording ? "删除记录" : "删除旅程", role: .destructive) {
                 if trip.isActive { engine.endTrip(trip) }
+                PostcardMail.cancel(for: trip.id)
                 context.delete(trip)
                 try? context.save()
                 dismiss()
@@ -310,8 +311,10 @@ struct TripDetailView: View {
         Task {
             for item in items {
                 guard let data = try? await item.loadTransferable(type: Data.self),
-                      let photo = PhotoImport.makePhoto(from: data, fallbackDate: Date(),
-                                                        fallbackCoordinate: engine.currentLocation?.coordinate) else { continue }
+                      // Without a date or place of its own, a photo added to a past trip belongs to its
+                      // start, not to now and here.
+                      let photo = PhotoImport.makePhoto(from: data, fallbackDate: trip.isActive ? Date() : trip.startDate,
+                                                        fallbackCoordinate: trip.isActive ? engine.currentLocation?.coordinate : nil) else { continue }
                 photo.trip = trip
                 context.insert(photo)
             }

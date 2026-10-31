@@ -45,7 +45,7 @@ struct ProvinceDetailView: View {
         .navigationTitle(province.name)
         .navigationBarTitleDisplayMode(.large)
         .sheet(item: $selected) { StayDetailView(stay: $0) }
-        .task(id: summaries.stays.count) {
+        .task(id: summaries.revision) {
             stays = summaries.stays.filter {
                 Province.containing(countryCode: $0.countryCode, region: $0.region, city: $0.city) == province
             }
