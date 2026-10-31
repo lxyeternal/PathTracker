@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import SwiftData
 
 /// Quiet markers along the way: distance travelled, countries, provinces, cities, days recorded.
 struct Milestone: Identifiable, Hashable {
@@ -202,7 +203,11 @@ struct MilestoneProgress {
         var cityNamesByKey: [String: String] = [:]
         var days = Set<Date>()
         let cityNames = CityNames.canonical(for: stays)
+        let passingThrough = StampBook.passingThrough(stays)
         for stay in stays {
+            days.formUnion(calendar.days(in: DateInterval(start: stay.arrival, end: max(stay.departure ?? Date(), stay.arrival))))
+            // A layover is a day recorded, not a country or city reached.
+            guard !passingThrough.contains(stay.persistentModelID) else { continue }
             if let code = stay.countryCode { countryFirst[code] = min(countryFirst[code] ?? .distantFuture, stay.arrival) }
             if let province = Province.containing(countryCode: stay.countryCode, region: stay.region, city: stay.city) {
                 provinceFirst[province.id] = min(provinceFirst[province.id] ?? .distantFuture, stay.arrival)
@@ -213,7 +218,6 @@ struct MilestoneProgress {
                 cityFirst[cityKey] = min(cityFirst[cityKey] ?? .distantFuture, stay.arrival)
                 cityNamesByKey[cityKey] = city
             }
-            days.formUnion(calendar.days(in: DateInterval(start: stay.arrival, end: max(stay.departure ?? Date(), stay.arrival))))
         }
         func ordered(_ dates: [String: Date], name: (String) -> String?) -> [First] {
             dates.sorted { $0.value < $1.value }.map { First(date: $0.value, name: name($0.key)) }

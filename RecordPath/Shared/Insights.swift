@@ -141,12 +141,14 @@ struct WorldInsights {
         var days = Set<Date>()
         var landmarkNames = Set<String>()
         let cityNames = CityNames.canonical(for: stays)
+        // Layovers and blips count as days recorded, not as countries or cities visited.
+        let passingThrough = StampBook.passingThrough(stays)
 
         for stay in stays {
             let interval = DateInterval(start: stay.arrival, end: max(stay.departure ?? Date(), stay.arrival))
             let stayDays = calendar.days(in: interval)
             days.formUnion(stayDays)
-            guard let code = stay.countryCode else { continue }
+            guard let code = stay.countryCode, !passingThrough.contains(stay.persistentModelID) else { continue }
             var summary = byCountry[code] ?? CountrySummary(code: code, name: Self.countryName(code: code, fallback: stay.country))
             summary.days.formUnion(stayDays)
             summary.firstVisit = min(summary.firstVisit, stay.arrival)

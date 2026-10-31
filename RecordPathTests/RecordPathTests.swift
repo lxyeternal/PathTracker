@@ -1098,6 +1098,20 @@ struct StampTests {
         #expect(StampBook(stays: stays).passport.isEmpty)
     }
 
+    @Test func aLayoverInAnAirportIsNotACountry() {
+        let stays = [
+            stay("CN", "上海", day: 0, hours: 200, lat: 31.23, lon: 121.47),
+            // Three hours between flights in Doha.
+            stay("QA", "Doha", day: 9, hours: 3, lat: 25.27, lon: 51.61, airport: true),
+            stay("GB", "London", day: 9.3, hours: 120, lat: 51.51, lon: -0.13),
+        ]
+        let book = StampBook(stays: stays)
+        #expect(book.passport.compactMap(\.countryCode) == ["GB"])
+        #expect(book.countries == ["CN", "GB"])
+        #expect(!LightUpInsights(stays: stays).countries.contains("QA"))
+        #expect(!WorldInsights(stays: stays).countries.map(\.code).contains("QA"))
+    }
+
     @Test func stillAbroadHasNoExitYet() {
         let stays = [
             stay("SG", "Singapore", day: 0, hours: 300, lat: 1.29, lon: 103.85),

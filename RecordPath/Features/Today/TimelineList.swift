@@ -151,13 +151,16 @@ private struct StayCard: View {
 
     /// "11:19 – 14:37 · 上海"
     private var detail: String {
+        // Somewhere with another clock, its times read as they were there.
+        let zone = stay.localTimeZone
         func label(_ date: Date) -> String {
             Calendar.current.isDate(date, inSameDayAs: day)
-                ? Format.time(date)
-                : date.formatted(.dateTime.month().day().hour().minute().locale(appLocale))
+                ? Format.time(date, in: zone)
+                : date.formatted(Date.FormatStyle(locale: appLocale, timeZone: zone ?? .current).month().day().hour().minute())
         }
         let end = stay.departure.map(label) ?? String(localized: "现在", bundle: .appLanguage)
-        let times = "\(label(stay.arrival)) – \(end)"
+        var times = "\(label(stay.arrival)) – \(end)"
+        if zone != nil { times += " " + String(localized: "当地时间", bundle: .appLanguage) }
         if stay.tagState == .pending { return times + " · " + String(localized: "正在识别地点…", bundle: .appLanguage) }
         return [times, stay.city].compactMap { $0 }.joined(separator: " · ")
     }
@@ -182,6 +185,7 @@ private struct StayCard: View {
             }
         }
         .scrollIndicators(.hidden)
+        .keepsDaySwipe()
         .scrollClipDisabled()
         .fullScreenCover(item: $viewingAsset) { AssetPager(assets: libraryPhotos, selection: $0.id) }
         .fullScreenCover(item: $viewingPhoto) { PhotoPager(photos: posted, selection: $0.id) }

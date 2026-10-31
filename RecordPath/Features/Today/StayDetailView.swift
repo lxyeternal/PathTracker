@@ -136,11 +136,18 @@ struct StayDetailView: View {
 
                 postSection
 
-                Section("时间") {
-                    LabeledContent("到达", value: stay.arrival.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: appLocale)))
-                    LabeledContent("离开", value: stay.departure?.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: appLocale))
+                Section {
+                    let style = Date.FormatStyle(date: .abbreviated, time: .shortened, locale: appLocale, timeZone: stay.localTimeZone ?? .current)
+                    LabeledContent("到达", value: stay.arrival.formatted(style))
+                    LabeledContent("离开", value: stay.departure?.formatted(style)
                                    ?? String(localized: "仍在这里", bundle: .appLanguage))
                     LabeledContent("停留", value: Format.duration(stay.duration))
+                } header: {
+                    Text("时间")
+                } footer: {
+                    if let zone = stay.localTimeZone {
+                        Text("当地时间（\(zone.localizedName(for: .generic, locale: appLocale) ?? zone.identifier)）")
+                    }
                 }
 
                 if !isEditing { SkySection(stay: stay) }
@@ -257,8 +264,9 @@ struct StayDetailView: View {
 
     private var timeLine: String {
         let day = stay.arrival.formatted(.dateTime.month().day().weekday(.abbreviated).locale(appLocale))
-        let end = stay.departure.map(Format.time) ?? String(localized: "现在", bundle: .appLanguage)
-        return "\(day) \(Format.time(stay.arrival)) – \(end) · \(Format.duration(stay.duration))"
+        let zone = stay.localTimeZone
+        let end = stay.departure.map { Format.time($0, in: zone) } ?? String(localized: "现在", bundle: .appLanguage)
+        return "\(day) \(Format.time(stay.arrival, in: zone)) – \(end) · \(Format.duration(stay.duration))"
     }
 
     /// Photos from the library taken during the stay, before anything is posted.

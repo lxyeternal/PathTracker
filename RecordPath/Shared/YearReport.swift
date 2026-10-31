@@ -1,5 +1,6 @@
 import Foundation
 import CoreLocation
+import SwiftData
 
 /// A year in footprints: how far, how many places, which were new, the standout days.
 struct YearReport {
@@ -88,6 +89,9 @@ struct YearReport {
         report.busiestMonth = byMonth.max { $0.value < $1.value }.map { ($0.key, $0.value) }
 
         // Places, and which were seen for the first time.
+        // Layovers don't count as countries, cities or provinces, the same as everywhere else.
+        let passingThrough = StampBook.passingThrough(stays)
+        func counted(_ stays: [Stay]) -> [Stay] { stays.filter { !passingThrough.contains($0.persistentModelID) } }
         func codes(_ stays: [Stay]) -> [String] {
             Dictionary(grouping: stays.compactMap(\.countryCode), by: { $0 }).sorted { $0.value.count > $1.value.count }.map(\.key)
         }
@@ -95,12 +99,13 @@ struct YearReport {
         func provinceIDs(_ stays: [Stay]) -> [String] {
             stays.compactMap { Province.containing(countryCode: $0.countryCode, region: $0.region, city: $0.city)?.id }.removingDuplicates()
         }
-        report.countries = codes(inYear)
-        report.cities = cityKeys(inYear)
-        report.provinces = provinceIDs(inYear)
+        report.countries = codes(counted(inYear))
+        report.cities = cityKeys(counted(inYear))
+        report.provinces = provinceIDs(counted(inYear))
         if hasHistory {
             // Worked out once, not once per place.
-            let seenCountries = Set(before.compactMap(\.countryCode)), seenCities = Set(cityKeys(before)), seenProvinces = Set(provinceIDs(before))
+            let earlier = counted(before)
+            let seenCountries = Set(earlier.compactMap(\.countryCode)), seenCities = Set(cityKeys(earlier)), seenProvinces = Set(provinceIDs(earlier))
             report.newCountries = report.countries.filter { !seenCountries.contains($0) }
             report.newCities = report.cities.filter { !seenCities.contains($0) }
             report.newProvinces = report.provinces.filter { !seenProvinces.contains($0) }

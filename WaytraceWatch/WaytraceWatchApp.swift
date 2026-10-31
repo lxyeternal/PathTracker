@@ -48,4 +48,17 @@ final class WatchAppDelegate: NSObject, WKApplicationDelegate {
             await WorkoutRecorder.shared.start(activity, linkedToPhone: true)
         }
     }
+
+    /// The app ended mid-recording (a crash, an update) and watchOS relaunched it.
+    func handleActiveWorkoutRecovery() {
+        Task { @MainActor in await WorkoutRecorder.shared.recover() }
+    }
+
+    func applicationDidFinishLaunching() {
+        // Give a pending recovery a moment; a route still on disk after that has no workout left.
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(8))
+            WorkoutRecorder.shared.sendOrphanedRoute()
+        }
+    }
 }

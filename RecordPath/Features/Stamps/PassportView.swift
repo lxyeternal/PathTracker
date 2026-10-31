@@ -130,7 +130,7 @@ private struct Grain: View {
 private struct PassportDataPage: View {
     let book: StampBook
 
-    private var countries: Int { Set(book.passport.compactMap(\.countryCode)).count + (book.home == nil ? 0 : 1) }
+    private var countries: Int { book.countries.count }
 
     var body: some View {
         GeometryReader { proxy in

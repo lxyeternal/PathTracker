@@ -23,7 +23,7 @@ struct TodayView: View {
                     DragGesture(minimumDistance: 30)
                         .onEnded { value in
                             let dx = value.translation.width, dy = value.translation.height
-                            guard abs(dx) > 90, abs(dx) > abs(dy) * 2 else { return }
+                            guard abs(dx) > 90, abs(dx) > abs(dy) * 2, !DaySwipe.isHeld else { return }
                             shift(by: dx > 0 ? -1 : 1)
                         }
                 )
@@ -367,5 +367,22 @@ private struct DayFigure: View {
                 configuration.title
             }
         }
+    }
+}
+
+/// Sideways swipes inside the page (a photo strip, the memory cards) belong to them, not to
+/// turning the day: while one is being dragged, the day swipe holds still.
+@MainActor
+enum DaySwipe {
+    private static var heldUntil = Date.distantPast
+
+    static var isHeld: Bool { Date() < heldUntil }
+    static func hold() { heldUntil = Date().addingTimeInterval(0.5) }
+}
+
+extension View {
+    /// Marks a horizontally scrolling area so dragging it doesn't also turn the day.
+    func keepsDaySwipe() -> some View {
+        simultaneousGesture(DragGesture(minimumDistance: 5).onChanged { _ in DaySwipe.hold() })
     }
 }

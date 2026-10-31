@@ -71,7 +71,10 @@ final class PlaceTagger {
         var descriptor = FetchDescriptor<Stay>(predicate: #Predicate { $0.tagStateRaw == pending && $0.sourceRaw == nil },
                                                sortBy: [SortDescriptor(\.arrival, order: .reverse)])
         descriptor.fetchLimit = 120
-        guard let stays = try? context.fetch(descriptor), !stays.isEmpty else { return }
+        guard let stays = try? context.fetch(descriptor), !stays.isEmpty else {
+            await fillTimeZones()
+            return
+        }
 
         for stay in stays {
             if Self.isGone(stay) { continue }
@@ -83,6 +86,37 @@ final class PlaceTagger {
             try? await Task.sleep(for: .milliseconds(2000))
         }
         needsAnotherPass = true
+    }
+
+    /// Places named before time zones were kept get theirs: one lookup per one-degree area,
+    /// shared by every place in it, and only a few areas each time the queue is empty.
+    private func fillTimeZones() async {
+        let tagged = TagState.tagged.rawValue
+        let missing = (try? context.fetch(FetchDescriptor<Stay>(predicate: #Predicate { $0.tagStateRaw == tagged && $0.timeZoneID == nil }))) ?? []
+        guard !missing.isEmpty else { return }
+        func area(_ stay: Stay) -> String { "\(Int(stay.latitude.rounded(.down))),\(Int(stay.longitude.rounded(.down)))" }
+        var zones: [String: String] = [:]
+        let known = (try? context.fetch(FetchDescriptor<Stay>(predicate: #Predicate { $0.timeZoneID != nil }))) ?? []
+        for stay in known { if let zone = stay.timeZoneID { zones[area(stay)] = zone } }
+
+        var lookups = 0
+        for stay in missing {
+            if Self.isGone(stay) { continue }
+            let key = area(stay)
+            if zones[key] == nil, lookups < 12, let request = MKReverseGeocodingRequest(location: stay.location) {
+                lookups += 1
+                do {
+                    if let zone = try await request.mapItems.first?.timeZone?.identifier { zones[key] = zone }
+                } catch let error as NSError where Self.isThrottled(error) {
+                    break
+                } catch {}
+                try? await Task.sleep(for: .milliseconds(1500))
+                if Self.isGone(stay) { continue }
+            }
+            if let zone = zones[key] { stay.timeZoneID = zone }
+        }
+        try? context.save()
+        Diagnostics.record("timeZones filled lookups=\(lookups) missing=\(missing.count)")
     }
 
     /// Photo visits can number in the thousands. Named places go into a grid of ~3 km cells
@@ -210,6 +244,7 @@ final class PlaceTagger {
                 stay.countryCode = neighbour.countryCode
                 stay.city = neighbour.city
                 stay.region = neighbour.region
+                stay.timeZoneID = neighbour.timeZoneID
                 stay.tagState = .tagged
                 return .done
             }
@@ -228,6 +263,7 @@ final class PlaceTagger {
                 stay.region = address.cityWithContext
                 stay.street = item.address?.shortAddress ?? item.name
             }
+            if let zone = item?.timeZone?.identifier { stay.timeZoneID = zone }
         } catch let error as NSError where Self.isThrottled(error) {
             Diagnostics.record("geocode throttled")
             return .throttled
@@ -440,6 +476,7 @@ private extension Stay {
         countryCode = neighbour.countryCode
         city = neighbour.city
         region = neighbour.region
+        timeZoneID = neighbour.timeZoneID
         tagState = .tagged
     }
 }

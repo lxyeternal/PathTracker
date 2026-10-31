@@ -26,6 +26,7 @@ struct OnThisDayCard: View {
                     }
                     .tabViewStyle(.page(indexDisplayMode: .never))
                     .frame(height: 128)
+                    .keepsDaySwipe()
                     if memories.count > 1 {
                         HStack(spacing: 6) {
                             ForEach(memories.indices, id: \.self) { index in

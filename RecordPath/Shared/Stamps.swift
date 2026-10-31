@@ -1,5 +1,6 @@
 import Foundation
 import CoreLocation
+import SwiftData
 
 /// One stamp in the passport or the stamp book. Nothing is stored: stamps are read off the
 /// stays, so they're the same on every device and appear for visits imported from photos too.
@@ -58,6 +59,8 @@ struct StampBook {
     /// The country lived in, which issues the passport rather than stamping it.
     var home: String?
     var since: Date?
+    /// Every country with time spent in it, home included when it has some.
+    var countries: Set<String> = []
 
     init() {}
 
@@ -67,6 +70,7 @@ struct StampBook {
         since = first.arrival
 
         let runs = Self.countryRuns(sorted)
+        countries = Set(runs.map(\.code))
         var time: [String: TimeInterval] = [:]
         for run in runs { time[run.code, default: 0] += run.end.timeIntervalSince(run.start) }
         home = Nationality.code ?? time.max { $0.value < $1.value }?.key
@@ -229,25 +233,59 @@ struct StampBook {
         return visits
     }
 
-    /// Back-to-back stays in one country make one visit. Brief blips, like a place across the
-    /// border named by mistake or a layover, are dropped, so they don't stamp the passport.
-    static func countryRuns(_ sorted: [Stay]) -> [Run] {
-        var raw: [Run] = []
+    /// Back-to-back stays in one country, before anything is dropped, with the stays in each.
+    private static func rawRuns(_ sorted: [Stay]) -> [(run: Run, stays: [Stay])] {
+        var raw: [(run: Run, stays: [Stay])] = []
         for stay in sorted {
             guard let code = stay.countryCode else { continue }
             let end = max(stay.departure ?? stay.arrival, stay.arrival)
-            if raw.last?.code == code {
-                raw[raw.count - 1].last = stay
-                raw[raw.count - 1].end = max(raw[raw.count - 1].end, end)
-                raw[raw.count - 1].time += end.timeIntervalSince(stay.arrival)
-                raw[raw.count - 1].count += 1
-                raw[raw.count - 1].fromPhotos = raw[raw.count - 1].fromPhotos || stay.isFromPhotos
+            if raw.last?.run.code == code {
+                raw[raw.count - 1].run.last = stay
+                raw[raw.count - 1].run.end = max(raw[raw.count - 1].run.end, end)
+                raw[raw.count - 1].run.time += end.timeIntervalSince(stay.arrival)
+                raw[raw.count - 1].run.count += 1
+                raw[raw.count - 1].run.fromPhotos = raw[raw.count - 1].run.fromPhotos || stay.isFromPhotos
+                raw[raw.count - 1].stays.append(stay)
             } else {
-                raw.append(Run(code: code, first: stay, last: stay, start: stay.arrival, end: end,
-                               time: end.timeIntervalSince(stay.arrival), count: 1, fromPhotos: stay.isFromPhotos))
+                raw.append((Run(code: code, first: stay, last: stay, start: stay.arrival, end: end,
+                                time: end.timeIntervalSince(stay.arrival), count: 1, fromPhotos: stay.isFromPhotos), [stay]))
             }
         }
-        let kept = raw.filter { $0.time >= 45 * 60 || $0.count >= 3 || $0.fromPhotos }
+        return raw
+    }
+
+    /// Whether a run is only passing through: a brief blip (a place across the border named by
+    /// mistake), a layover spent entirely in an airport, or a lone photo far from everything
+    /// before and after it (taken from a window seat over another country).
+    private static func isPassingThrough(_ raw: [(run: Run, stays: [Stay])], at index: Int) -> Bool {
+        let run = raw[index].run
+        if !(run.time >= 45 * 60 || run.count >= 3 || run.fromPhotos) { return true }
+        if raw[index].stays.allSatisfy({ $0.category == .airport }), run.end.timeIntervalSince(run.start) < 86_400 { return true }
+        if run.fromPhotos, run.count == 1, index > 0, index + 1 < raw.count {
+            let before = raw[index - 1].run, after = raw[index + 1].run
+            return after.start.timeIntervalSince(before.end) < 86_400
+                && before.last.location.distance(from: run.first.location) > 300_000
+                && after.first.location.distance(from: run.first.location) > 300_000
+        }
+        return false
+    }
+
+    /// Stays that don't count as having been in their country (see `isPassingThrough`). Every
+    /// count of countries and cities leaves them out, so all of them agree with the passport.
+    static func passingThrough(_ stays: [Stay]) -> Set<PersistentIdentifier> {
+        let raw = rawRuns(stays.filter { $0.countryCode != nil }.sorted { $0.arrival < $1.arrival })
+        var ids = Set<PersistentIdentifier>()
+        for index in raw.indices where isPassingThrough(raw, at: index) {
+            ids.formUnion(raw[index].stays.map(\.persistentModelID))
+        }
+        return ids
+    }
+
+    /// Back-to-back stays in one country make one visit. Blips and layovers are dropped, so
+    /// they don't stamp the passport.
+    static func countryRuns(_ sorted: [Stay]) -> [Run] {
+        let raw = rawRuns(sorted)
+        let kept = raw.indices.filter { !isPassingThrough(raw, at: $0) }.map { raw[$0].run }
         var merged: [Run] = []
         for run in kept {
             if merged.last?.code == run.code {
