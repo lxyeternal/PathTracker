@@ -141,7 +141,7 @@ struct WorldInsights {
         var days = Set<Date>()
         var landmarkNames = Set<String>()
         let cityNames = CityNames.canonical(for: stays)
-        // Layovers and blips count as days recorded, not as countries or cities visited.
+        // Blips and window-seat photos count as days recorded, not as countries or cities visited.
         let passingThrough = StampBook.passingThrough(stays)
 
         for stay in stays {

@@ -255,12 +255,11 @@ struct StampBook {
     }
 
     /// Whether a run is only passing through: a brief blip (a place across the border named by
-    /// mistake), a layover spent entirely in an airport, or a lone photo far from everything
-    /// before and after it (taken from a window seat over another country).
+    /// mistake), or a lone photo far from everything before and after it (taken from a window
+    /// seat over another country). A layover in an airport does count: you were there.
     private static func isPassingThrough(_ raw: [(run: Run, stays: [Stay])], at index: Int) -> Bool {
         let run = raw[index].run
         if !(run.time >= 45 * 60 || run.count >= 3 || run.fromPhotos) { return true }
-        if raw[index].stays.allSatisfy({ $0.category == .airport }), run.end.timeIntervalSince(run.start) < 86_400 { return true }
         if run.fromPhotos, run.count == 1, index > 0, index + 1 < raw.count {
             let before = raw[index - 1].run, after = raw[index + 1].run
             return after.start.timeIntervalSince(before.end) < 86_400
@@ -281,8 +280,8 @@ struct StampBook {
         return ids
     }
 
-    /// Back-to-back stays in one country make one visit. Blips and layovers are dropped, so
-    /// they don't stamp the passport.
+    /// Back-to-back stays in one country make one visit. Blips are dropped, so they don't stamp
+    /// the passport.
     static func countryRuns(_ sorted: [Stay]) -> [Run] {
         let raw = rawRuns(sorted)
         let kept = raw.indices.filter { !isPassingThrough(raw, at: $0) }.map { raw[$0].run }

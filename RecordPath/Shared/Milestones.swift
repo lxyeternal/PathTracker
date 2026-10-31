@@ -206,7 +206,7 @@ struct MilestoneProgress {
         let passingThrough = StampBook.passingThrough(stays)
         for stay in stays {
             days.formUnion(calendar.days(in: DateInterval(start: stay.arrival, end: max(stay.departure ?? Date(), stay.arrival))))
-            // A layover is a day recorded, not a country or city reached.
+            // A blip across a border is a day recorded, not a country or city reached.
             guard !passingThrough.contains(stay.persistentModelID) else { continue }
             if let code = stay.countryCode { countryFirst[code] = min(countryFirst[code] ?? .distantFuture, stay.arrival) }
             if let province = Province.containing(countryCode: stay.countryCode, region: stay.region, city: stay.city) {
