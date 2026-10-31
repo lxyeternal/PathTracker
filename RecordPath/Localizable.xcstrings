@@ -9446,6 +9446,136 @@
           }
         }
       }
+    },
+    "国籍": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nationality"
+          }
+        }
+      }
+    },
+    "自动（停留最久的国家）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatic (where you've spent the most time)"
+          }
+        }
+      }
+    },
+    "护照的签发国。去这个国家以外的地方才算出国，护照上也不会给它盖入境章。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The country that issues your passport. Only places outside it count as abroad, and it gets no entry stamps."
+          }
+        }
+      }
+    },
+    "夜里九点以后": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After 9 p.m."
+          }
+        }
+      }
+    },
+    "早上八点以前": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Before 8 a.m."
+          }
+        }
+      }
+    },
+    "的路": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "of your travel"
+          }
+        }
+      }
+    },
+    "怎么走的": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How you got around"
+          }
+        }
+      }
+    },
+    "新去的地方": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New places"
+          }
+        }
+      }
+    },
+    "在家的时间": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time at home"
+          }
+        }
+      }
+    },
+    "最近三个月": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Past three months"
+          }
+        }
+      }
+    },
+    "金色": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gold"
+          }
+        }
+      }
+    },
+    "月光": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moonlight"
+          }
+        }
+      }
+    },
+    "霓虹": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neon"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -77,24 +77,7 @@ struct PortraitSheet: View {
                     PortraitFace(portrait: portrait, large: true)
                         .scaleEffect(appeared ? 1 : 0.92)
                         .opacity(appeared ? 1 : 0)
-                    VStack(alignment: .leading, spacing: 14) {
-                        Text("你的这一年").font(.headline)
-                        bar("夜里九点以后走的路", portrait.night, symbol: "moon.stars.fill", tint: .indigo)
-                        bar("早上八点以前走的路", portrait.early, symbol: "sunrise.fill", tint: .orange)
-                        bar("步行和跑步", portrait.onFoot, symbol: "figure.walk", tint: .green)
-                        bar("骑行", portrait.cycling, symbol: "bicycle", tint: .teal)
-                        bar("乘车和地铁", portrait.riding, symbol: "tram.fill", tint: .blue)
-                        bar("最近三个月的新地方", portrait.newPlaces, symbol: "binoculars.fill", tint: .mint)
-                        bar("最近三个月在家的时间", portrait.atHome, symbol: "house.fill", tint: .pink)
-                        HStack {
-                            Label("\(portrait.cities) 座城市", systemImage: "building.2.fill")
-                            Spacer()
-                            Label("\(portrait.countries) 个国家和地区", systemImage: "globe.asia.australia.fill")
-                        }
-                        .font(.subheadline).foregroundStyle(.secondary)
-                    }
-                    .padding(18)
-                    .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
+                    YearInTiles(portrait: portrait, appeared: appeared)
                     Text("画像根据过去一年的轨迹和地点算出，只在你的手机上计算。")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
@@ -124,23 +107,133 @@ struct PortraitSheet: View {
             image = renderer.uiImage.map { Image(uiImage: $0) }
         }
     }
+}
 
-    private func bar(_ title: LocalizedStringKey, _ value: Double, symbol: String, tint: Color) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Label(title, systemImage: symbol).font(.subheadline)
-                Spacer()
-                Text(value.formatted(.percent.precision(.fractionLength(0)).locale(appLocale)))
-                    .font(.subheadline.weight(.semibold)).monospacedDigit()
+/// "你的这一年" as a set of tiles: night and dawn as two skies, how you got around as one
+/// bar, new places and home as two rings, and the cities and countries as big numbers.
+struct YearInTiles: View {
+    let portrait: TravellerPortrait
+    let appeared: Bool
+
+    private func percent(_ value: Double) -> String { value.formatted(.percent.precision(.fractionLength(0)).locale(appLocale)) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("你的这一年").font(.system(.title3, design: .serif, weight: .bold))
+            HStack(spacing: 12) {
+                skyTile(title: "夜里九点以后", value: portrait.night, symbol: "moon.stars.fill",
+                        colors: [Color(red: 0.1, green: 0.1, blue: 0.3), Color(red: 0.35, green: 0.25, blue: 0.6)])
+                skyTile(title: "早上八点以前", value: portrait.early, symbol: "sunrise.fill",
+                        colors: [Color(red: 0.98, green: 0.55, blue: 0.4), Color(red: 1, green: 0.82, blue: 0.55)],
+                        ink: Color(red: 0.4, green: 0.16, blue: 0.1))
             }
+            modesTile
+            HStack(spacing: 12) {
+                ringTile(title: "新去的地方", detail: "最近三个月", value: portrait.newPlaces, tint: .mint, symbol: "binoculars.fill")
+                ringTile(title: "在家的时间", detail: "最近三个月", value: portrait.atHome, tint: .pink, symbol: "house.fill")
+            }
+            HStack(spacing: 12) {
+                numberTile(value: portrait.cities, unit: "座城市", symbol: "building.2.fill", tint: .indigo)
+                numberTile(value: portrait.countries, unit: "个国家和地区", symbol: "globe.asia.australia.fill", tint: .blue)
+            }
+        }
+    }
+
+    /// A share of the year's walking as a little sky, the number set large on it.
+    private func skyTile(title: LocalizedStringKey, value: Double, symbol: String, colors: [Color], ink: Color = .white) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Image(systemName: symbol).font(.title2).symbolRenderingMode(.hierarchical)
+            Spacer(minLength: 8)
+            Text(percent(appeared ? value : 0))
+                .font(.system(size: 34, weight: .bold, design: .rounded))
+                .contentTransition(.numericText())
+            Text(title).font(.caption.weight(.semibold)).opacity(0.85)
+            Text("的路").font(.caption2).opacity(0.7)
+        }
+        .foregroundStyle(ink)
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 156)
+        .background(LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing),
+                    in: .rect(cornerRadius: 22, style: .continuous))
+        .animation(.smooth(duration: 0.9).delay(0.2), value: appeared)
+    }
+
+    /// Walking, cycling and riding as the parts of one bar.
+    private var modesTile: some View {
+        let parts: [(LocalizedStringKey, Double, Color, String)] = [
+            ("步行", portrait.onFoot, .green, "figure.walk"),
+            ("骑行", portrait.cycling, .teal, "bicycle"),
+            ("乘车和地铁", portrait.riding, .blue, "tram.fill"),
+        ]
+        return VStack(alignment: .leading, spacing: 12) {
+            Text("怎么走的").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
             GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(tint.opacity(0.15))
-                    Capsule().fill(tint.gradient).frame(width: geo.size.width * (appeared ? value : 0))
+                HStack(spacing: 3) {
+                    ForEach(Array(parts.enumerated()), id: \.offset) { _, part in
+                        if part.1 > 0.005 {
+                            Capsule().fill(part.2.gradient)
+                                .frame(width: max(6, (geo.size.width - 6) * (appeared ? part.1 : 1 / 3)))
+                        }
+                    }
+                    Spacer(minLength: 0)
                 }
             }
-            .frame(height: 6)
-            .animation(.spring(response: 0.8, dampingFraction: 0.8).delay(0.2), value: appeared)
+            .frame(height: 14)
+            .animation(.spring(response: 0.9, dampingFraction: 0.85).delay(0.2), value: appeared)
+            HStack(spacing: 16) {
+                ForEach(Array(parts.enumerated()), id: \.offset) { _, part in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Label(part.0, systemImage: part.3).font(.caption).foregroundStyle(part.2)
+                        Text(percent(part.1)).font(.system(.headline, design: .rounded)).monospacedDigit()
+                    }
+                }
+            }
         }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.background.secondary, in: .rect(cornerRadius: 22, style: .continuous))
+    }
+
+    /// A share as a ring filling up, the number in the middle.
+    private func ringTile(title: LocalizedStringKey, detail: LocalizedStringKey, value: Double, tint: Color, symbol: String) -> some View {
+        VStack(spacing: 10) {
+            ZStack {
+                Circle().stroke(tint.opacity(0.15), lineWidth: 10)
+                Circle()
+                    .trim(from: 0, to: appeared ? value : 0)
+                    .stroke(tint.gradient, style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                VStack(spacing: 0) {
+                    Image(systemName: symbol).font(.caption).foregroundStyle(tint)
+                    Text(percent(value)).font(.system(.title3, design: .rounded, weight: .bold)).monospacedDigit()
+                }
+            }
+            .frame(width: 92, height: 92)
+            .animation(.spring(response: 1.1, dampingFraction: 0.85).delay(0.3), value: appeared)
+            VStack(spacing: 1) {
+                Text(title).font(.subheadline.weight(.semibold))
+                Text(detail).font(.caption2).foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 18)
+        .frame(maxWidth: .infinity)
+        .background(.background.secondary, in: .rect(cornerRadius: 22, style: .continuous))
+    }
+
+    private func numberTile(value: Int, unit: LocalizedStringKey, symbol: String, tint: Color) -> some View {
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: symbol)
+                .font(.title3).foregroundStyle(.white)
+                .frame(width: 42, height: 42)
+                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(tint.gradient))
+            VStack(alignment: .leading, spacing: 0) {
+                Text(verbatim: "\(value)").font(.system(size: 28, weight: .bold, design: .rounded))
+                Text(unit).font(.caption).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .background(.background.secondary, in: .rect(cornerRadius: 22, style: .continuous))
     }
 }
