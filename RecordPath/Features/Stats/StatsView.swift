@@ -118,6 +118,7 @@ struct StatsView: View {
             .navigationDestination(for: FirstsRoute.self) { _ in FirstsView(firsts: summaries.firsts, extremes: summaries.extremes) }
             .navigationDestination(for: JourneyRoute.self) { _ in JourneyView(distance: groundLifetime, home: summaries.home) }
             .navigationDestination(for: DayRoute.self) { DayPage(day: $0.day) }
+            .navigationDestination(for: ParallelRoute.self) { _ in ParallelView() }
             .refreshable { await load() }
         }
     }
@@ -421,7 +422,7 @@ struct StatsView: View {
         (milestones.all.first { $0.milestone.kind == .distance }?.current ?? 0) * 1000
     }
 
-    /// The portrait, the virtual road, the firsts and the light painting.
+    /// The portrait, the virtual road, the firsts and the footprints shared with friends.
     @ViewBuilder private var storiesSection: some View {
         if !summaries.stays.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
@@ -434,6 +435,7 @@ struct StatsView: View {
                 }
                 JourneyCard(distance: groundLifetime, home: summaries.home)
                 if !summaries.firsts.isEmpty { FirstsCard(firsts: summaries.firsts) }
+                ParallelCard()
             }
         }
     }

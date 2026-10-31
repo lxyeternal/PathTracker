@@ -31,6 +31,8 @@
 			</dict>
 		</dict>
 	</array>
+	<key>CKSharingSupported</key>
+	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
