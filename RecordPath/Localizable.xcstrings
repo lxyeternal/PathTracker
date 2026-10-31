@@ -9266,6 +9266,186 @@
           }
         }
       }
+    },
+    "你走到了%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've reached %@"
+          }
+        }
+      }
+    },
+    "已走": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Travelled"
+          }
+        }
+      }
+    },
+    "到达的站": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stops reached"
+          }
+        }
+      }
+    },
+    "下一站%@ · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next: %1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "全程 %@ · %lld 站": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · %2$lld stops"
+          }
+        }
+      }
+    },
+    "你在这里": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're here"
+          }
+        }
+      }
+    },
+    "下一站 · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next stop · %@"
+          }
+        }
+      }
+    },
+    "你在地面上走过的路（不含飞行），按城市之间的直线距离铺在这条路上。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your ground travel (flights not included), laid along the road by the straight-line distance between towns."
+          }
+        }
+      }
+    },
+    "%lld · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld · %2$@"
+          }
+        }
+      }
+    },
+    "出国": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abroad"
+          }
+        }
+      }
+    },
+    "新的国家": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New country"
+          }
+        }
+      }
+    },
+    "走路": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On foot"
+          }
+        }
+      }
+    },
+    "深夜": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Late night"
+          }
+        }
+      }
+    },
+    "在外过夜": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Night away"
+          }
+        }
+      }
+    },
+    "个": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ""
+          }
+        }
+      }
+    },
+    "还有 %lld 个第一次": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld more firsts"
+          }
+        }
+      }
+    },
+    "%lld 个第一次": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld firsts"
+          }
+        }
+      }
+    },
+    "沿着%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Along %@"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

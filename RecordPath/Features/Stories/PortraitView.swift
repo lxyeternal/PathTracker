@@ -1,66 +1,54 @@
 import SwiftUI
 
-extension TravellerPortrait.Archetype {
-    var gradient: LinearGradient {
-        LinearGradient(colors: colors.map { Color(red: $0.0, green: $0.1, blue: $0.2) }, startPoint: .topLeading, endPoint: .bottomTrailing)
-    }
-}
-
-/// "这一年，你是……" as a card in the archetype's colours.
+/// "这一年，你是……" as a small travel poster: the archetype's painted scene, its name set
+/// large in serif over the bottom, the reason in the person's own numbers.
 struct PortraitFace: View {
     let portrait: TravellerPortrait
     var large = false
 
     var body: some View {
         let archetype = portrait.archetype
-        VStack(alignment: .leading, spacing: large ? 14 : 10) {
-            HStack(alignment: .top) {
-                Text("这一年，你是")
-                    .font(large ? .headline : .subheadline.weight(.semibold))
+        ZStack(alignment: .bottomLeading) {
+            PortraitScene(archetype: archetype)
+            LinearGradient(stops: [.init(color: .clear, location: 0.35), .init(color: .black.opacity(0.62), location: 1)],
+                           startPoint: .top, endPoint: .bottom)
+            VStack(alignment: .leading, spacing: large ? 10 : 7) {
+                Text(verbatim: "\(Calendar.current.component(.year, from: Date())) · \(String(localized: "旅人画像", bundle: .appLanguage))")
+                    .font(.caption.weight(.semibold))
+                    .tracking(2)
                     .opacity(0.85)
-                Spacer()
-                Image(systemName: archetype.symbol)
-                    .font(.system(size: large ? 54 : 34, weight: .semibold))
-                    .symbolRenderingMode(.hierarchical)
-                    .shadow(color: .black.opacity(0.15), radius: 6, y: 3)
-            }
-            Text(archetype.title)
-                .font(.system(size: large ? 38 : 28, weight: .bold, design: .serif))
-                .minimumScaleFactor(0.7)
-                .lineLimit(1)
-            Text(portrait.reason)
-                .font(large ? .body : .subheadline)
-                .opacity(0.9)
-                .fixedSize(horizontal: false, vertical: true)
-            if !portrait.traits.isEmpty {
-                HStack(spacing: 6) {
-                    Text("也是").font(.caption.weight(.semibold)).opacity(0.75)
-                    ForEach(portrait.traits, id: \.self) { trait in
-                        Label(trait.title, systemImage: trait.symbol)
-                            .font(.caption.weight(.semibold))
-                            .padding(.horizontal, 9).padding(.vertical, 5)
-                            .background(.white.opacity(0.2), in: .capsule)
+                Spacer(minLength: 0)
+                Text("这一年，你是").font(.subheadline.weight(.medium)).opacity(0.85)
+                Text(archetype.title)
+                    .font(.system(size: large ? 40 : 32, weight: .bold, design: .serif))
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
+                    .shadow(color: .black.opacity(0.25), radius: 8, y: 2)
+                Text(portrait.reason)
+                    .font(large ? .callout : .footnote)
+                    .opacity(0.92)
+                    .fixedSize(horizontal: false, vertical: true)
+                if !portrait.traits.isEmpty {
+                    HStack(spacing: 6) {
+                        ForEach(portrait.traits, id: \.self) { trait in
+                            Label(trait.title, systemImage: trait.symbol)
+                                .font(.caption2.weight(.semibold))
+                                .padding(.horizontal, 9).padding(.vertical, 5)
+                                .background(.ultraThinMaterial.opacity(0.9), in: .capsule)
+                                .environment(\.colorScheme, .dark)
+                        }
                     }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .padding(.top, 2)
                 }
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
             }
+            .foregroundStyle(.white)
+            .padding(large ? 24 : 20)
         }
-        .foregroundStyle(.white)
-        .padding(large ? 24 : 18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            ZStack {
-                archetype.gradient
-                // A large faint symbol in the corner, like a watermark.
-                Image(systemName: archetype.symbol)
-                    .font(.system(size: large ? 220 : 150, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.08))
-                    .rotationEffect(.degrees(-12))
-                    .offset(x: large ? 110 : 120, y: large ? 60 : 40)
-            }
-        }
-        .clipShape(.rect(cornerRadius: large ? 30 : 24, style: .continuous))
+        .frame(height: large ? 460 : 340)
+        .clipShape(.rect(cornerRadius: large ? 32 : 28, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: large ? 32 : 28, style: .continuous).strokeBorder(.white.opacity(0.12), lineWidth: 1))
     }
 }
 
@@ -130,7 +118,7 @@ struct PortraitSheet: View {
             let renderer = ImageRenderer(content: PortraitFace(portrait: portrait, large: true)
                 .frame(width: 360)
                 .padding(20)
-                .background(Color(uiColor: .systemBackground))
+                .background(Color.black)
                 .environment(\.locale, appLocale))
             renderer.scale = 3
             image = renderer.uiImage.map { Image(uiImage: $0) }

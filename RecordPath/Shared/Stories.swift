@@ -54,6 +54,8 @@ struct LifeFirst: Identifiable, Sendable {
     let date: Date
     let title: String
     let place: String?
+    /// For a place worth a lifetime, which one, for its photograph.
+    var mustSeeID: String? = nil
     var id: String { "\(kind.rawValue)|\(title)|\(date.timeIntervalSince1970)" }
 }
 
@@ -117,7 +119,7 @@ enum LifeFirsts {
             guard let place = places.first(where: { $0.id == id }) else { continue }
             firsts.append(LifeFirst(kind: .mustSee, date: date,
                                     title: String(localized: "第一次到\(place.localizedName)", bundle: .appLanguage),
-                                    place: String(localized: "此生必去", bundle: .appLanguage)))
+                                    place: place.localizedRegion, mustSeeID: place.id))
         }
 
         // Moving: the first flight, the first long walk, the first time out in the small hours.
