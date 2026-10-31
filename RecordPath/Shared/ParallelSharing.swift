@@ -79,7 +79,11 @@ final class ParallelSharing {
                 share = stored
             }
             isSharing = true
-            try await upload(force: true)
+            // The history goes up in the background: the invitation shouldn't wait for years
+            // of days to upload.
+            Task {
+                do { try await self.upload(force: true) } catch { self.lastError = Self.describe(error) }
+            }
             return share
         } catch {
             log.error("Couldn't prepare the share: \(error.localizedDescription)")
@@ -190,7 +194,8 @@ final class ParallelSharing {
         if let share = try? await privateDB.record(for: CKRecord.ID(recordName: CKRecordNameZoneWideShare, zoneID: zoneID)) as? CKShare {
             for participant in share.participants where participant.role != .owner {
                 guard let id = participant.userIdentity.userRecordID?.recordName else { continue }
-                byID[id] = Friend(id: id, name: Self.name(of: participant.userIdentity),
+                if let name = Self.givenName(of: participant.userIdentity) { Self.knownNames[id] = name }
+                byID[id] = Friend(id: id, name: Self.name(for: id),
                                   state: participant.acceptanceStatus == .accepted ? .waitingForThem : .invited)
             }
         }
@@ -198,8 +203,9 @@ final class ParallelSharing {
             for zone in try await sharedDB.allRecordZones() where zone.zoneID.zoneName == zoneID.zoneName {
                 let ownerID = zone.zoneID.ownerName
                 let owner = (try? await sharedDB.record(for: CKRecord.ID(recordName: CKRecordNameZoneWideShare, zoneID: zone.zoneID)) as? CKShare)?.owner
-                var friend = byID[ownerID] ?? Friend(id: ownerID, name: owner.map { Self.name(of: $0.userIdentity) } ?? "", state: .theyShared)
-                if friend.name.isEmpty, let owner { friend.name = Self.name(of: owner.userIdentity) }
+                if let owner, let name = Self.givenName(of: owner.userIdentity) { Self.knownNames[ownerID] = name }
+                var friend = byID[ownerID] ?? Friend(id: ownerID, name: Self.name(for: ownerID), state: .theyShared)
+                friend.name = Self.name(for: ownerID)
                 switch byID[ownerID]?.state {
                 case .waitingForThem: friend.state = .mutual
                 case .invited: friend.state = .invited
@@ -246,8 +252,9 @@ final class ParallelSharing {
     func accept(_ metadata: CKShare.Metadata) async {
         do {
             _ = try await container.accept(metadata)
-            await refresh()
             let ownerID = metadata.ownerIdentity.userRecordID?.recordName
+            if let ownerID, let name = Self.givenName(of: metadata.ownerIdentity) { Self.knownNames[ownerID] = name }
+            await refresh()
             if let friend = friends.first(where: { $0.id == ownerID }), friend.state == .theyShared {
                 justAccepted = friend
             }
@@ -292,10 +299,22 @@ final class ParallelSharing {
 
     // MARK: Helpers
 
-    private static func name(of identity: CKUserIdentity) -> String {
-        identity.nameComponents.map { PersonNameComponentsFormatter.localizedString(from: $0, style: .default) }
+    /// The name iCloud gives for someone, when it gives one.
+    private static func givenName(of identity: CKUserIdentity) -> String? {
+        let name = identity.nameComponents.map { PersonNameComponentsFormatter.localizedString(from: $0, style: .default) }
             ?? identity.lookupInfo?.emailAddress ?? identity.lookupInfo?.phoneNumber
-            ?? String(localized: "一位朋友", bundle: .appLanguage)
+        return name.flatMap { $0.trimmingCharacters(in: .whitespaces).isEmpty ? nil : $0 }
+    }
+
+    /// The best name known for someone. iCloud doesn't always say, so names are remembered
+    /// from whenever it did.
+    private static func name(for id: String) -> String {
+        knownNames[id] ?? String(localized: "一位朋友", bundle: .appLanguage)
+    }
+
+    private static var knownNames: [String: String] {
+        get { UserDefaults.standard.dictionary(forKey: "parallel.names") as? [String: String] ?? [:] }
+        set { UserDefaults.standard.set(newValue, forKey: "parallel.names") }
     }
 
     private static func describe(_ error: Error) -> String {
