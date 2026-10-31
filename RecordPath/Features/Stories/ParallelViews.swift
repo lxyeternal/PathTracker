@@ -1,6 +1,7 @@
 import SwiftUI
 import MapKit
 import CloudKit
+import LinkPresentation
 
 struct ParallelRoute: Hashable {}
 
@@ -169,7 +170,7 @@ struct ParallelView: View {
             defer { working = false }
             do {
                 let share = try await sharing.prepareShare()
-                CloudSharing.present(share: share, container: sharing.container) { Task { await sharing.refresh() } }
+                InviteSharing.present(share: share) { Task { await sharing.refresh() } }
             } catch {
                 await sharing.refresh()
             }
@@ -223,7 +224,7 @@ private struct ParallelPrivacyText: View {
             point("xmark.circle.fill", .red, "不会共享",
                   "家、公司、学校附近 2 公里内的一切，隐私区域，地点名称，具体坐标，路线，照片和文字。朋友算不出你住在哪里。")
             point("iphone", .blue, "在哪里比对",
-                  "摘要存在你自己的 iCloud 里，只给你邀请的人看。比对在各自的手机上进行，不经过我们的服务器。")
+                  "摘要存在你自己的 iCloud 里。邀请是一个链接，拿到的人可以接受，所以请只发给你想邀请的人；双方都共享之后，你们才会在漫迹里互相看到。比对在各自的手机上进行，不经过我们的服务器。")
             point("hand.raised.fill", .orange, "随时停止",
                   "停止共享后，对方立刻看不到你的足迹，你也看不到对方的。")
         }
@@ -267,7 +268,7 @@ struct ShareBackSheet: View {
                     dismiss()
                     // iOS won't show the sharing screen while this sheet is still closing.
                     try? await Task.sleep(for: .milliseconds(700))
-                    CloudSharing.present(share: share, container: sharing.container) { Task { await sharing.refresh() } }
+                    InviteSharing.present(share: share) { Task { await sharing.refresh() } }
                 }
             } label: {
                 Group { if working { ProgressView() } else { Text("共享我的足迹给 Ta") } }
@@ -278,6 +279,56 @@ struct ShareBackSheet: View {
         }
         .padding(24)
         .presentationDetents([.medium])
+    }
+}
+
+/// Sends the invitation as a link to our own invite page, with Waytrace's name and icon, so
+/// chat apps show it as Waytrace rather than iCloud. Falls back to Apple's sharing screen.
+@MainActor
+enum InviteSharing {
+    static func present(share: CKShare, onChange: @escaping () -> Void) {
+        let sharing = ParallelSharing.shared
+        let name = AppServices.shared.account.profile.displayName
+        guard let url = sharing.inviteURL(for: share, from: name) else {
+            CloudSharing.present(share: share, container: sharing.container, onChange: onChange)
+            return
+        }
+        let controller = UIActivityViewController(activityItems: [InviteItem(url: url)], applicationActivities: nil)
+        controller.completionWithItemsHandler = { _, _, _, _ in onChange() }
+        guard let root = UIApplication.shared.connectedScenes.compactMap({ ($0 as? UIWindowScene)?.keyWindow }).first?.rootViewController else { return }
+        var top = root
+        while let presented = top.presentedViewController { top = presented }
+        controller.popoverPresentationController?.sourceView = top.view
+        top.present(controller, animated: true)
+    }
+
+    /// The link, with a title and the app's icon for the share sheet's preview.
+    private final class InviteItem: NSObject, UIActivityItemSource {
+        let url: URL
+        init(url: URL) { self.url = url }
+
+        func activityViewControllerPlaceholderItem(_ controller: UIActivityViewController) -> Any { url }
+        func activityViewController(_ controller: UIActivityViewController, itemForActivityType type: UIActivity.ActivityType?) -> Any? { url }
+
+        func activityViewController(_ controller: UIActivityViewController, subjectForActivityType type: UIActivity.ActivityType?) -> String {
+            String(localized: "漫迹 · 平行足迹邀请", bundle: .appLanguage)
+        }
+
+        func activityViewControllerLinkMetadata(_ controller: UIActivityViewController) -> LPLinkMetadata? {
+            let metadata = LPLinkMetadata()
+            metadata.title = String(localized: "漫迹 · 平行足迹邀请", bundle: .appLanguage)
+            metadata.originalURL = url
+            metadata.url = url
+            if let icon = Self.appIcon { metadata.iconProvider = NSItemProvider(object: icon) }
+            return metadata
+        }
+
+        private static var appIcon: UIImage? {
+            let icons = Bundle.main.object(forInfoDictionaryKey: "CFBundleIcons") as? [String: Any]
+            let primary = icons?["CFBundlePrimaryIcon"] as? [String: Any]
+            let files = primary?["CFBundleIconFiles"] as? [String]
+            return files?.last.flatMap { UIImage(named: $0) }
+        }
     }
 }
 

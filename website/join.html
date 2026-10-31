@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>漫迹 · 平行足迹邀请</title>
+<meta name="description" content="一起看看你们的足迹在哪里交汇：哪天在同一座城市，在哪里擦肩而过。">
+<meta property="og:title" content="漫迹 · 平行足迹邀请">
+<meta property="og:description" content="一起看看你们的足迹在哪里交汇：哪天在同一座城市，在哪里擦肩而过。">
+<meta property="og:image" content="https://waytrace.cn/images/icon.png">
+<meta property="og:type" content="website">
+<link rel="icon" href="images/icon.png">
+<style>
+  :root { --bg:#0b0d1a; --card:#161a2e; --text:#f5f5f7; --muted:#9a9cb3; --accent:#0a84ff; --warm:#ff9f0a; --cool:#30d5c8; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; background:var(--bg); color:var(--text); font:17px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif; }
+  main { max-width: 440px; margin: 0 auto; padding: 56px 24px calc(48px + env(safe-area-inset-bottom)); text-align: center; }
+  .paths { width: 120px; height: 150px; margin: 0 auto 8px; display:block; }
+  .icon { width: 64px; height: 64px; border-radius: 15px; box-shadow: 0 8px 22px rgba(0,0,0,.4); }
+  h1 { font: 700 28px/1.3 "Songti SC", "STSong", serif; margin: 18px 0 10px; }
+  p { color: var(--muted); margin: 0 0 10px; }
+  .card { background: var(--card); border-radius: 22px; padding: 18px 20px; margin: 26px 0; text-align: left; }
+  .card div { display:flex; gap:12px; align-items:flex-start; margin: 8px 0; color: var(--muted); font-size: 15px; }
+  .dot { flex: none; width: 10px; height: 10px; border-radius: 50%; margin-top: 7px; }
+  .button { display:block; background: var(--accent); color:#fff; text-decoration:none; font-weight:600; border-radius: 16px; padding: 15px; margin: 8px 0 14px; }
+  .button.off { background:#2c2f45; color:#8e90a6; pointer-events:none; }
+  .small { font-size: 14px; }
+  a { color: var(--accent); }
+  /* In WeChat: point at the menu that opens the page in Safari. */
+  .wechat { display:none; position:fixed; inset:0; background:rgba(0,0,0,.82); z-index:9; color:#fff; text-align:right; padding: 18px 22px; }
+  .wechat.on { display:block; }
+  .wechat .arrow { font-size: 46px; line-height: 1; margin-right: 6px; }
+  .wechat .tip { text-align:left; background: var(--card); border-radius: 18px; padding: 18px 20px; margin-top: 10px; font-size: 16px; }
+  .wechat .tip b { color: var(--warm); }
+</style>
+</head>
+<body>
+<div class="wechat" id="wechat">
+  <div class="arrow">↗</div>
+  <div class="tip">
+    <div>微信里打不开这个邀请。</div>
+    <div>请点右上角 <b>···</b>，选择 <b>在默认浏览器中打开</b>（Safari），再点“在漫迹中打开”。</div>
+  </div>
+</div>
+<main>
+  <svg class="paths" viewBox="0 0 120 150" aria-hidden="true">
+    <rect width="120" height="150" rx="26" fill="#161a2e"/>
+    <path d="M18 135 C24 70, 84 82, 102 15" stroke="#ff9f0a" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M102 135 C96 70, 36 82, 18 15" stroke="#30d5c8" stroke-width="5" fill="none" stroke-linecap="round" stroke-dasharray="1 9"/>
+    <circle cx="60" cy="74" r="11" fill="#ffd60a" opacity=".3"/>
+    <circle cx="60" cy="74" r="6" fill="#ffd60a"/>
+  </svg>
+  <h1 id="title">一起看看你们的平行足迹</h1>
+  <p>哪天在同一座城市，在哪里擦肩而过，<br>又去过哪些同样的地方。</p>
+
+  <div class="card">
+    <div><span class="dot" style="background:var(--warm)"></span>接受邀请后，你也把足迹共享给对方，你们就能看到彼此交汇的地方。</div>
+    <div><span class="dot" style="background:var(--cool)"></span>只共享粗略的足迹摘要：家附近 2 公里、地点名称、路线和照片都不会共享。</div>
+  </div>
+
+  <a class="button off" id="open" href="#">在漫迹中打开</a>
+  <p class="small" id="hint">这个邀请链接不完整，请让朋友重新发一次。</p>
+  <p class="small">还没有漫迹？<a href="./">了解漫迹</a></p>
+</main>
+<script>
+  (function () {
+    var query = new URLSearchParams(location.search);
+    var token = query.get('s') || '';
+    var name = (query.get('n') || '').slice(0, 30);
+    // Only an iCloud share id goes into the link: nothing else can be sent anywhere from here.
+    if (/^[A-Za-z0-9_-]{8,80}$/.test(token)) {
+      var open = document.getElementById('open');
+      open.href = 'https://www.icloud.com/share/' + token;
+      open.className = 'button';
+      document.getElementById('hint').textContent = '需要先安装漫迹。打开后，漫迹会请你接受邀请。';
+    }
+    if (name) document.getElementById('title').textContent = name + ' 邀请你看看你们的平行足迹';
+    if (/MicroMessenger/i.test(navigator.userAgent)) document.getElementById('wechat').className = 'wechat on';
+  })();
+</script>
+</body>
+</html>

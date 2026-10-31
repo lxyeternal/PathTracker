@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>漫迹 Waytrace · 你走过的路，它都替你记着</title>
+<meta name="description" content="漫迹是一款全天自动记录足迹的 iPhone 与 Apple Watch App：轨迹、停留的地点、城市和国家，点亮中国与世界，年度足迹、旅人画像、平行足迹。数据只在你的设备和 iCloud。">
+<meta property="og:title" content="漫迹 Waytrace">
+<meta property="og:description" content="全天自动记录你走过的路。点亮中国与世界，把一年讲成一个故事。">
+<meta property="og:image" content="https://waytrace.cn/images/icon.png">
+<meta name="theme-color" content="#0b0d1a">
+<link rel="icon" href="images/icon.png">
+<link rel="apple-touch-icon" href="images/icon.png">
+<style>
+  :root {
+    --night: #0b0d1a; --night-2: #12152a; --ink: #f5f5f7; --muted: #a3a6bf; --line: rgba(255,255,255,.08);
+    --paper: #fbf8f3; --paper-ink: #1d1b19; --paper-muted: #6f6a63;
+    --warm: #ff9f0a; --gold: #ffd60a; --teal: #30d5c8; --blue: #0a84ff; --rose: #ff6b8b;
+    --serif: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", sans-serif;
+    --ease: cubic-bezier(.2,.8,.2,1);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--night); color: var(--ink); font: 17px/1.7 var(--sans); overflow-x: hidden; }
+  a { color: inherit; }
+  img { display: block; max-width: 100%; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+
+  /* Navigation */
+  nav { position: fixed; inset: 0 0 auto; z-index: 20; transition: background .4s, backdrop-filter .4s; }
+  nav.solid { background: rgba(11,13,26,.72); backdrop-filter: saturate(160%) blur(18px); -webkit-backdrop-filter: saturate(160%) blur(18px); border-bottom: 1px solid var(--line); }
+  nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 600; letter-spacing: .5px; }
+  .brand img { width: 30px; height: 30px; border-radius: 8px; }
+  nav .links { display: flex; gap: 26px; font-size: 15px; color: var(--muted); }
+  nav .links a { text-decoration: none; transition: color .2s; }
+  nav .links a:hover { color: var(--ink); }
+  @media (max-width: 760px) { nav .links { display: none; } }
+
+  /* Hero */
+  .hero { position: relative; min-height: 100vh; min-height: 100svh; display: flex; align-items: center; overflow: hidden;
+    background: radial-gradient(1200px 700px at 75% 30%, #1d2550 0%, transparent 60%), radial-gradient(900px 600px at 10% 90%, #2a1a3d 0%, transparent 60%), var(--night); }
+  .stars { position: absolute; inset: 0; pointer-events: none; }
+  .stars i { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #fff; opacity: .5; animation: twinkle 4s ease-in-out infinite; }
+  @keyframes twinkle { 0%,100% { opacity: .15 } 50% { opacity: .8 } }
+  .hero .wrap { position: relative; display: grid; grid-template-columns: 1.05fr .95fr; align-items: center; gap: 40px; padding-top: 90px; padding-bottom: 60px; }
+  .hero h1 { font: 700 clamp(56px, 9vw, 112px)/1 var(--serif); margin: 0 0 18px; letter-spacing: 4px; }
+  .hero h1 small { display: block; font: 500 clamp(18px, 2vw, 22px)/1.4 var(--sans); letter-spacing: 6px; color: var(--muted); margin-top: 16px; }
+  .hero p.lead { font-size: clamp(19px, 2.2vw, 24px); color: #d6d7e6; margin: 0 0 34px; max-width: 520px; }
+  .cta { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+  .btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 26px; border-radius: 999px; font-weight: 600; text-decoration: none; transition: transform .3s var(--ease), box-shadow .3s; }
+  .btn.primary { background: #fff; color: #111; box-shadow: 0 10px 30px rgba(255,255,255,.15); }
+  .btn.primary:hover { transform: translateY(-2px); box-shadow: 0 16px 40px rgba(255,255,255,.22); }
+  .btn.ghost { border: 1px solid rgba(255,255,255,.25); color: var(--ink); }
+  .btn.ghost:hover { background: rgba(255,255,255,.06); }
+  .btn svg { width: 20px; height: 20px; }
+  .soon { font-size: 14px; color: var(--muted); }
+  .route { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .route path.trail { fill: none; stroke: url(#trail); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 2400; stroke-dashoffset: 2400; animation: draw 5.5s var(--ease) .4s forwards; filter: drop-shadow(0 0 8px rgba(255,159,10,.7)); }
+  .route circle { fill: var(--gold); opacity: 0; animation: pop .6s var(--ease) forwards; filter: drop-shadow(0 0 10px rgba(255,214,10,.9)); }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes pop { 0% { opacity: 0; transform: scale(.2); } 70% { opacity: 1; transform: scale(1.4); } 100% { opacity: 1; transform: scale(1); } }
+  .route circle { transform-box: fill-box; transform-origin: center; }
+
+  /* Phones */
+  .phone { position: relative; width: 300px; aspect-ratio: 540 / 1174; border-radius: 48px; padding: 10px; background: linear-gradient(145deg, #2c2f3d, #0f1018); box-shadow: 0 40px 90px rgba(0,0,0,.55), inset 0 0 0 1.5px rgba(255,255,255,.12); }
+  .phone img { width: 100%; height: 100%; object-fit: cover; border-radius: 39px; }
+  .phone::after { content: ""; position: absolute; top: 20px; left: 50%; width: 92px; height: 26px; transform: translateX(-50%); border-radius: 20px; background: #000; }
+  .hero .phones { position: relative; height: 640px; }
+  .hero .phones .phone { position: absolute; }
+  .hero .phones .p1 { right: 150px; top: 40px; transform: rotate(-6deg); animation: float 7s ease-in-out infinite; }
+  .hero .phones .p2 { right: 0; top: 0; z-index: 2; animation: float 7s ease-in-out -3.5s infinite; }
+  @keyframes float { 0%,100% { translate: 0 0; } 50% { translate: 0 -14px; } }
+  @media (max-width: 900px) {
+    .hero .wrap { grid-template-columns: 1fr; text-align: center; padding-top: 110px; }
+    .hero p.lead { margin-left: auto; margin-right: auto; }
+    .cta { justify-content: center; }
+    .hero .phones { height: 520px; }
+    .hero .phones .phone { width: 240px; }
+    .hero .phones .p1 { right: calc(50% - 30px); top: 30px; }
+    .hero .phones .p2 { right: calc(50% - 210px); }
+  }
+  @media (max-width: 480px) { .hero .phones .p1 { display: none; } .hero .phones .p2 { right: calc(50% - 120px); } }
+  .scroll-hint { position: absolute; left: 50%; bottom: 26px; translate: -50% 0; color: var(--muted); font-size: 13px; letter-spacing: 3px; animation: hint 2.4s ease-in-out infinite; }
+  @keyframes hint { 0%,100% { opacity: .4; translate: -50% 0; } 50% { opacity: 1; translate: -50% 6px; } }
+
+  /* Sections */
+  section { position: relative; padding: 140px 0; }
+  .eyebrow { font-size: 14px; letter-spacing: 4px; color: var(--warm); font-weight: 600; margin: 0 0 14px; }
+  h2 { font: 700 clamp(34px, 5vw, 56px)/1.2 var(--serif); margin: 0 0 20px; letter-spacing: 1px; }
+  .section-lead { font-size: clamp(17px, 1.8vw, 20px); color: var(--muted); max-width: 640px; margin: 0; }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 70px; align-items: center; }
+  .split.flip > :first-child { order: 2; }
+  @media (max-width: 900px) { .split, .split.flip { grid-template-columns: 1fr; gap: 50px; text-align: center; } .split.flip > :first-child { order: 0; } .section-lead { margin: 0 auto; } }
+  .points { list-style: none; padding: 0; margin: 30px 0 0; display: grid; gap: 16px; }
+  .points li { display: flex; gap: 14px; align-items: flex-start; color: #d6d7e6; text-align: left; }
+  .points li b { color: var(--ink); }
+  .points .dot { flex: none; width: 10px; height: 10px; border-radius: 50%; margin-top: 10px; background: var(--warm); box-shadow: 0 0 12px var(--warm); }
+  .stage { display: flex; justify-content: center; gap: 24px; }
+  .stage .phone { width: 270px; }
+  .stage .phone.small { width: 230px; margin-top: 70px; }
+  .trio-phones { margin-top: 80px; align-items: flex-start; }
+  .trio-phones .phone { width: 260px; }
+  .trio-phones .phone:nth-child(2) { margin-top: 60px; }
+  @media (max-width: 900px) { .trio-phones .phone { width: 200px; } .trio-phones .phone:nth-child(3) { display: none; } }
+  @media (max-width: 600px) { .stage .phone { width: 220px; } .stage .phone.small { display: none; } }
+
+  /* Light paper section */
+  .paper { background: var(--paper); color: var(--paper-ink); }
+  .paper .section-lead, .paper .points li { color: var(--paper-muted); }
+  .paper .points li b { color: var(--paper-ink); }
+  .paper .eyebrow { color: #c0392b; }
+
+  /* Gallery */
+  .gallery { margin-top: 60px; overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+  .track { display: flex; gap: 26px; width: max-content; animation: marquee 60s linear infinite; padding: 20px 0 40px; }
+  .gallery:hover .track { animation-play-state: paused; }
+  .track figure { margin: 0; text-align: center; }
+  .track .phone { width: 220px; box-shadow: 0 24px 50px rgba(0,0,0,.25), inset 0 0 0 1.5px rgba(255,255,255,.12); }
+  .track figcaption { margin-top: 16px; font-size: 15px; color: var(--paper-muted); }
+  @keyframes marquee { to { transform: translateX(-50%); } }
+
+  /* Story cards */
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 60px; }
+  @media (max-width: 900px) { .cards { grid-template-columns: 1fr; } }
+  .card { position: relative; border-radius: 28px; padding: 30px; min-height: 280px; overflow: hidden; border: 1px solid var(--line); display: flex; flex-direction: column; justify-content: flex-end; transition: transform .5s var(--ease); }
+  .card:hover { transform: translateY(-6px); }
+  .card h3 { font: 700 26px/1.3 var(--serif); margin: 0 0 8px; }
+  .card p { margin: 0; color: rgba(255,255,255,.75); font-size: 15px; }
+  .card .art { position: absolute; inset: 0; z-index: -1; }
+  .card.portrait { background: linear-gradient(180deg, #3d7a7a 0%, #1d3b3c 100%); }
+  .card.journey { background: linear-gradient(180deg, #2b2f6b 0%, #e88a5a 160%); }
+  .card.firsts { background: linear-gradient(180deg, #4a2c2a 0%, #1b1213 100%); }
+  .card svg { position: absolute; top: 0; left: 0; width: 100%; height: 66%; z-index: 0; }
+  @media (max-width: 900px) { .card { min-height: 330px; } }
+  .card::after { content: ""; position: absolute; inset: 0; z-index: 0; background: linear-gradient(180deg, transparent 35%, rgba(0,0,0,.55) 100%); }
+  .card h3, .card p { position: relative; z-index: 1; }
+
+  /* Parallel */
+  .parallel { background: radial-gradient(900px 500px at 50% 0%, #182046 0%, transparent 70%), var(--night); text-align: center; }
+  .parallel .section-lead { margin: 0 auto; }
+  .crossing { width: min(560px, 90vw); height: 300px; margin: 50px auto 30px; display: block; }
+  .crossing .mine, .crossing .theirs { fill: none; stroke-width: 4; stroke-linecap: round; stroke-dasharray: 900; stroke-dashoffset: 900; }
+  .crossing .mine { stroke: var(--warm); }
+  .crossing .theirs { stroke: var(--teal); }
+  .crossing .meet { opacity: 0; transform-box: fill-box; transform-origin: center; }
+  .in .crossing .mine, .in .crossing .theirs { animation: draw 3s var(--ease) forwards; }
+  .in .crossing .theirs { animation-delay: .3s; }
+  .in .crossing .meet { animation: pop .8s var(--ease) 2.6s forwards; }
+  .trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 30px; text-align: left; }
+  @media (max-width: 900px) { .trio { grid-template-columns: 1fr; } }
+  .trio div { background: var(--night-2); border: 1px solid var(--line); border-radius: 22px; padding: 24px; }
+  .trio b { display: block; font: 700 21px/1.4 var(--serif); margin-bottom: 6px; }
+  .trio span { color: var(--muted); font-size: 15px; }
+
+  /* Year numbers */
+  .year { background: linear-gradient(180deg, var(--night) 0%, #10162e 100%); }
+  .numbers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 50px; }
+  @media (max-width: 900px) { .numbers { grid-template-columns: repeat(2, 1fr); } }
+  .numbers div { border-top: 1px solid var(--line); padding-top: 18px; }
+  .numbers b { display: block; font: 700 clamp(36px, 5vw, 54px)/1 var(--sans); background: linear-gradient(120deg, #fff, var(--gold)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .numbers span { color: var(--muted); font-size: 15px; }
+
+  /* Privacy */
+  .privacy { text-align: center; }
+  .privacy .section-lead { margin: 0 auto; }
+  .promises { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 50px; text-align: left; }
+  @media (max-width: 900px) { .promises { grid-template-columns: 1fr; } }
+  .promises div { padding: 28px; border-radius: 24px; background: var(--night-2); border: 1px solid var(--line); }
+  .promises svg { width: 34px; height: 34px; margin-bottom: 14px; }
+  .promises b { display: block; font-size: 19px; margin-bottom: 6px; }
+  .promises span { color: var(--muted); font-size: 15px; }
+
+  /* Download */
+  .download { text-align: center; background: radial-gradient(800px 400px at 50% 100%, #3a2412 0%, transparent 70%), var(--night); }
+  .download .icon { width: 120px; height: 120px; border-radius: 28px; margin: 0 auto 30px; box-shadow: 0 20px 60px rgba(255,159,10,.25); }
+  .download .cta { justify-content: center; margin-top: 34px; }
+
+  footer { border-top: 1px solid var(--line); padding: 36px 0 calc(36px + env(safe-area-inset-bottom)); color: var(--muted); font-size: 14px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 14px 26px; justify-content: space-between; }
+  footer nav { position: static; }
+  footer a { text-decoration: none; margin-right: 22px; }
+  footer a:hover { color: var(--ink); }
+
+  /* Reveal on scroll */
+  .reveal { opacity: 0; transform: translateY(40px); transition: opacity 1s var(--ease), transform 1s var(--ease); }
+  .reveal.in { opacity: 1; transform: none; }
+  .reveal.d1 { transition-delay: .12s; } .reveal.d2 { transition-delay: .24s; } .reveal.d3 { transition-delay: .36s; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .reveal { opacity: 1; transform: none; }
+    .route path.trail, .crossing .mine, .crossing .theirs { stroke-dashoffset: 0; }
+    .route circle, .crossing .meet { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="images/icon.png" alt="">漫迹 Waytrace</a>
+    <div class="links">
+      <a href="#record">自动记录</a>
+      <a href="#world">点亮世界</a>
+      <a href="#stories">你的故事</a>
+      <a href="#parallel">平行足迹</a>
+      <a href="#privacy">隐私</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="stars" id="stars"></div>
+  <svg class="route" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <defs>
+      <linearGradient id="trail" x1="0" x2="1">
+        <stop offset="0" stop-color="#ff9f0a" stop-opacity="0"/>
+        <stop offset=".25" stop-color="#ff9f0a"/>
+        <stop offset="1" stop-color="#ffd60a"/>
+      </linearGradient>
+    </defs>
+    <path class="trail" d="M-40 760 C 180 700, 240 560, 420 590 S 700 760, 860 600 S 1080 260, 1250 300 S 1460 180, 1520 120"/>
+    <circle cx="420" cy="590" r="6" style="animation-delay:2.1s"/>
+    <circle cx="860" cy="600" r="6" style="animation-delay:3.2s"/>
+    <circle cx="1250" cy="300" r="7" style="animation-delay:4.6s"/>
+  </svg>
+  <div class="wrap">
+    <div>
+      <h1 class="reveal">漫迹<small>WAYTRACE</small></h1>
+      <p class="lead reveal d1">不用打开，不用记得按开始。<br>你走过的每一条路，它都替你记着。</p>
+      <div class="cta reveal d2">
+        <a class="btn primary" href="#download">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.37 12.6c-.02-2.2 1.8-3.26 1.88-3.31-1.02-1.5-2.62-1.7-3.19-1.73-1.36-.14-2.65.8-3.34.8-.69 0-1.75-.78-2.88-.76-1.48.02-2.85.86-3.61 2.19-1.54 2.67-.39 6.63 1.11 8.8.73 1.06 1.6 2.25 2.75 2.2 1.1-.04 1.52-.71 2.85-.71 1.33 0 1.71.71 2.88.69 1.19-.02 1.94-1.08 2.67-2.15.84-1.23 1.19-2.42 1.21-2.48-.03-.01-2.32-.89-2.33-3.54zM14.18 6.13c.61-.74 1.02-1.76.91-2.78-.88.04-1.94.59-2.57 1.32-.56.65-1.06 1.69-.93 2.69.98.08 1.98-.5 2.59-1.23z"/></svg>
+          iPhone 与 Apple Watch
+        </a>
+        <a class="btn ghost" href="#record">看看它能做什么</a>
+      </div>
+    </div>
+    <div class="phones">
+      <div class="phone p1"><img src="images/timeline.jpg" alt="时间线"></div>
+      <div class="phone p2"><img src="images/day.jpg" alt="今天"></div>
+    </div>
+  </div>
+  <div class="scroll-hint">向下滑动</div>
+</header>
+
+<section id="record">
+  <div class="wrap split">
+    <div class="reveal">
+      <p class="eyebrow">全天自动记录</p>
+      <h2>口袋里的手机，<br>就是你的旅行日记</h2>
+      <p class="section-lead">走路、骑车、坐车、搭地铁、飞行，漫迹在后台安静地记下路线和停留过的地方，自动认出城市、国家和地标。</p>
+      <ul class="points">
+        <li><span class="dot"></span><span><b>不用操心</b>，静止时自动关掉 GPS，走动时再醒来，电量跟着你的移动走。</span></li>
+        <li><span class="dot" style="background:var(--teal);box-shadow:0 0 12px var(--teal)"></span><span><b>没信号也不断</b>，地铁里、隧道里的那一段，会用运动数据补上。</span></li>
+        <li><span class="dot" style="background:var(--rose);box-shadow:0 0 12px var(--rose)"></span><span><b>从相册点亮过去</b>，照片的拍摄地点能补上很多年前去过的地方。</span></li>
+      </ul>
+    </div>
+    <div class="stage reveal d1">
+      <div class="phone"><img src="images/day.jpg" alt="今天"></div>
+      <div class="phone small"><img src="images/trip.jpg" alt="旅程"></div>
+    </div>
+  </div>
+</section>
+
+<section class="paper" id="world">
+  <div class="wrap">
+    <div class="reveal" style="text-align:center">
+      <p class="eyebrow">点亮中国，点亮世界</p>
+      <h2>你去过的每一个地方，<br>都留下了一枚印章</h2>
+      <p class="section-lead" style="margin:0 auto">一本会自己盖章的护照，三十四枚省份印，城市纪念章，还有中国与世界各一百处“此生必去”。</p>
+    </div>
+  </div>
+  <div class="gallery reveal d1">
+    <div class="track" id="track">
+      <figure><div class="phone"><img src="images/passport.jpg" alt=""></div><figcaption>会自己盖章的护照</figcaption></figure>
+      <figure><div class="phone"><img src="images/seals.jpg" alt=""></div><figcaption>三十四枚省份印</figcaption></figure>
+      <figure><div class="phone"><img src="images/city-stamps.jpg" alt=""></div><figcaption>城市纪念章</figcaption></figure>
+      <figure><div class="phone"><img src="images/must-see.jpg" alt=""></div><figcaption>此生必去</figcaption></figure>
+      <figure><div class="phone"><img src="images/country.jpg" alt=""></div><figcaption>每一个国家</figcaption></figure>
+      <figure><div class="phone"><img src="images/globe.jpg" alt=""></div><figcaption>一颗发光的地球</figcaption></figure>
+      <figure><div class="phone"><img src="images/four-corners.jpg" alt=""></div><figcaption>你到过的最东南西北</figcaption></figure>
+      <figure><div class="phone"><img src="images/places.jpg" alt=""></div><figcaption>你的足迹</figcaption></figure>
+      <figure><div class="phone"><img src="images/stamp-ceremony.jpg" alt=""></div><figcaption>每一次第一次，都有仪式</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section id="stories">
+  <div class="wrap">
+    <div class="reveal">
+      <p class="eyebrow">你的故事</p>
+      <h2>数字之外，<br>是一个关于你的故事</h2>
+      <p class="section-lead">漫迹会读懂你的足迹，把它们写成一幅画像、一段旅程，和一张张“第一次”的车票。</p>
+    </div>
+    <div class="cards">
+      <div class="card portrait reveal">
+        <svg viewBox="0 0 360 280" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <circle cx="80" cy="70" r="26" fill="#f1efe6" opacity=".9"/>
+          <path d="M0 210 L90 120 L170 200 L250 110 L360 220 L360 280 L0 280Z" fill="#245050" opacity=".8"/>
+          <path d="M0 240 C90 200 180 260 360 220 L360 280 L0 280Z" fill="#163636"/>
+          <path d="M140 270 C170 220 200 190 250 130" stroke="#f3e3b5" stroke-width="2.5" stroke-dasharray="2 6" fill="none" stroke-linecap="round"/>
+          <path d="M250 130 L250 95 L275 105 L250 113" fill="#ff6b4a" stroke="#fff" stroke-width="1.5"/>
+        </svg>
+        <h3>旅人画像</h3>
+        <p>夜行者、早起的人、城市收藏家、好奇的探索者……过去一年，你是哪一种旅人？</p>
+      </div>
+      <div class="card journey reveal d1">
+        <svg viewBox="0 0 360 280" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <path d="M40 200 L90 120 L140 200Z M110 200 L170 90 L230 200Z M190 200 L250 130 L310 200Z" fill="#1c1f4a" opacity=".55"/>
+          <path d="M162 104 L170 90 L178 104 L170 100Z" fill="#fff"/>
+          <path d="M20 160 C80 150 120 120 170 125 S270 80 340 60" stroke="rgba(255,255,255,.4)" stroke-width="2.5" stroke-dasharray="3 6" fill="none" stroke-linecap="round"/>
+          <path d="M20 160 C80 150 120 120 170 125" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round" style="filter:drop-shadow(0 0 6px #fff)"/>
+        </svg>
+        <h3>你已经走到了哪里</h3>
+        <p>把你走过的路铺在京杭大运河、318 国道、丝绸之路上，看看你走到了哪一站。</p>
+      </div>
+      <div class="card firsts reveal d2">
+        <svg viewBox="0 0 360 280" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <g transform="rotate(-8 180 110)">
+            <rect x="70" y="50" width="220" height="110" rx="14" fill="#f6efe2"/>
+            <circle cx="70" cy="105" r="12" fill="#4a2c2a"/><circle cx="290" cy="105" r="12" fill="#4a2c2a"/>
+            <line x1="215" y1="62" x2="215" y2="148" stroke="#c9bba5" stroke-dasharray="4 5"/>
+            <text x="92" y="98" font-size="22" font-weight="700" fill="#3a2a22" font-family="Songti SC, serif">第一次</text>
+            <text x="92" y="128" font-size="14" fill="#8a7a66">出国 · 2016</text>
+            <text x="230" y="112" font-size="26" fill="#c0392b">✈</text>
+          </g>
+        </svg>
+        <h3>第一次</h3>
+        <p>第一次出国、第一次到一座城市、第一次坐飞机……人生里的第一次，被印成一张张车票。</p>
+      </div>
+    </div>
+    <div class="stage trio-phones">
+      <div class="phone reveal"><img src="images/stories.jpg" alt="你的故事" loading="lazy"></div>
+      <div class="phone reveal d1"><img src="images/journey.jpg" alt="318 国道" loading="lazy"></div>
+      <div class="phone reveal d2"><img src="images/year-tiles.jpg" alt="你的过去一年" loading="lazy"></div>
+    </div>
+  </div>
+</section>
+
+<section class="parallel" id="parallel">
+  <div class="wrap reveal">
+    <p class="eyebrow">平行足迹</p>
+    <h2>我们曾经，<br>离得那么近</h2>
+    <p class="section-lead">和朋友互相共享足迹，看看你们哪天在同一座城市，在哪里擦肩而过，又去过哪些同样的地方。</p>
+    <svg class="crossing" viewBox="0 0 560 300" aria-hidden="true">
+      <path class="mine" d="M30 270 C 120 260, 160 170, 280 150 S 470 40, 530 30"/>
+      <path class="theirs" d="M30 40 C 140 50, 180 140, 280 150 S 450 260, 530 270" stroke-dasharray="2 10"/>
+      <g class="meet"><circle cx="280" cy="150" r="22" fill="#ffd60a" opacity=".25"/><circle cx="280" cy="150" r="9" fill="#ffd60a"/></g>
+    </svg>
+    <div class="trio">
+      <div><b>擦肩而过</b><span>同一个小时，相距不到一公里。原来那天，你们就在彼此附近。</span></div>
+      <div><b>同一个地方，不同的时光</b><span>你十月去过的地方，Ta 十一月也去了。</span></div>
+      <div><b>同一天，同一座城市</b><span>那些你们都不知道的、在同一座城市的日子。</span></div>
+    </div>
+    <p class="section-lead" style="margin-top:28px;font-size:15px">只共享粗略的摘要：家附近 2 公里、地点名称、路线和照片都不会共享。比对在各自的手机上进行。</p>
+  </div>
+</section>
+
+<section class="year" id="year">
+  <div class="wrap split flip">
+    <div class="reveal">
+      <p class="eyebrow">年度足迹</p>
+      <h2>一年，<br>一个故事</h2>
+      <p class="section-lead">到了年底，漫迹会把这一年讲给你听：去了多少座城市、走了多远、最常去哪里、最远到过哪里。做成一张海报，分享给想分享的人。</p>
+      <div class="numbers" id="numbers">
+        <div><b data-to="16">0</b><span>座城市</span></div>
+        <div><b data-to="4382">0</b><span>公里</span></div>
+        <div><b data-to="301">0</b><span>天的足迹</span></div>
+        <div><b data-to="23">0</b><span>枚奖牌</span></div>
+      </div>
+    </div>
+    <div class="stage reveal d1">
+      <div class="phone"><img src="images/year.jpg" alt="年度足迹"></div>
+      <div class="phone small"><img src="images/milestones.jpg" alt="奖牌"></div>
+    </div>
+  </div>
+</section>
+
+<section id="watch">
+  <div class="wrap split">
+    <div class="reveal">
+      <p class="eyebrow">Apple Watch</p>
+      <h2>不带手机，<br>也能出发</h2>
+      <p class="section-lead">徒步、跑步、骑行，从手腕开始记录。路线存进“健康”，回到 iPhone 身边时自动同步进你的足迹。</p>
+    </div>
+    <div class="stage reveal d1">
+      <div class="phone"><img src="images/stats.jpg" alt="统计"></div>
+    </div>
+  </div>
+</section>
+
+<section class="privacy" id="privacy">
+  <div class="wrap reveal">
+    <p class="eyebrow">隐私</p>
+    <h2>你的足迹，<br>只属于你</h2>
+    <p class="section-lead">漫迹没有自己的服务器。你去过的每一个地方，只保存在你的设备和你自己的 iCloud 里。</p>
+    <div class="promises">
+      <div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#ff9f0a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        <b>没有服务器</b><span>开发者看不到、也拿不到你的任何轨迹和地点。</span>
+      </div>
+      <div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#30d5c8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a5 5 0 0 1-.6-9.96A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9H7z"/></svg>
+        <b>只在你的 iCloud</b><span>换手机、多台设备，数据通过你自己的 iCloud 同步。</span>
+      </div>
+      <div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#ff6b8b" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 5.1A9.7 9.7 0 0 1 12 5c5 0 9 4.5 10 7a12.7 12.7 0 0 1-2.4 3.6M6.6 6.6C4.4 8 2.8 10.2 2 12c1 2.5 5 7 10 7a9.7 9.7 0 0 0 4-.9"/></svg>
+        <b>隐私区域</b><span>家和其他私人地点，可以在分享和导出时自动隐藏。</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="download" id="download">
+  <div class="wrap reveal">
+    <img class="icon" src="images/icon.png" alt="漫迹">
+    <h2>从今天开始，<br>让每一步都算数</h2>
+    <p class="section-lead" style="margin:0 auto">漫迹即将登陆 App Store。正在测试中，想抢先体验，欢迎写信给我们。</p>
+    <div class="cta">
+      <a class="btn primary" href="mailto:honywendev@gmail.com?subject=%E6%83%B3%E4%BD%93%E9%AA%8C%E6%BC%AB%E8%BF%B9">申请抢先体验</a>
+      <a class="btn ghost" href="#support">帮助与反馈</a>
+    </div>
+  </div>
+</section>
+
+<footer id="support">
+  <div class="wrap">
+    <div>
+      <a href="privacy.html">隐私政策</a>
+      <a href="mailto:honywendev@gmail.com">联系我们 honywendev@gmail.com</a>
+    </div>
+    <div>
+      <!-- ICP 备案号：备案通过后填在这里，并链接到 https://beian.miit.gov.cn/ -->
+      <span id="icp"></span>
+      © 2026 漫迹 Waytrace
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Stars in the hero sky.
+  (function () {
+    var sky = document.getElementById('stars');
+    for (var i = 0; i < 90; i++) {
+      var s = document.createElement('i');
+      s.style.left = Math.random() * 100 + '%';
+      s.style.top = Math.random() * 100 + '%';
+      s.style.animationDelay = (Math.random() * 4).toFixed(2) + 's';
+      var size = Math.random() < .15 ? 3 : 2;
+      s.style.width = s.style.height = size + 'px';
+      sky.appendChild(s);
+    }
+  })();
+
+  // The navigation bar gets a background once the page scrolls.
+  var nav = document.getElementById('nav');
+  addEventListener('scroll', function () { nav.classList.toggle('solid', scrollY > 40); }, { passive: true });
+
+  // The gallery loops: its pictures twice in a row.
+  var track = document.getElementById('track');
+  track.innerHTML += track.innerHTML;
+
+  // Things fade up as they come into view; numbers count up.
+  function countUp(el) {
+    var to = +el.dataset.to, start = performance.now(), length = 1600;
+    (function step(now) {
+      var t = Math.min((now - start) / length, 1), eased = 1 - Math.pow(1 - t, 3);
+      el.textContent = Math.round(to * eased).toLocaleString('zh-CN');
+      if (t < 1) requestAnimationFrame(step);
+    })(start);
+  }
+  var seen = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('in');
+      entry.target.querySelectorAll && entry.target.querySelectorAll('[data-to]').forEach(countUp);
+      seen.unobserve(entry.target);
+    });
+  }, { threshold: .18 });
+  document.querySelectorAll('.reveal').forEach(function (el) { seen.observe(el); });
+</script>
+</body>
+</html>
