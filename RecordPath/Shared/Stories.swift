@@ -80,7 +80,8 @@ struct LifeExtremes: Sendable {
 }
 
 enum LifeFirsts {
-    static func find(stays: [Stay], chunks: [TrackChunk], home: HomeBase?) -> (firsts: [LifeFirst], extremes: LifeExtremes) {
+    /// `country` is the person's own: going anywhere else is going abroad.
+    static func find(stays: [Stay], chunks: [TrackChunk], home: HomeBase?, country: String?) -> (firsts: [LifeFirst], extremes: LifeExtremes) {
         let ordered = stays.sorted { $0.arrival < $1.arrival }
         var firsts: [LifeFirst] = []
         var extremes = LifeExtremes()
@@ -92,7 +93,7 @@ enum LifeFirsts {
                                 title: String(localized: "故事从这里开始", bundle: .appLanguage), place: name(first)))
 
         // Countries and cities, in the order they first happened.
-        let homeCountry = home?.countryCode
+        let homeCountry = country ?? home?.countryCode
         var countries = Set<String>(), cities = Set<String>()
         var wentAbroad = false
         let cityNames = CityNames.canonical(for: stays)

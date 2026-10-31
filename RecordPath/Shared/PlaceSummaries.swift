@@ -141,7 +141,7 @@ final class PlaceSummaries {
                                  countryCode: $0.countryCode)
             })
             home = HomeBase.find(in: all)
-            (firsts, extremes) = LifeFirsts.find(stays: all, chunks: chunks, home: home)
+            (firsts, extremes) = LifeFirsts.find(stays: all, chunks: chunks, home: home, country: stamps.home)
             portrait = TravellerPortrait(stays: all, chunks: chunks, home: home)
             echoes = Echoes.find(stays: all, home: home)
         }

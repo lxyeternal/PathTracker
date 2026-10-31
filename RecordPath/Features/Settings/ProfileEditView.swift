@@ -14,6 +14,7 @@ struct ProfileEditView: View {
     @State private var showingPhotoPicker = false
     @State private var confirmingSignOut = false
     @State private var isLoadingPhoto = false
+    @State private var nationality = Nationality.code ?? ""
 
     private var emailIsValid: Bool {
         let trimmed = email.trimmingCharacters(in: .whitespaces)
@@ -24,6 +25,7 @@ struct ProfileEditView: View {
         Form {
             avatarSection
             infoSection
+            nationalitySection
             appleSection
         }
         .navigationTitle("个人资料")
@@ -96,6 +98,24 @@ struct ProfileEditView: View {
             } else {
                 Text("邮箱格式不正确").foregroundStyle(.red)
             }
+        }
+    }
+
+    private var nationalitySection: some View {
+        Section {
+            Picker("国籍", selection: $nationality) {
+                Text("自动（停留最久的国家）").tag("")
+                ForEach(Nationality.all, id: \.code) { country in
+                    Text("\(String.flag(for: country.code)) \(country.name)").tag(country.code)
+                }
+            }
+            .pickerStyle(.navigationLink)
+            .onChange(of: nationality) { _, code in
+                Nationality.code = code.isEmpty ? nil : code
+                PlaceSummaries.shared.refresh()
+            }
+        } footer: {
+            Text("护照的签发国。去这个国家以外的地方才算出国，护照上也不会给它盖入境章。")
         }
     }
 

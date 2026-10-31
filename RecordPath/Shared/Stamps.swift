@@ -69,7 +69,7 @@ struct StampBook {
         let runs = Self.countryRuns(sorted)
         var time: [String: TimeInterval] = [:]
         for run in runs { time[run.code, default: 0] += run.end.timeIntervalSince(run.start) }
-        home = time.max { $0.value < $1.value }?.key
+        home = Nationality.code ?? time.max { $0.value < $1.value }?.key
 
         for visit in Self.visits(runs, home: home) {
             passport.append(Stamp(id: "entry.\(visit.code).\(Int(visit.start.timeIntervalSince1970))", kind: .entry, date: visit.start,
