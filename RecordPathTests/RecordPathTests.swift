@@ -1386,3 +1386,58 @@ struct SkyTests {
         #expect(Sky.sun(on: day, at: CLLocationCoordinate2D(latitude: 78.2, longitude: 15.6)).set == nil)
     }
 }
+
+struct ParallelFootprintTests {
+    private let shanghai = TimeZone(identifier: "Asia/Shanghai")!
+    private let start = Date(timeIntervalSince1970: 1_780_000_000)
+
+    private func seen(_ lat: Double, _ lon: Double, at hours: Double, for length: Double = 0) -> FootprintDigest.Sighting {
+        let from = start.addingTimeInterval(hours * 3600)
+        return FootprintDigest.Sighting(latitude: lat, longitude: lon, start: from, end: from.addingTimeInterval(length * 3600), timeZone: shanghai)
+    }
+
+    @Test func homeIsNeverShared() {
+        let home = CLLocation(latitude: 31.2000, longitude: 121.4000)
+        let days = FootprintDigest.days(from: [seen(31.2050, 121.4050, at: 0, for: 5), seen(31.2400, 121.4900, at: 6)], excluding: [home])
+        let slots = days.values.flatMap(\.slots)
+        // Five hours at home show only as the area, never as a cell; the Bund an hour later does.
+        #expect(slots.count == 1)
+        #expect(slots.first?.lat == 3124)
+        #expect(!days.values.flatMap(\.areas).isEmpty)
+    }
+
+    @Test func bytesRoundTrip() {
+        let day = FootprintDigest.days(from: [seen(31.24, 121.49, at: 0, for: 3), seen(-33.86, 151.21, at: 30)], excluding: [])
+        for original in day.values {
+            let copy = FootprintDay(day: original.day, areasData: original.areasData, slotsData: original.slotsData)
+            #expect(copy == original)
+            #expect(copy.fingerprint == original.fingerprint)
+        }
+    }
+
+    @Test func passingBySameCityAndSamePlaceAtAnotherTime() {
+        // Both on the Bund at the same hour; both at West Lake, a month apart; both in Hangzhou
+        // the day after, in different parts of town.
+        let mine = FootprintDigest.days(from: [
+            seen(31.2400, 121.4900, at: 0),
+            seen(30.2500, 120.1500, at: 24 * 30),
+            seen(30.2700, 120.1600, at: 24 * 31),
+        ], excluding: [])
+        let theirs = FootprintDigest.days(from: [
+            seen(31.2450, 121.4950, at: 0.5),
+            seen(30.2510, 120.1520, at: 24 * 60),
+            seen(30.3000, 120.2000, at: 24 * 31 + 2),
+        ], excluding: [])
+        let result = ParallelMatch.compare(mine: Array(mine.values), theirs: Array(theirs.values))
+        #expect(result.passedBy.count == 1)
+        #expect(result.samePlaces.count == 1, "West Lake, a month apart")
+        #expect(result.sameDays.contains { $0.day == FootprintDigest.dayString(start.addingTimeInterval(24 * 31 * 3600), in: shanghai) })
+        #expect(!result.sameDays.contains { $0.day == FootprintDigest.dayString(start.addingTimeInterval(24 * 60 * 3600), in: shanghai) })
+    }
+
+    @Test func farApartAtTheSameHourIsNotPassingBy() {
+        let mine = FootprintDigest.days(from: [seen(31.24, 121.49, at: 0)], excluding: [])
+        let theirs = FootprintDigest.days(from: [seen(31.30, 121.49, at: 0)], excluding: [])
+        #expect(ParallelMatch.compare(mine: Array(mine.values), theirs: Array(theirs.values)).passedBy.isEmpty)
+    }
+}

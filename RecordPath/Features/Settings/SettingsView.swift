@@ -35,6 +35,7 @@ struct SettingsView: View {
                 notificationsSection
                 permissionsSection
                 privacySection
+                parallelSection
                 dataSection
                 aboutSection
                 #if DEBUG
@@ -302,6 +303,18 @@ struct SettingsView: View {
             Text("隐私区域")
         } footer: {
             Text("在地点详情里打开“分享和导出时隐藏这里”即可添加，左滑可以删除。隐私区域内的轨迹不会出现在分享图片和 GPX 文件里。")
+        }
+    }
+
+    private var parallelSection: some View {
+        Section {
+            NavigationLink {
+                ParallelView()
+            } label: {
+                Label("平行足迹", systemImage: "point.topleft.down.to.point.bottomright.curvepath")
+            }
+        } footer: {
+            Text("和你邀请的朋友互相共享足迹摘要，看看你们在哪里交汇。")
         }
     }
 

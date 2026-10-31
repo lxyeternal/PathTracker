@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RootView: View {
     @AppStorage("onboarding.completed") private var onboardingCompleted = false
+    @State private var parallel = ParallelSharing.shared
     @State private var navigator = AppNavigator()
     @State private var showingSettings = false
     @State private var ceremony: [Celebrations.Item] = []
@@ -42,6 +43,8 @@ struct RootView: View {
         .onChange(of: scenePhase, initial: true) { presentCeremonyIfDue() }
         .onChange(of: celebrations.ceremonies.count) { presentCeremonyIfDue() }
         .onChange(of: showingSettings) { presentCeremonyIfDue() }
+        // Someone's invitation to 平行足迹 was just accepted: offer to share back.
+        .sheet(item: Binding(get: { parallel.justAccepted }, set: { parallel.justAccepted = $0 })) { ShareBackSheet(friend: $0) }
         .environment(navigator)
         .environment(\.locale, language.locale)
     }

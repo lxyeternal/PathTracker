@@ -1,9 +1,11 @@
 import SwiftUI
+import CloudKit
 import SwiftData
 import UserNotifications
 
 @main
 struct RecordPathApp: App {
+    @UIApplicationDelegateAdaptor private var appDelegate: AppDelegate
     @Environment(\.scenePhase) private var scenePhase
     // Created at launch, including background relaunches triggered by location events,
     // so recording resumes before any UI exists.
@@ -36,6 +38,7 @@ struct RecordPathApp: App {
                     await services.notifier.refreshAuthorization()
                     services.watch.scheduleUpdate(immediately: true)
                     await services.account.verifyCredential()
+                    try? await ParallelSharing.shared.upload()
                 }
             default:
                 break
@@ -74,6 +77,7 @@ final class AppServices {
         liveRecording.activate()
         notifier = Notifier(context: container.mainContext, activity: activity)
         PlaceSummaries.shared.attach(container.mainContext)
+        ParallelSharing.shared.attach(container)
         Nationality.observeOtherDevices()
         _ = CloudSync.shared
         tagger.onTagged = { [notifier] stay in
@@ -121,5 +125,26 @@ private final class NotificationPresenter: NSObject, UNUserNotificationCenterDel
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async
         -> UNNotificationPresentationOptions {
         [.banner, .sound]
+    }
+}
+
+/// Hands invitations to 平行足迹 to the app: tapped in Messages or Mail, or opened from a link.
+final class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication, configurationForConnecting session: UISceneSession,
+                     options: UIScene.ConnectionOptions) -> UISceneConfiguration {
+        let configuration = UISceneConfiguration(name: nil, sessionRole: session.role)
+        configuration.delegateClass = SceneDelegate.self
+        return configuration
+    }
+}
+
+final class SceneDelegate: NSObject, UIWindowSceneDelegate {
+    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+        guard let metadata = connectionOptions.cloudKitShareMetadata else { return }
+        Task { @MainActor in await ParallelSharing.shared.accept(metadata) }
+    }
+
+    func windowScene(_ windowScene: UIWindowScene, userDidAcceptCloudKitShareWith cloudKitShareMetadata: CKShare.Metadata) {
+        Task { @MainActor in await ParallelSharing.shared.accept(cloudKitShareMetadata) }
     }
 }

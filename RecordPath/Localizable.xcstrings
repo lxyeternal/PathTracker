@@ -9696,6 +9696,536 @@
           }
         }
       }
+    },
+    "%@把足迹共享给了你": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ shared their footprints with you"
+          }
+        }
+      }
+    },
+    "一位朋友": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A friend"
+          }
+        }
+      }
+    },
+    "不会共享": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Never shared"
+          }
+        }
+      }
+    },
+    "个共同的地方": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "places you share"
+          }
+        }
+      }
+    },
+    "会共享": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shared"
+          }
+        }
+      }
+    },
+    "你": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You"
+          }
+        }
+      }
+    },
+    "你也共享给 Ta，你们就能看到彼此的平行足迹：哪天在同一座城市，在哪里擦肩而过。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share yours back and you'll both see your parallel footprints: the days you were in the same city, and where you passed each other."
+          }
+        }
+      }
+    },
+    "你们去过同一个地方，只是不在同一个时候。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've both been here, just not at the same time."
+          }
+        }
+      }
+    },
+    "你们将互相看不到对方的足迹。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You'll no longer see each other's footprints."
+          }
+        }
+      }
+    },
+    "你们的足迹还没有在同一个地方出现过。下次一起出发吧。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your footprints haven't met anywhere yet. Maybe go somewhere together next time."
+          }
+        }
+      }
+    },
+    "你们都在%@附近": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You were both near %@"
+          }
+        }
+      }
+    },
+    "你共享在 iCloud 里的足迹摘要会被删除，朋友们也看不到了。你自己的记录不受影响。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The footprint summary you share in iCloud will be deleted, and your friends will no longer see it. Your own records aren't affected."
+          }
+        }
+      }
+    },
+    "停止与%@共享？": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop sharing with %@?"
+          }
+        }
+      }
+    },
+    "停止与所有人共享": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop Sharing with Everyone"
+          }
+        }
+      }
+    },
+    "停止与所有人共享？": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop sharing with everyone?"
+          }
+        }
+      }
+    },
+    "停止共享": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop Sharing"
+          }
+        }
+      }
+    },
+    "停止共享后，对方立刻看不到你的足迹，你也看不到对方的。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Once you stop, they can't see your footprints any more, and you can't see theirs."
+          }
+        }
+      }
+    },
+    "停止共享并删除": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop Sharing and Delete"
+          }
+        }
+      }
+    },
+    "共享了什么": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What's Shared"
+          }
+        }
+      }
+    },
+    "共享了什么，没有共享什么": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What's shared and what isn't"
+          }
+        }
+      }
+    },
+    "共享回去": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share Back"
+          }
+        }
+      }
+    },
+    "共享我的足迹给 Ta": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share My Footprints"
+          }
+        }
+      }
+    },
+    "同一个地方": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "the same place"
+          }
+        }
+      }
+    },
+    "同一个地方，不同的时光": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Same place, different times"
+          }
+        }
+      }
+    },
+    "同一个小时，相距约 1 公里以内。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In the same hour, within about 1 km of each other."
+          }
+        }
+      }
+    },
+    "同一天，同一座城市": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Same day, same city"
+          }
+        }
+      }
+    },
+    "同意并邀请朋友": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agree and Invite a Friend"
+          }
+        }
+      }
+    },
+    "和 %@ 的足迹": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Footprints with %@"
+          }
+        }
+      }
+    },
+    "和朋友互相共享足迹，看看你们哪天在同一座城市、在哪里擦肩而过、去过哪些同样的地方。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share footprints with a friend and see the days you were in the same city, where you passed each other, and the places you've both been."
+          }
+        }
+      }
+    },
+    "和朋友共享你的足迹": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share your footprints with friends"
+          }
+        }
+      }
+    },
+    "在哪里比对": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where it's compared"
+          }
+        }
+      }
+    },
+    "天在同一座城市": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "days in the same city"
+          }
+        }
+      }
+    },
+    "家、公司、学校附近 2 公里内的一切，隐私区域，地点名称，具体坐标，路线，照片和文字。朋友算不出你住在哪里。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anything within 2 km of home, work or school, your privacy zones, place names, exact coordinates, routes, photos and notes. Friends can't work out where you live."
+          }
+        }
+      }
+    },
+    "已邀请，等待接受": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invited, waiting"
+          }
+        }
+      }
+    },
+    "平行足迹": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parallel Footprints"
+          }
+        }
+      }
+    },
+    "摘要存在你自己的 iCloud 里，只给你邀请的人看。比对在各自的手机上进行，不经过我们的服务器。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The summary is kept in your own iCloud and only the people you invite can see it. The comparing happens on each phone, never on a server of ours."
+          }
+        }
+      }
+    },
+    "擦肩而过": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passed each other"
+          }
+        }
+      }
+    },
+    "朋友": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Friends"
+          }
+        }
+      }
+    },
+    "朋友就是你发出邀请、并且接受了的人。双方都共享之后，才能看到彼此的平行足迹。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Friends are the people you invite who accept. You both need to share before either of you sees your parallel footprints."
+          }
+        }
+      }
+    },
+    "次擦肩而过": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "times you passed each other"
+          }
+        }
+      }
+    },
+    "正在比对你们的足迹…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comparing your footprints…"
+          }
+        }
+      }
+    },
+    "每天到过哪些区域（约 20 公里的范围），以及每个小时所在的约 1 公里的方格。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which areas you were in each day (about 20 km across), and which square of about 1 km you were in each hour."
+          }
+        }
+      }
+    },
+    "漫迹 · 平行足迹": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waytrace · Parallel Footprints"
+          }
+        }
+      }
+    },
+    "等 Ta 共享回来": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for them to share"
+          }
+        }
+      }
+    },
+    "网络不可用，稍后再试。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The network isn't available. Try again later."
+          }
+        }
+      }
+    },
+    "还没有交汇": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No crossings yet"
+          }
+        }
+      }
+    },
+    "邀请一个朋友，看看你们的足迹在哪里交汇。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invite a friend and see where your footprints cross."
+          }
+        }
+      }
+    },
+    "邀请朋友": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invite a Friend"
+          }
+        }
+      }
+    },
+    "随时停止": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop any time"
+          }
+        }
+      }
+    },
+    "需要登录 iCloud 才能使用平行足迹。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to iCloud to use Parallel Footprints."
+          }
+        }
+      }
+    },
+    "和你邀请的朋友互相共享足迹摘要，看看你们在哪里交汇。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share a footprint summary with friends you invite and see where you crossed."
+          }
+        }
+      }
+    },
+    "只有当你在“平行足迹”中邀请朋友并同意共享时，App 才会把一份足迹摘要保存在你自己的 iCloud 中，并只共享给你邀请且接受了的人：每天到过的大致区域（约 20 公里）和每小时所在的约 1 公里方格。家、公司、学校附近 2 公里内的一切、隐私区域、地点名称、具体坐标、路线、照片和文字都不会共享。比对在各自的手机上进行，不经过任何服务器。你可以随时停止共享，摘要会从 iCloud 删除。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only if you invite a friend in Parallel Footprints and agree to share, the app keeps a footprint summary in your own iCloud and shares it only with the people you invite who accept: the rough areas you were in each day (about 20 km) and the square of about 1 km you were in each hour. Nothing within 2 km of home, work or school, your privacy zones, place names, exact coordinates, routes, photos or notes are shared. The comparing happens on each phone, never on a server. You can stop sharing at any time, and the summary is deleted from iCloud."
+          }
+        }
+      }
+    },
+    "App 不包含广告、数据分析或第三方追踪 SDK，不会出售或共享你的任何数据；唯一的例外是你在“平行足迹”中主动共享给朋友的足迹摘要。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The app has no ads, analytics or third-party tracking SDKs, and never sells or shares any of your data; the only exception is the footprint summary you choose to share with friends in Parallel Footprints."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
