@@ -19,6 +19,16 @@ final class MotionClassifier {
     struct Reading {
         let start: Date
         let mode: MovementMode?
+        /// The chip was sure the phone wasn't moving.
+        var still = false
+    }
+
+    /// A stretch of moving the motion chip saw, for a time GPS has nothing for.
+    struct Journey: Equatable {
+        let start: Date
+        let end: Date
+        /// How it mostly moved; nil when the chip only knew it was moving.
+        let mode: MovementMode?
     }
 
     private enum Tuning {
@@ -41,6 +51,8 @@ final class MotionClassifier {
         static let bikeBursts: Double = 8.5
         /// Between two drives, a slow stretch this fast or faster (16 km/h) is traffic, not a bike.
         static let trafficPace: Double = 4.5
+        /// Still for less than this between two stretches of moving is one journey.
+        static let journeyPause: TimeInterval = 5 * 60
     }
 
     func legs(of points: [TrackPoint]) async -> [Leg] {
@@ -58,6 +70,21 @@ final class MotionClassifier {
             ?? Self.mode(forSpeeds: points.map(\.speed))
     }
 
+    /// When the phone was on the move between two moments, from the motion history iOS keeps
+    /// for a week whether or not the app was running.
+    func journey(from start: Date, to end: Date) async -> Journey? {
+        let readings = await history(from: start.addingTimeInterval(-600), to: end)
+        return Self.journey(in: readings, from: start, to: end)
+    }
+
+    /// Whether the phone is moving right now, as far as the motion chip can tell. GPS goes quiet
+    /// on a train underground; the chip still feels the ride.
+    func isMoving() async -> Bool {
+        let readings = await history(from: Date().addingTimeInterval(-30 * 60), to: Date())
+        guard let latest = readings.max(by: { $0.start < $1.start }) else { return false }
+        return latest.mode != nil && latest.mode != .unknown
+    }
+
     private func history(from start: Date, to end: Date) async -> [Reading] {
         guard CMMotionActivityManager.isActivityAvailable(),
               CMMotionActivityManager.authorizationStatus() != .denied else { return [] }
@@ -73,11 +100,34 @@ final class MotionClassifier {
                 activity.cycling ? .cycling :
                 activity.running ? .running :
                 activity.walking ? .walking : nil
-            return Reading(start: activity.startDate, mode: mode)
+            return Reading(start: activity.startDate, mode: mode, still: activity.stationary && activity.confidence != .low)
         }
     }
 
     // MARK: Working it out
+
+    /// The longest stretch of moving between two moments. Stops shorter than a few minutes
+    /// (a subway station, a red light) count as part of it.
+    static func journey(in readings: [Reading], from start: Date, to end: Date) -> Journey? {
+        let sorted = readings.sorted { $0.start < $1.start }
+        var spans: [(start: Date, end: Date, modes: [MovementMode: TimeInterval])] = []
+        for (index, reading) in sorted.enumerated() {
+            guard let mode = reading.mode, !reading.still else { continue }
+            let from = max(reading.start, start)
+            let to = min(index + 1 < sorted.count ? sorted[index + 1].start : end, end)
+            guard to > from else { continue }
+            if let last = spans.last, from.timeIntervalSince(last.end) < Tuning.journeyPause {
+                spans[spans.count - 1].end = to
+                spans[spans.count - 1].modes[mode, default: 0] += to.timeIntervalSince(from)
+            } else {
+                spans.append((from, to, [mode: to.timeIntervalSince(from)]))
+            }
+        }
+        guard let longest = spans.max(by: { $0.end.timeIntervalSince($0.start) < $1.end.timeIntervalSince($1.start) }),
+              longest.end.timeIntervalSince(longest.start) >= Tuning.minimumLegDuration else { return nil }
+        let mode = longest.modes.max { $0.value < $1.value }?.key
+        return Journey(start: longest.start, end: longest.end, mode: mode)
+    }
 
     static func legs(of points: [TrackPoint], readings: [Reading]) -> [Leg] {
         guard points.count >= 2 else { return [Leg(points: points, mode: mode(forSpeeds: points.map(\.speed)))] }

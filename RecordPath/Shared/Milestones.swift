@@ -97,6 +97,20 @@ struct Milestone: Identifiable, Hashable {
         }
     }
 
+    /// A sense of how far a distance is, for the big medal.
+    var scale: String? {
+        guard kind == .distance else { return nil }
+        return switch threshold {
+        case 100: String(localized: "差不多是两个半马拉松", bundle: .appLanguage)
+        case 500: String(localized: "比北京到青岛的直线距离还远", bundle: .appLanguage)
+        case 1_000: String(localized: "大约是北京到上海的直线距离", bundle: .appLanguage)
+        case 5_000: String(localized: "比北京到新加坡的直线距离还远", bundle: .appLanguage)
+        case 10_000: String(localized: "从北极到赤道的距离", bundle: .appLanguage)
+        case 40_075: String(localized: "赤道一圈的长度", bundle: .appLanguage)
+        default: nil
+        }
+    }
+
     var title: String {
         switch kind {
         case .distance where threshold == 40_075: String(localized: "绕地球一圈", bundle: .appLanguage)
@@ -118,6 +132,12 @@ struct MilestoneProgress {
         var id: String { milestone.id }
     }
 
+    /// The country, province or city that made up the number, with when it first happened.
+    struct First {
+        let date: Date
+        let name: String?
+    }
+
     struct Next: Identifiable {
         let milestone: Milestone
         let current: Double
@@ -130,9 +150,37 @@ struct MilestoneProgress {
         let milestone: Milestone
         let date: Date?
         let current: Double
+        /// What reached it: the tenth country, the fiftieth city.
+        var subject: String? = nil
+        /// The first milestone of its kind still to reach.
+        var isNext = false
         var id: String { milestone.id }
         var isReached: Bool { date != nil }
         var fraction: Double { min(1, current / Double(milestone.threshold)) }
+
+        /// "还差 3,592 公里"
+        var remaining: String {
+            let left = max(0, Double(milestone.threshold) - current)
+            let value = (milestone.kind == .distance ? Int(left.rounded(.up)) : Int(left)).formatted(.number.locale(appLocale))
+            return switch milestone.kind {
+            case .distance: String(localized: "还差 \(value) 公里", bundle: .appLanguage)
+            case .countries: String(localized: "还差 \(value) 个国家和地区", bundle: .appLanguage)
+            case .provinces: String(localized: "还差 \(value) 个省份", bundle: .appLanguage)
+            case .cities: String(localized: "还差 \(value) 座城市", bundle: .appLanguage)
+            case .days: String(localized: "还差 \(value) 天", bundle: .appLanguage)
+            }
+        }
+
+        /// "第 10 个：日本"
+        var subjectLine: String? {
+            guard let subject else { return nil }
+            return switch milestone.kind {
+            case .countries: String(localized: "第 \(milestone.threshold) 个国家和地区：\(subject)", bundle: .appLanguage)
+            case .provinces: String(localized: "第 \(milestone.threshold) 个省份：\(subject)", bundle: .appLanguage)
+            case .cities: String(localized: "第 \(milestone.threshold) 座城市：\(subject)", bundle: .appLanguage)
+            default: nil
+            }
+        }
     }
 
     var reached: [Reached] = []
@@ -145,32 +193,40 @@ struct MilestoneProgress {
     /// the day it was first visited.
     init(stays: [Stay], movements: [(date: Date, distance: Double)]) {
         let calendar = Calendar.current
-        var firsts: [Milestone.Kind: [Date]] = [:]
+        var firsts: [Milestone.Kind: [First]] = [:]
 
         var countryFirst: [String: Date] = [:]
         var provinceFirst: [String: Date] = [:]
+        var provinceNames: [String: String] = [:]
         var cityFirst: [String: Date] = [:]
+        var cityNamesByKey: [String: String] = [:]
         var days = Set<Date>()
         let cityNames = CityNames.canonical(for: stays)
         for stay in stays {
             if let code = stay.countryCode { countryFirst[code] = min(countryFirst[code] ?? .distantFuture, stay.arrival) }
             if let province = Province.containing(countryCode: stay.countryCode, region: stay.region, city: stay.city) {
                 provinceFirst[province.id] = min(provinceFirst[province.id] ?? .distantFuture, stay.arrival)
+                provinceNames[province.id] = province.name
             }
             if let key = CityNames.key(stay), let city = cityNames[key] {
                 let cityKey = "\(stay.countryCode ?? "")|\(city)"
                 cityFirst[cityKey] = min(cityFirst[cityKey] ?? .distantFuture, stay.arrival)
+                cityNamesByKey[cityKey] = city
             }
             days.formUnion(calendar.days(in: DateInterval(start: stay.arrival, end: max(stay.departure ?? Date(), stay.arrival))))
         }
-        firsts[.countries] = countryFirst.values.sorted()
-        firsts[.provinces] = provinceFirst.values.sorted()
-        firsts[.cities] = cityFirst.values.sorted()
-        firsts[.days] = days.filter { $0 <= Date() }.sorted()
+        func ordered(_ dates: [String: Date], name: (String) -> String?) -> [First] {
+            dates.sorted { $0.value < $1.value }.map { First(date: $0.value, name: name($0.key)) }
+        }
+        firsts[.countries] = ordered(countryFirst) { appLocale.localizedString(forRegionCode: $0) }
+        firsts[.provinces] = ordered(provinceFirst) { provinceNames[$0] }
+        firsts[.cities] = ordered(cityFirst) { cityNamesByKey[$0] }
+        firsts[.days] = days.filter { $0 <= Date() }.sorted().map { First(date: $0, name: nil) }
 
         for kind in Milestone.Kind.allCases {
             let current: Double
             var reachedDates: [Int: Date] = [:]
+            var subjects: [Int: String] = [:]
             if kind == .distance {
                 var total = 0.0
                 for movement in movements.sorted(by: { $0.date < $1.date }) {
@@ -182,11 +238,16 @@ struct MilestoneProgress {
                 current = total
             } else {
                 let dates = firsts[kind] ?? []
-                for threshold in kind.thresholds where dates.count >= threshold { reachedDates[threshold] = dates[threshold - 1] }
+                for threshold in kind.thresholds where dates.count >= threshold {
+                    reachedDates[threshold] = dates[threshold - 1].date
+                    subjects[threshold] = dates[threshold - 1].name
+                }
                 current = Double(dates.count)
             }
+            let upcoming = kind.thresholds.first { reachedDates[$0] == nil }
             for threshold in kind.thresholds {
-                all.append(Status(milestone: Milestone(kind: kind, threshold: threshold), date: reachedDates[threshold], current: current))
+                all.append(Status(milestone: Milestone(kind: kind, threshold: threshold), date: reachedDates[threshold],
+                                  current: current, subject: subjects[threshold], isNext: threshold == upcoming))
             }
             for threshold in kind.thresholds {
                 let milestone = Milestone(kind: kind, threshold: threshold)

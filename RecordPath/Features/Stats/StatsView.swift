@@ -88,7 +88,7 @@ struct StatsView: View {
                     yearReportCard
                     stepsCard
                     distanceCard
-                    if !modeTotals.isEmpty { modesCard }
+                    if !groundModeTotals.isEmpty { modesCard }
                     lifetimeCard
                     milestonesCard
                 }
@@ -210,14 +210,19 @@ struct StatsView: View {
         }
     }
 
+    /// Ground travel by mode; a single flight would otherwise fill the whole ring.
+    private var groundModeTotals: [(mode: MovementMode, distance: Double)] { modeTotals.filter { $0.mode != .flying } }
+
     private var modesCard: some View {
-        let total = modeTotals.reduce(0) { $0 + $1.distance }
-        let focus = selectedMode.flatMap { mode in modeTotals.first { $0.mode == mode } }
+        let ground = groundModeTotals
+        let total = ground.reduce(0) { $0 + $1.distance }
+        let flight = modeTotals.first { $0.mode == .flying }
+        let focus = selectedMode.flatMap { mode in ground.first { $0.mode == mode } }
         return Card {
             VStack(alignment: .leading, spacing: 14) {
                 Text("出行方式").font(.headline)
                 HStack(spacing: 20) {
-                    Chart(modeTotals, id: \.mode) { item in
+                    Chart(ground, id: \.mode) { item in
                         SectorMark(angle: .value("距离", item.distance),
                                    innerRadius: .ratio(0.64),
                                    outerRadius: .ratio(selectedMode == item.mode ? 1 : 0.9),
@@ -237,15 +242,16 @@ struct StatsView: View {
                             } else {
                                 Text(Format.distance(total))
                                     .font(.system(.subheadline, design: .rounded, weight: .bold))
+                                    .multilineTextAlignment(.center)
                                     .minimumScaleFactor(0.6)
-                                Text("合计").font(.caption2).foregroundStyle(.secondary)
+                                Text("地面合计").font(.caption2).foregroundStyle(.secondary)
                             }
                         }
                         .frame(width: 70)
                     }
                     .frame(width: 130, height: 130)
                     VStack(spacing: 4) {
-                        ForEach(modeTotals, id: \.mode) { item in
+                        ForEach(ground, id: \.mode) { item in
                             Button {
                                 withAnimation(.snappy) { selectedMode = selectedMode == item.mode ? nil : item.mode }
                             } label: {
@@ -270,12 +276,27 @@ struct StatsView: View {
                         }
                     }
                 }
+                if let flight {
+                    Divider()
+                    HStack(spacing: 10) {
+                        Image(systemName: MovementMode.flying.symbol)
+                            .font(.caption.bold())
+                            .foregroundStyle(.white)
+                            .frame(width: 26, height: 26)
+                            .background(Circle().fill(MovementMode.flying.color.gradient))
+                        Text("另有飞行")
+                        Spacer(minLength: 4)
+                        Text(Format.distance(flight.distance)).foregroundStyle(.secondary).monospacedDigit()
+                    }
+                    .font(.subheadline)
+                    .padding(.horizontal, 8)
+                }
             }
         }
         .onChange(of: modeAngle) { _, angle in
             guard let angle else { return }
             var running = 0.0
-            let mode = modeTotals.first { running += $0.distance; return angle <= running }?.mode
+            let mode = groundModeTotals.first { running += $0.distance; return angle <= running }?.mode
             withAnimation(.snappy) { selectedMode = mode == selectedMode ? nil : mode }
         }
         .sensoryFeedback(.selection, trigger: selectedMode)
@@ -407,8 +428,13 @@ struct StatsView: View {
     private var xAxis: some AxisContent {
         AxisMarks(values: .automatic(desiredCount: period == .week ? 7 : 5)) { value in
             AxisGridLine()
-            AxisValueLabel(format: period == .year ? .dateTime.month(.abbreviated) : period == .week ? .dateTime.weekday(.narrow) : .dateTime.day(),
-                           centered: period != .month, collisionResolution: .greedy)
+            AxisValueLabel(centered: period != .month, collisionResolution: .greedy) {
+                if let date = value.as(Date.self) {
+                    let format: Date.FormatStyle = period == .year ? .dateTime.month(.abbreviated)
+                        : period == .week ? .dateTime.weekday(.narrow) : .dateTime.day()
+                    Text(date.formatted(format.locale(appLocale)))
+                }
+            }
         }
     }
 

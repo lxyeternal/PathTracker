@@ -18,6 +18,8 @@ struct TrackMap: View {
         let id: Int
         let coordinates: [CLLocationCoordinate2D]
         let color: Color
+        /// Drawn dashed: the way between two places when there was no signal on it.
+        var inferred = false
     }
 
     var body: some View {
@@ -26,7 +28,8 @@ struct TrackMap: View {
                 MapPolyline(coordinates: line.coordinates)
                     .stroke(.white.opacity(0.9), style: StrokeStyle(lineWidth: 7, lineCap: .round, lineJoin: .round))
                 MapPolyline(coordinates: line.coordinates)
-                    .stroke(line.color.gradient, style: StrokeStyle(lineWidth: 4.5, lineCap: .round, lineJoin: .round))
+                    .stroke(line.color.gradient, style: StrokeStyle(lineWidth: 4.5, lineCap: .round, lineJoin: .round,
+                                                                    dash: line.inferred ? [6, 8] : []))
             }
             if livePoints.count > 1 {
                 MapPolyline(coordinates: livePoints.map(\.coordinate.onMap))
@@ -117,7 +120,7 @@ struct TrackMap: View {
         let apart = separated(simplified)
         return chunks.enumerated().compactMap { index, chunk in
             guard apart[index].count > 1 else { return nil }
-            return Line(id: index, coordinates: apart[index], color: chunk.mode.color)
+            return Line(id: index, coordinates: apart[index], color: chunk.mode.color, inferred: chunk.mode == .subway)
         }
     }
 

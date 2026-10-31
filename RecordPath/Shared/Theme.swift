@@ -7,6 +7,7 @@ extension MovementMode {
         case .running: .orange
         case .cycling: .teal
         case .automotive: .blue
+        case .subway: .indigo
         case .flying: .purple
         case .unknown: .gray
         }
