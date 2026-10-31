@@ -429,11 +429,7 @@ struct JourneyView: View {
                     .clipShape(.rect(cornerRadius: 28, style: .continuous))
                 numbers(progress)
                 routePicker
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(Array(route.stops.enumerated()), id: \.offset) { index, stop in
-                        stopRow(stop, index: index, progress: progress)
-                    }
-                }
+                JourneyStops(progress: progress)
                 Text("你在地面上走过的路（不含飞行），按城市之间的直线距离铺在这条路上。")
                     .font(.footnote).foregroundStyle(.secondary)
             }
@@ -475,77 +471,25 @@ struct JourneyView: View {
         .frame(maxWidth: .infinity)
     }
 
-    /// The four roads as small cards, each drawn in its own shape.
+    /// The four roads as small posters, each in its own scenery.
     private var routePicker: some View {
-        ScrollView(.horizontal) {
-            HStack(spacing: 10) {
-                ForEach(ClassicRoute.all) { option in
-                    let selected = option.id == route.id
-                    Button {
-                        withAnimation(.snappy) { routeID = option.id }
-                    } label: {
-                        VStack(alignment: .leading, spacing: 6) {
-                            RouteShape(points: option.layout(aspect: 120 / 44, margin: 0.08))
-                                .stroke(option.tint, style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
-                                .frame(width: 120, height: 44)
-                            Text(option.localizedName).font(.footnote.weight(.semibold)).foregroundStyle(.primary)
-                            HStack(spacing: 4) {
-                                Text(Format.distance(option.length))
-                                if distance >= option.length { Image(systemName: "checkmark.seal.fill").foregroundStyle(option.tint) }
-                            }
-                            .font(.caption2).foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 10) {
+            Text("换一条路").font(.system(.title3, design: .serif, weight: .bold))
+            ScrollView(.horizontal) {
+                HStack(spacing: 12) {
+                    ForEach(ClassicRoute.all) { option in
+                        Button {
+                            withAnimation(.snappy) { routeID = option.id }
+                        } label: {
+                            RoutePosterCard(route: option, travelled: distance, selected: option.id == route.id)
                         }
-                        .padding(12)
-                        .background(.background.secondary, in: .rect(cornerRadius: 18, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .strokeBorder(selected ? option.tint : .clear, lineWidth: 2))
+                        .buttonStyle(PressableStyle())
                     }
-                    .buttonStyle(PressableStyle())
                 }
+                .padding(.vertical, 4)
             }
-        }
-        .scrollIndicators(.hidden)
-        .scrollClipDisabled()
-    }
-
-    private func stopRow(_ stop: ClassicRoute.Stop, index: Int, progress: JourneyProgress) -> some View {
-        let reached = index <= progress.lastStopIndex
-        let isNext = index == progress.lastStopIndex + 1 && !progress.isComplete
-        let isLast = index == route.stops.count - 1
-        return HStack(alignment: .top, spacing: 14) {
-            VStack(spacing: 0) {
-                ZStack {
-                    Circle().fill(reached ? AnyShapeStyle(route.tint) : AnyShapeStyle(Color(uiColor: .systemBackground)))
-                    Circle().strokeBorder(reached ? .white : (isNext ? route.tint : Color.secondary.opacity(0.35)), lineWidth: 3)
-                }
-                .frame(width: 20, height: 20)
-                .shadow(color: reached ? route.tint.opacity(0.4) : .clear, radius: 3)
-                if !isLast {
-                    Rectangle()
-                        .fill(index < progress.lastStopIndex ? AnyShapeStyle(route.tint) : AnyShapeStyle(Color.secondary.opacity(0.18)))
-                        .frame(width: 4)
-                        .frame(maxHeight: .infinity)
-                }
-            }
-            .frame(width: 24)
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(stop.localizedName)
-                        .font(.system(.body, design: .serif, weight: .semibold))
-                        .foregroundStyle(reached || isNext ? .primary : .secondary)
-                    if index == progress.lastStopIndex && !progress.isComplete {
-                        Text("你在这里").font(.caption2.weight(.bold)).foregroundStyle(.white)
-                            .padding(.horizontal, 7).padding(.vertical, 2).background(route.tint, in: .capsule)
-                    } else if isNext {
-                        Text("下一站 · \(Format.distance(progress.toNext))").font(.caption2.weight(.semibold)).foregroundStyle(route.tint)
-                    }
-                    Spacer()
-                    Text(index == 0 ? String(localized: "起点", bundle: .appLanguage) : Format.distance(route.marks[index]))
-                        .font(.caption).foregroundStyle(.tertiary).monospacedDigit()
-                }
-                Text(stop.localizedNote).font(.subheadline).foregroundStyle(reached ? .secondary : .tertiary)
-            }
-            .padding(.bottom, 24)
+            .scrollIndicators(.hidden)
+            .scrollClipDisabled()
         }
     }
 }
