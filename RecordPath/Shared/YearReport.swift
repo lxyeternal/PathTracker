@@ -89,7 +89,7 @@ struct YearReport {
         report.busiestMonth = byMonth.max { $0.value < $1.value }.map { ($0.key, $0.value) }
 
         // Places, and which were seen for the first time.
-        // Layovers don't count as countries, cities or provinces, the same as everywhere else.
+        // Blips don't count as countries, cities or provinces, the same as everywhere else.
         let passingThrough = StampBook.passingThrough(stays)
         func counted(_ stays: [Stay]) -> [Stay] { stays.filter { !passingThrough.contains($0.persistentModelID) } }
         func codes(_ stays: [Stay]) -> [String] {

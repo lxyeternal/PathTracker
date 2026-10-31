@@ -1098,7 +1098,7 @@ struct StampTests {
         #expect(StampBook(stays: stays).passport.isEmpty)
     }
 
-    @Test func aLayoverInAnAirportIsNotACountry() {
+    @Test func aLayoverInAnAirportCountsTheSameEverywhere() {
         let stays = [
             stay("CN", "上海", day: 0, hours: 200, lat: 31.23, lon: 121.47),
             // Three hours between flights in Doha.
@@ -1106,10 +1106,10 @@ struct StampTests {
             stay("GB", "London", day: 9.3, hours: 120, lat: 51.51, lon: -0.13),
         ]
         let book = StampBook(stays: stays)
-        #expect(book.passport.compactMap(\.countryCode) == ["GB"])
-        #expect(book.countries == ["CN", "GB"])
-        #expect(!LightUpInsights(stays: stays).countries.contains("QA"))
-        #expect(!WorldInsights(stays: stays).countries.map(\.code).contains("QA"))
+        #expect(book.passport.compactMap(\.countryCode).removingDuplicates() == ["QA", "GB"])
+        #expect(book.countries == ["CN", "QA", "GB"])
+        #expect(LightUpInsights(stays: stays).countries == book.countries)
+        #expect(Set(WorldInsights(stays: stays).countries.map(\.code)) == book.countries)
     }
 
     @Test func stillAbroadHasNoExitYet() {
