@@ -60,20 +60,32 @@ final class ParallelSharing {
     /// The share of this person's footprint zone, made the first time; the days are uploaded
     /// before anyone is invited.
     func prepareShare() async throws -> CKShare {
-        _ = try await privateDB.modifyRecordZones(saving: [CKRecordZone(zoneID: zoneID)], deleting: [])
-        let share: CKShare
-        if let existing = try? await privateDB.record(for: CKRecord.ID(recordName: CKRecordNameZoneWideShare, zoneID: zoneID)) as? CKShare {
-            share = existing
-        } else {
-            let made = CKShare(recordZoneID: zoneID)
-            made[CKShare.SystemFieldKey.title] = String(localized: "漫迹 · 平行足迹", bundle: .appLanguage)
-            made.publicPermission = .none
-            _ = try await privateDB.modifyRecords(saving: [made], deleting: [])
-            share = made
+        do {
+            // Each zone and record reports its own result; a failure there doesn't throw by itself.
+            let zones = try await privateDB.modifyRecordZones(saving: [CKRecordZone(zoneID: zoneID)], deleting: [])
+            _ = try zones.saveResults[zoneID]?.get()
+            let share: CKShare
+            if let existing = try? await privateDB.record(for: CKRecord.ID(recordName: CKRecordNameZoneWideShare, zoneID: zoneID)) as? CKShare {
+                share = existing
+            } else {
+                let made = CKShare(recordZoneID: zoneID)
+                made[CKShare.SystemFieldKey.title] = String(localized: "漫迹 · 平行足迹", bundle: .appLanguage)
+                made.publicPermission = .none
+                let saved = try await privateDB.modifyRecords(saving: [made], deleting: [])
+                // The share as the server keeps it, with the link the invitation needs.
+                guard let result = saved.saveResults[made.recordID], let stored = try result.get() as? CKShare else {
+                    throw CKError(.internalError)
+                }
+                share = stored
+            }
+            isSharing = true
+            try await upload(force: true)
+            return share
+        } catch {
+            log.error("Couldn't prepare the share: \(error.localizedDescription)")
+            lastError = Self.describe(error)
+            throw error
         }
-        isSharing = true
-        try await upload(force: true)
-        return share
     }
 
     /// Uploads the days that changed since last time. Cheap to call: at most every few hours
@@ -96,15 +108,35 @@ final class ParallelSharing {
         }
         let deletions = gone.map { CKRecord.ID(recordName: "day-\($0)", zoneID: zoneID) }
         // CloudKit takes a few hundred at a time.
+        var savedIDs = Set<CKRecord.ID>(), deletedIDs = Set<CKRecord.ID>()
+        var firstError: Error?
         for start in stride(from: 0, to: max(records.count, deletions.count), by: 300) {
             let saving = Array(records.dropFirst(start).prefix(300))
             let deleting = Array(deletions.dropFirst(start).prefix(300))
-            _ = try await privateDB.modifyRecords(saving: saving, deleting: deleting, savePolicy: .allKeys)
+            let results = try await privateDB.modifyRecords(saving: saving, deleting: deleting, savePolicy: .allKeys)
+            for (id, result) in results.saveResults {
+                switch result {
+                case .success: savedIDs.insert(id)
+                case .failure(let error): firstError = firstError ?? error
+                }
+            }
+            for (id, result) in results.deleteResults {
+                switch result {
+                case .success: deletedIDs.insert(id)
+                case .failure(let error): firstError = firstError ?? error
+                }
+            }
         }
-        for day in changed { uploaded[day.day] = day.fingerprint }
-        for day in gone { uploaded[day] = nil }
+        // Only what made it is remembered, so the rest goes again next time.
+        for day in changed where savedIDs.contains(CKRecord.ID(recordName: "day-\(day.day)", zoneID: zoneID)) {
+            uploaded[day.day] = day.fingerprint
+        }
+        for day in gone where deletedIDs.contains(CKRecord.ID(recordName: "day-\(day)", zoneID: zoneID)) {
+            uploaded[day] = nil
+        }
         Self.uploadedFingerprints = uploaded
-        log.info("Uploaded \(changed.count) days, removed \(gone.count)")
+        log.info("Uploaded \(savedIDs.count) days, removed \(deletedIDs.count)")
+        if let firstError { throw firstError }
     }
 
     /// This person's footprint days, from the store.
@@ -231,7 +263,8 @@ final class ParallelSharing {
             if let share = try? await privateDB.record(for: CKRecord.ID(recordName: CKRecordNameZoneWideShare, zoneID: zoneID)) as? CKShare,
                let participant = share.participants.first(where: { $0.userIdentity.userRecordID?.recordName == friend.id }) {
                 share.removeParticipant(participant)
-                _ = try await privateDB.modifyRecords(saving: [share], deleting: [])
+                let saved = try await privateDB.modifyRecords(saving: [share], deleting: [])
+                _ = try saved.saveResults[share.recordID]?.get()
             }
             if let zone = friend.zoneID { _ = try await sharedDB.modifyRecordZones(saving: [], deleting: [zone]) }
             Self.cache([], for: friend.id)
