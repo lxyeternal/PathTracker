@@ -168,52 +168,177 @@ enum JourneyChoice {
     }
 }
 
-/// The road drawn on a map: the part travelled bright, the rest dashed, and you on it.
-struct JourneyMap: View {
-    let route: ClassicRoute
-    let distance: Double
-    var interactive = false
+extension JourneyProgress {
+    /// Where you are in "station space": 3.4 is 40% of the way from the fourth stop to the fifth.
+    var stationPosition: Double {
+        guard nextStop != nil else { return Double(route.stops.count - 1) }
+        let marks = route.marks
+        let from = marks[lastStopIndex], to = marks[lastStopIndex + 1]
+        return Double(lastStopIndex) + (shown - from) / max(to - from, 1)
+    }
+}
+
+/// The route as a subway line: stations you've passed filled in, the next one ringed, and a
+/// little figure walking between them. Scrolls sideways and opens on where you are.
+struct MetroLine: View {
+    let progress: JourneyProgress
+    var spacing: CGFloat = 66
+
+    private var tint: Color { progress.route.tint }
 
     var body: some View {
-        let done = route.path(upTo: distance)
-        Map(initialPosition: .rect(rect), interactionModes: interactive ? .all : []) {
-            MapPolyline(coordinates: route.stops.map(\.coordinate))
-                .stroke(.white.opacity(0.85), style: StrokeStyle(lineWidth: 3, lineCap: .round, dash: [4, 6]))
-            if done.count > 1 {
-                MapPolyline(coordinates: done)
-                    .stroke(.white, style: StrokeStyle(lineWidth: 8, lineCap: .round, lineJoin: .round))
-                MapPolyline(coordinates: done)
-                    .stroke(route.tint.gradient, style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
-            }
-            ForEach(Array(route.stops.enumerated()), id: \.offset) { index, stop in
-                let reached = route.marks[index] <= distance
-                Annotation(interactive ? stop.localizedName : "", coordinate: stop.coordinate) {
-                    Circle()
-                        .fill(reached ? AnyShapeStyle(route.tint.gradient) : AnyShapeStyle(Color.gray.opacity(0.6)))
-                        .frame(width: reached ? 12 : 8, height: reached ? 12 : 8)
-                        .overlay(Circle().stroke(.white, lineWidth: 2))
+        let stops = progress.route.stops
+        let width = spacing * CGFloat(stops.count - 1)
+        let here = spacing * CGFloat(progress.stationPosition)
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal) {
+                ZStack(alignment: .topLeading) {
+                    Capsule().fill(Color.secondary.opacity(0.18))
+                        .frame(width: width, height: 6)
+                        .offset(y: 37)
+                    Capsule().fill(LinearGradient(colors: [tint.opacity(0.7), tint], startPoint: .leading, endPoint: .trailing))
+                        .frame(width: max(6, here), height: 6)
+                        .offset(y: 37)
+                    ForEach(Array(stops.enumerated()), id: \.offset) { index, stop in
+                        station(stop, index: index)
+                            .frame(width: spacing)
+                            .offset(x: spacing * CGFloat(index) - spacing / 2, y: 30)
+                            .id(index)
+                    }
+                    if !progress.isComplete {
+                        Image(systemName: "figure.walk")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 26, height: 26)
+                            .background(Circle().fill(tint.gradient))
+                            .overlay(Circle().stroke(.white, lineWidth: 2))
+                            .shadow(color: tint.opacity(0.5), radius: 6, y: 2)
+                            .offset(x: here - 13, y: 0)
+                    }
                 }
+                .frame(width: width, height: 84, alignment: .topLeading)
+                .padding(.horizontal, spacing / 2)
             }
-            if let here = done.last {
-                Annotation("", coordinate: here) {
-                    Image(systemName: "figure.walk")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 30, height: 30)
-                        .background(Circle().fill(route.tint.gradient))
-                        .overlay(Circle().stroke(.white, lineWidth: 2.5))
-                        .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
-                }
-            }
+            .scrollIndicators(.hidden)
+            .onAppear { proxy.scrollTo(progress.lastStopIndex, anchor: .center) }
         }
-        .mapStyle(.standard(elevation: .flat, emphasis: .muted, pointsOfInterest: .excludingAll))
     }
 
-    private var rect: MKMapRect {
-        var rect = MKMapRect.null
-        for stop in route.stops { rect = rect.union(MKMapRect(origin: MKMapPoint(stop.coordinate), size: MKMapSize(width: 0, height: 0))) }
-        let pad = max(rect.width, rect.height) * 0.18
-        return rect.insetBy(dx: -pad, dy: -pad)
+    private func station(_ stop: ClassicRoute.Stop, index: Int) -> some View {
+        let reached = index <= progress.lastStopIndex
+        let isNext = index == progress.lastStopIndex + 1 && !progress.isComplete
+        return VStack(spacing: 7) {
+            ZStack {
+                Circle().fill(reached ? AnyShapeStyle(tint) : AnyShapeStyle(Color(uiColor: .systemBackground)))
+                Circle().strokeBorder(reached ? .white : (isNext ? tint : Color.secondary.opacity(0.35)), lineWidth: reached ? 3 : (isNext ? 3 : 2))
+            }
+            .frame(width: 20, height: 20)
+            .shadow(color: reached ? tint.opacity(0.35) : .clear, radius: 3)
+            Text(stop.localizedName)
+                .font(.caption2.weight(reached || isNext ? .semibold : .regular))
+                .foregroundStyle(reached ? .primary : (isNext ? tint : .secondary))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+    }
+}
+
+/// The route's own shape, drawn from its stops: a smooth line through them.
+struct RouteShape: Shape {
+    let points: [CGPoint]
+
+    func path(in rect: CGRect) -> Path {
+        let pts = points.map { CGPoint(x: rect.minX + $0.x * rect.width, y: rect.minY + $0.y * rect.height) }
+        var path = Path()
+        guard let first = pts.first else { return path }
+        path.move(to: first)
+        for i in 1..<pts.count {
+            // Catmull–Rom through the stops, as cubic curves.
+            let p0 = pts[max(i - 2, 0)], p1 = pts[i - 1], p2 = pts[i], p3 = pts[min(i + 1, pts.count - 1)]
+            let c1 = CGPoint(x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6)
+            let c2 = CGPoint(x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6)
+            path.addCurve(to: p2, control1: c1, control2: c2)
+        }
+        return path
+    }
+}
+
+extension ClassicRoute {
+    /// The stops placed in a unit square, keeping the route's shape, with a margin.
+    func layout(aspect: CGFloat, margin: CGFloat = 0.12) -> [CGPoint] {
+        let midLat = stops.map(\.latitude).reduce(0, +) / Double(stops.count)
+        let raw = stops.map { CGPoint(x: $0.longitude * cos(midLat * .pi / 180), y: -$0.latitude) }
+        let minX = raw.map(\.x).min()!, maxX = raw.map(\.x).max()!, minY = raw.map(\.y).min()!, maxY = raw.map(\.y).max()!
+        let spanX = max(maxX - minX, 0.01), spanY = max(maxY - minY, 0.01)
+        let fitX = (1 - 2 * margin) / spanX, fitY = (1 - 2 * margin) * aspect / spanY
+        let scale = min(fitX, fitY)
+        // A road running mostly east–west would be a thin line; let north–south stretch up to
+        // five times, as a poster would, so the route fills its frame below the title.
+        let scaleY = min(fitY, scale * 5)
+        let offX = (1 - spanX * scale) / 2, offY = (1 - spanY * scaleY / aspect) / 2 + margin * 0.5
+        return raw.map { CGPoint(x: offX + ($0.x - minX) * scale, y: offY + ($0.y - minY) * scaleY / aspect) }
+    }
+}
+
+/// The route as art: its line glowing on a dark field, the part you've walked lit in its
+/// colour, every stop a point of light.
+struct JourneyRouteArt: View {
+    let progress: JourneyProgress
+    /// 0…1 of the walked part, animated by the page.
+    var drawn: Double
+
+    var body: some View {
+        GeometryReader { geo in
+            let route = progress.route
+            let points = route.layout(aspect: geo.size.width / max(geo.size.height, 1))
+            // How far along the drawn line you are, measured on the line itself.
+            let lengths = zip(points, points.dropFirst()).map { hypot(($1.x - $0.x) * geo.size.width, ($1.y - $0.y) * geo.size.height) }
+            let total = max(lengths.reduce(0, +), 1)
+            let position = progress.stationPosition
+            let whole = Int(position)
+            let walked = lengths.prefix(whole).reduce(0, +) + (whole < lengths.count ? lengths[whole] * (position - Double(whole)) : 0)
+            let fraction = walked / total
+            ZStack(alignment: .topLeading) {
+                LinearGradient(colors: [Color(red: 0.05, green: 0.06, blue: 0.12), Color(red: 0.1, green: 0.1, blue: 0.2)], startPoint: .top, endPoint: .bottom)
+                RadialGradient(colors: [route.tint.opacity(0.35), .clear], center: .center, startRadius: 10, endRadius: geo.size.width * 0.7)
+                RouteShape(points: points)
+                    .stroke(.white.opacity(0.22), style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [2, 6]))
+                RouteShape(points: points)
+                    .trim(from: 0, to: drawn * fraction)
+                    .stroke(route.tint, style: StrokeStyle(lineWidth: 10, lineCap: .round, lineJoin: .round))
+                    .blur(radius: 8)
+                    .opacity(0.8)
+                RouteShape(points: points)
+                    .trim(from: 0, to: drawn * fraction)
+                    .stroke(LinearGradient(colors: [route.tint.opacity(0.8), .white], startPoint: .leading, endPoint: .trailing),
+                            style: StrokeStyle(lineWidth: 3.5, lineCap: .round, lineJoin: .round))
+                ForEach(Array(points.enumerated()), id: \.offset) { index, point in
+                    let reached = Double(index) <= progress.stationPosition * drawn + 0.001
+                    let showName = index == 0 || index == route.stops.count - 1 || index == progress.lastStopIndex || index == progress.lastStopIndex + 1
+                    ZStack {
+                        Circle().fill(reached ? .white : .white.opacity(0.3)).frame(width: reached ? 7 : 5, height: reached ? 7 : 5)
+                            .shadow(color: reached ? route.tint : .clear, radius: 4)
+                        if showName {
+                            Text(route.stops[index].localizedName)
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(.white.opacity(reached ? 0.95 : 0.6))
+                                .fixedSize()
+                                .offset(y: 13)
+                        }
+                    }
+                    .position(x: point.x * geo.size.width, y: point.y * geo.size.height)
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Label(route.localizedName, systemImage: route.symbol)
+                        .font(.system(size: 26, weight: .bold, design: .serif))
+                        .labelStyle(.titleOnly)
+                    Text("全程 \(Format.distance(route.length)) · \(route.stops.count) 站")
+                        .font(.caption.weight(.medium)).tracking(1).opacity(0.7)
+                }
+                .foregroundStyle(.white)
+                .padding(20)
+            }
+        }
     }
 }
 
@@ -225,141 +350,182 @@ struct JourneyCard: View {
 
     var body: some View {
         let progress = JourneyProgress(route: JourneyChoice.route(for: routeID, home: home, distance: distance), travelled: distance)
+        let tint = progress.route.tint
         NavigationLink(value: JourneyRoute()) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text("你已经走到了哪里").font(.title3.bold()).foregroundStyle(.primary)
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("你已经走到了哪里").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                        Text(progress.isComplete ? String(localized: "你走完了\(progress.route.localizedName)", bundle: .appLanguage)
+                                                 : String(localized: "你走到了\(progress.lastStop.localizedName)", bundle: .appLanguage))
+                            .font(.system(.title2, design: .serif, weight: .bold))
+                            .foregroundStyle(.primary)
+                        Text("沿着\(progress.route.localizedName)")
+                            .font(.footnote.weight(.semibold)).foregroundStyle(tint)
+                    }
                     Spacer()
-                    Image(systemName: "chevron.forward").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+                    VStack(alignment: .trailing, spacing: 0) {
+                        Text(progress.fraction.formatted(.percent.precision(.fractionLength(0)).locale(appLocale)))
+                            .font(.system(size: 30, weight: .bold, design: .rounded)).foregroundStyle(tint).monospacedDigit()
+                        Text("已走").font(.caption2).foregroundStyle(.secondary)
+                    }
                 }
-                JourneyMap(route: progress.route, distance: progress.shown)
-                    .frame(height: 170)
-                    .clipShape(.rect(cornerRadius: 18, style: .continuous))
-                    .allowsHitTesting(false)
-                JourneyLine(progress: progress)
+                MetroLine(progress: progress)
+                    .frame(height: 84)
+                    .padding(.horizontal, -18)
+                HStack {
+                    Text("\(Format.distance(progress.shown)) / \(Format.distance(progress.route.length))").monospacedDigit()
+                    Spacer()
+                    if let next = progress.nextStop {
+                        Text("下一站\(next.localizedName) · \(Format.distance(progress.toNext))")
+                    }
+                }
+                .font(.footnote).foregroundStyle(.secondary)
             }
-            .padding(16)
-            .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
+            .padding(18)
+            .background {
+                RoundedRectangle(cornerRadius: 28, style: .continuous).fill(.background.secondary)
+                    .overlay(alignment: .topTrailing) {
+                        Circle().fill(tint.opacity(0.14)).frame(width: 220).blur(radius: 50).offset(x: 60, y: -80)
+                    }
+                    .clipShape(.rect(cornerRadius: 28, style: .continuous))
+            }
         }
         .buttonStyle(PressableStyle())
     }
 }
 
-/// Where you've got to, in words, with a bar under it.
-struct JourneyLine: View {
-    let progress: JourneyProgress
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if progress.isComplete {
-                Text("你走完了\(progress.route.localizedName)").font(.headline).foregroundStyle(.primary)
-                Text("一共 \(Format.distance(progress.route.length))。换一条路，继续走吧。")
-                    .font(.subheadline).foregroundStyle(.secondary)
-            } else {
-                Text("沿着\(progress.route.localizedName)，你走到了\(progress.lastStop.localizedName)")
-                    .font(.headline).foregroundStyle(.primary)
-                if let next = progress.nextStop {
-                    Text("离下一站\(next.localizedName)还有 \(Format.distance(progress.toNext))")
-                        .font(.subheadline).foregroundStyle(.secondary)
-                }
-            }
-            ProgressView(value: progress.fraction).tint(progress.route.tint)
-        }
-        .multilineTextAlignment(.leading)
-    }
-}
-
-/// The whole road: a map to explore, the route to choose, and every stop with its story.
+/// The whole road: drawn as art, the route to choose, and every stop with its story.
 struct JourneyView: View {
     let distance: Double
     let home: HomeBase?
     @AppStorage(JourneyChoice.key) private var routeID = ""
     /// Grows from nothing to where you are when the page opens.
-    @State private var shown = 0.0
+    @State private var drawn = 0.0
 
     private var route: ClassicRoute { JourneyChoice.route(for: routeID, home: home, distance: distance) }
 
     var body: some View {
         let progress = JourneyProgress(route: route, travelled: distance)
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                JourneyMap(route: route, distance: shown, interactive: true)
-                    .id(route.id)
-                    .frame(height: 340)
-                    .clipShape(.rect(cornerRadius: 24, style: .continuous))
-                Text("你在地面上走过的 \(Format.distance(distance))，铺在\(route.localizedName)上。")
-                    .font(.subheadline).foregroundStyle(.secondary)
-                JourneyLine(progress: progress)
+            VStack(alignment: .leading, spacing: 22) {
+                JourneyRouteArt(progress: progress, drawn: drawn)
+                    .frame(height: 320)
+                    .clipShape(.rect(cornerRadius: 28, style: .continuous))
+                numbers(progress)
+                routePicker
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(Array(route.stops.enumerated()), id: \.offset) { index, stop in
                         stopRow(stop, index: index, progress: progress)
                     }
                 }
+                Text("你在地面上走过的路（不含飞行），按城市之间的直线距离铺在这条路上。")
+                    .font(.footnote).foregroundStyle(.secondary)
             }
             .padding(.horizontal)
             .padding(.bottom, 32)
         }
         .navigationTitle(route.localizedName)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Picker("路线", selection: Binding(get: { route.id }, set: { routeID = $0 })) {
-                        ForEach(ClassicRoute.all) { route in
-                            Label("\(route.localizedName) · \(Format.distance(route.length))", systemImage: route.symbol).tag(route.id)
+        .task(id: route.id) {
+            drawn = 0
+            try? await Task.sleep(for: .milliseconds(150))
+            withAnimation(.easeOut(duration: 1.6)) { drawn = 1 }
+        }
+        .sensoryFeedback(.selection, trigger: route.id)
+    }
+
+    private func numbers(_ progress: JourneyProgress) -> some View {
+        HStack(spacing: 0) {
+            figure(Format.distance(progress.shown), "已走")
+            Divider().frame(height: 34)
+            figure(progress.fraction.formatted(.percent.precision(.fractionLength(0)).locale(appLocale)), "完成")
+            Divider().frame(height: 34)
+            figure("\(progress.lastStopIndex + 1) / \(route.stops.count)", "到达的站")
+        }
+        .padding(.vertical, 14)
+        .background(.background.secondary, in: .rect(cornerRadius: 20, style: .continuous))
+    }
+
+    private func figure(_ value: String, _ label: LocalizedStringKey) -> some View {
+        VStack(spacing: 3) {
+            Text(value).font(.system(.title3, design: .rounded, weight: .bold)).monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
+            Text(label).font(.caption).foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    /// The four roads as small cards, each drawn in its own shape.
+    private var routePicker: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 10) {
+                ForEach(ClassicRoute.all) { option in
+                    let selected = option.id == route.id
+                    Button {
+                        withAnimation(.snappy) { routeID = option.id }
+                    } label: {
+                        VStack(alignment: .leading, spacing: 6) {
+                            RouteShape(points: option.layout(aspect: 120 / 44, margin: 0.08))
+                                .stroke(option.tint, style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+                                .frame(width: 120, height: 44)
+                            Text(option.localizedName).font(.footnote.weight(.semibold)).foregroundStyle(.primary)
+                            HStack(spacing: 4) {
+                                Text(Format.distance(option.length))
+                                if distance >= option.length { Image(systemName: "checkmark.seal.fill").foregroundStyle(option.tint) }
+                            }
+                            .font(.caption2).foregroundStyle(.secondary)
                         }
+                        .padding(12)
+                        .background(.background.secondary, in: .rect(cornerRadius: 18, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .strokeBorder(selected ? option.tint : .clear, lineWidth: 2))
                     }
-                } label: {
-                    Label("换一条路", systemImage: "arrow.triangle.swap")
+                    .buttonStyle(PressableStyle())
                 }
             }
         }
-        .task(id: route.id) { await grow(to: progress.shown) }
-        .sensoryFeedback(.success, trigger: route.id)
+        .scrollIndicators(.hidden)
+        .scrollClipDisabled()
     }
 
     private func stopRow(_ stop: ClassicRoute.Stop, index: Int, progress: JourneyProgress) -> some View {
-        let reached = route.marks[index] <= progress.shown
+        let reached = index <= progress.lastStopIndex
+        let isNext = index == progress.lastStopIndex + 1 && !progress.isComplete
         let isLast = index == route.stops.count - 1
         return HStack(alignment: .top, spacing: 14) {
             VStack(spacing: 0) {
-                Circle()
-                    .fill(reached ? AnyShapeStyle(route.tint.gradient) : AnyShapeStyle(Color.secondary.opacity(0.25)))
-                    .frame(width: 14, height: 14)
-                    .overlay {
-                        if index == progress.lastStopIndex && !progress.isComplete {
-                            Circle().stroke(route.tint.opacity(0.4), lineWidth: 6).frame(width: 24, height: 24)
-                        }
-                    }
-                    .padding(.top, 4)
+                ZStack {
+                    Circle().fill(reached ? AnyShapeStyle(route.tint) : AnyShapeStyle(Color(uiColor: .systemBackground)))
+                    Circle().strokeBorder(reached ? .white : (isNext ? route.tint : Color.secondary.opacity(0.35)), lineWidth: 3)
+                }
+                .frame(width: 20, height: 20)
+                .shadow(color: reached ? route.tint.opacity(0.4) : .clear, radius: 3)
                 if !isLast {
                     Rectangle()
-                        .fill(route.marks[index + 1] <= progress.shown ? AnyShapeStyle(route.tint) : AnyShapeStyle(Color.secondary.opacity(0.2)))
-                        .frame(width: 2)
+                        .fill(index < progress.lastStopIndex ? AnyShapeStyle(route.tint) : AnyShapeStyle(Color.secondary.opacity(0.18)))
+                        .frame(width: 4)
                         .frame(maxHeight: .infinity)
                 }
             }
             .frame(width: 24)
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(stop.localizedName).font(.body.weight(.semibold)).foregroundStyle(reached ? .primary : .secondary)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(stop.localizedName)
+                        .font(.system(.body, design: .serif, weight: .semibold))
+                        .foregroundStyle(reached || isNext ? .primary : .secondary)
+                    if index == progress.lastStopIndex && !progress.isComplete {
+                        Text("你在这里").font(.caption2.weight(.bold)).foregroundStyle(.white)
+                            .padding(.horizontal, 7).padding(.vertical, 2).background(route.tint, in: .capsule)
+                    } else if isNext {
+                        Text("下一站 · \(Format.distance(progress.toNext))").font(.caption2.weight(.semibold)).foregroundStyle(route.tint)
+                    }
                     Spacer()
                     Text(index == 0 ? String(localized: "起点", bundle: .appLanguage) : Format.distance(route.marks[index]))
                         .font(.caption).foregroundStyle(.tertiary).monospacedDigit()
                 }
                 Text(stop.localizedNote).font(.subheadline).foregroundStyle(reached ? .secondary : .tertiary)
             }
-            .padding(.bottom, 22)
-        }
-    }
-
-    private func grow(to target: Double) async {
-        shown = 0
-        let steps = 40
-        for step in 1...steps {
-            try? await Task.sleep(for: .milliseconds(30))
-            let t = Double(step) / Double(steps)
-            shown = target * (1 - pow(1 - t, 3))
+            .padding(.bottom, 24)
         }
     }
 }
