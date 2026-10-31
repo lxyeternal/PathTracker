@@ -243,8 +243,10 @@ struct DayContentView: View {
             showingFullMap = true
         } label: {
             ZStack(alignment: .bottomLeading) {
+                // The "you are here" dot keeps GPS running for as long as the map is on screen,
+                // so it only shows while you're on the move and GPS is on anyway.
                 TrackMap(chunks: chunks, stays: stays, livePoints: isToday ? engine.pendingPoints : [],
-                         interactive: false, showsUser: isToday)
+                         interactive: false, showsUser: isToday && engine.activity == .moving)
                     .allowsHitTesting(false)
                 if chunks.isEmpty && stays.isEmpty && (!isToday || engine.pendingPoints.isEmpty) {
                     Rectangle().fill(.ultraThinMaterial)

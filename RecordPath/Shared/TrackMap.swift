@@ -75,7 +75,9 @@ struct TrackMap: View {
     private var framing: MapCameraPosition {
         let all = lines.flatMap(\.coordinates) + stays.map(\.coordinate.onMap) + livePoints.map(\.coordinate.onMap)
         let coordinates = Self.mainRegion(all, stays: stays.map(\.coordinate.onMap))
-        guard !coordinates.isEmpty else { return .userLocation(fallback: .automatic) }
+        // With nothing to frame, a wide view, not the user's location: following it would keep
+        // GPS on for as long as the map is showing.
+        guard !coordinates.isEmpty else { return .automatic }
         var rect = MKMapRect.null
         for coordinate in coordinates {
             rect = rect.union(MKMapRect(origin: MKMapPoint(coordinate), size: MKMapSize(width: 0, height: 0)))
