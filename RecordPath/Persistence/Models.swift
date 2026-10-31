@@ -169,7 +169,7 @@ final class TripPhoto {
 }
 
 enum MovementMode: String, CaseIterable {
-    case walking, running, cycling, automotive, flying, unknown
+    case walking, running, cycling, automotive, subway, flying, unknown
 
     var title: String {
         switch self {
@@ -177,6 +177,7 @@ enum MovementMode: String, CaseIterable {
         case .running: String(localized: "跑步", bundle: .appLanguage)
         case .cycling: String(localized: "骑行", bundle: .appLanguage)
         case .automotive: String(localized: "乘车", bundle: .appLanguage)
+        case .subway: String(localized: "地铁", bundle: .appLanguage)
         case .flying: String(localized: "飞行", bundle: .appLanguage)
         case .unknown: String(localized: "移动", bundle: .appLanguage)
         }
@@ -188,6 +189,7 @@ enum MovementMode: String, CaseIterable {
         case .running: "figure.run"
         case .cycling: "bicycle"
         case .automotive: "car.fill"
+        case .subway: "tram.fill.tunnel"
         case .flying: "airplane"
         case .unknown: "location.north.line.fill"
         }

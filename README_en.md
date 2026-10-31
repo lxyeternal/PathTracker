@@ -59,7 +59,7 @@
 | | |
 |---|---|
 | **Two ways to record** | **All day**, so every outing has its route; or **only when you ask**, using location only after you press Start, with no "Always" permission needed. Switch any time in Settings. |
-| **How you got there** | The iPhone's motion coprocessor and your speed tell walking, running, cycling, driving and flying apart, each drawn in its own colour. |
+| **How you got there** | The iPhone's motion coprocessor and your speed tell walking, running, cycling, driving and flying apart, each drawn in its own colour. A subway ride with no signal is filled in from the phone's own motion history and drawn dashed. |
 | **Where you were** | A few minutes in one place becomes a stay, named as the shop, sight, city and country it is. |
 | **Easy on the battery** | Location sleeps while the phone is still. After ten minutes in one place GPS turns off entirely, replaced by a 150 m geofence that wakes it when you leave. |
 | **Timeline** | Each day reads stay → journey → stay, every place with the photos you took there. |

@@ -1249,6 +1249,21 @@ struct TravelModeTests {
         #expect(MotionClassifier.legs(of: points, readings: walking).map(\.mode) == [.walking, .cycling, .walking])
     }
 
+    @Test func aSubwayRideIsFoundInTheMotionHistory() {
+        let t0 = Date(timeIntervalSince1970: 1_800_000_000)
+        func at(_ minutes: Double) -> Date { t0.addingTimeInterval(minutes * 60) }
+        typealias R = MotionClassifier.Reading
+        // Dinner with a walk to the restroom, a short walk to the station, the ride with a still stop at a station on the
+        // way, a walk home, then the evening at home until the app is opened next morning.
+        let readings = [R(start: at(0), mode: nil, still: true), R(start: at(2), mode: .walking),
+                        R(start: at(4), mode: nil, still: true), R(start: at(9), mode: .walking),
+                        R(start: at(11), mode: .automotive), R(start: at(20), mode: nil, still: true),
+                        R(start: at(21), mode: .automotive), R(start: at(40), mode: .walking),
+                        R(start: at(46), mode: nil, still: true)]
+        let journey = MotionClassifier.journey(in: readings, from: at(0), to: at(600))
+        #expect(journey == MotionClassifier.Journey(start: at(9), end: at(46), mode: .automotive))
+    }
+
     @Test func steadyPedallingStaysARide() {
         let points = track([(600, 1.3), (900, 4.5), (600, 1.3)])
         #expect(MotionClassifier.legs(of: points, readings: []).map(\.mode) == [.walking, .cycling, .walking])

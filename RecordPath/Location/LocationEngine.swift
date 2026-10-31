@@ -109,6 +109,12 @@ final class LocationEngine {
         /// take-off when only the landing is known.
         static let cruiseSpeed: CLLocationSpeed = 230
         static let groundTime: TimeInterval = 40 * 60
+        /// A fix this far from the last one, with nothing in between for this long, means the
+        /// signal was gone on the way: underground, or iOS had stopped the app.
+        static let gapDistance: CLLocationDistance = 1_000
+        static let gapSilence: TimeInterval = 3 * 60
+        /// Faster than this just before the signal went, it was a drive through a tunnel.
+        static let drivingSpeed: CLLocationSpeed = 7
     }
 
     private static let fenceID = "stay"
@@ -370,7 +376,7 @@ final class LocationEngine {
         }
         Diagnostics.count("accepted")
         activity = location.speed >= 0 && location.speed < 0.5 && openStay != nil ? .stationary : .moving
-        noteFlight(to: location)
+        if !noteFlight(to: location) { bridgeGap(to: location) }
         record(location)
         detectStay(with: location)
     }
@@ -421,7 +427,8 @@ final class LocationEngine {
     /// A fix far from where we last were, sooner than anything on the ground could get there,
     /// means a flight. It's drawn as a great-circle arc from the last place to here, and the
     /// stay at the departure airport ends at about take-off rather than at landing.
-    private func noteFlight(to location: CLLocation) {
+    @discardableResult
+    private func noteFlight(to location: CLLocation) -> Bool {
         var from: CLLocation?
         var left: Date?
         if let last = lastAcceptedLocation ?? pendingPoints.last?.location {
@@ -433,9 +440,9 @@ final class LocationEngine {
             from = stay.location
             left = stay.departure ?? stay.arrival
         }
-        guard let from, let left else { return }
+        guard let from, let left else { return false }
         let distance = location.distance(from: from)
-        guard distance > Tuning.flightDistance else { return }
+        guard distance > Tuning.flightDistance else { return false }
         // When take-off isn't known (still "at" the airport), work back from the landing.
         let flightTime = distance / Tuning.cruiseSpeed
         var takeoff = left
@@ -444,7 +451,7 @@ final class LocationEngine {
                           location.timestamp.addingTimeInterval(-flightTime - Tuning.groundTime))
         }
         let elapsed = location.timestamp.timeIntervalSince(takeoff)
-        guard elapsed > 0, distance / elapsed > Tuning.flightSpeed else { return }
+        guard elapsed > 0, distance / elapsed > Tuning.flightSpeed else { return false }
 
         // The landing is a little before this fix, once the phone found a signal.
         let landing = max(takeoff.addingTimeInterval(flightTime), location.timestamp.addingTimeInterval(-15 * 60))
@@ -458,6 +465,82 @@ final class LocationEngine {
         anchor = nil
         lastAcceptedLocation = nil
         pendingPoints = []
+        return true
+    }
+
+    // MARK: Gaps
+
+    /// A fix far from the last one with nothing in between: a subway ride, a long tunnel, or a
+    /// stretch when iOS had stopped the app. The motion history the phone keeps anyway says
+    /// when we really left and when we got there; the way between is drawn as a dashed line.
+    private func bridgeGap(to location: CLLocation) {
+        let stay = openStay
+        let from: CLLocation
+        // The earliest the journey could have begun: a point put down when the geofence fired
+        // stands for the whole stay, not for the moment it was put down.
+        var earliest: Date
+        if let last = lastAcceptedLocation ?? pendingPoints.last?.location {
+            from = last
+            earliest = last.timestamp
+            if let stay, last.distance(from: stay.location) <= Tuning.stayRadius + 30 {
+                earliest = min(earliest, stay.arrival.addingTimeInterval(Tuning.stayMinimumDuration))
+            }
+        } else if let stay = stay ?? lastClosedStay().flatMap({ stay in
+            stay.departure.map { location.timestamp.timeIntervalSince($0) < 6 * 3600 } == true ? stay : nil
+        }) {
+            from = stay.location
+            earliest = stay.departure ?? stay.arrival.addingTimeInterval(Tuning.stayMinimumDuration)
+        } else { return }
+        let distance = location.distance(from: from)
+        let silence = location.timestamp.timeIntervalSince(from.timestamp)
+        guard distance >= Tuning.gapDistance, distance < Tuning.flightDistance,
+              silence >= Tuning.gapSilence || earliest < from.timestamp else { return }
+
+        let drove = from.speed > Tuning.drivingSpeed
+        let known = from.timestamp
+        Diagnostics.record("gap \(Int(distance))m silent=\(Int(silence / 60))min drove=\(drove)")
+        // What led up to the gap is kept as it is; the gap gets a line of its own.
+        flushChunk(carryOver: false)
+        let tripID = activeTripID
+        Task {
+            let journey = await classifier.journey(from: earliest, to: location.timestamp)
+            var start = journey.map { max($0.start, earliest) } ?? known
+            var end = journey.map { min($0.end, location.timestamp) } ?? location.timestamp
+            if end.timeIntervalSince(start) < 60 {
+                start = known
+                end = location.timestamp
+            }
+            // Without a signal and not on foot or a bike, it was a train underground, unless we
+            // were already driving fast when it went.
+            var mode: MovementMode = drove ? .automotive : .subway
+            if let said = journey?.mode, [.walking, .running, .cycling].contains(said) { mode = said }
+            let speed = distance / max(end.timeIntervalSince(start), 1)
+            let points = [
+                TrackPoint(latitude: from.coordinate.latitude, longitude: from.coordinate.longitude, altitude: from.altitude,
+                           speed: speed, accuracy: 1000, timestamp: start),
+                TrackPoint(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude,
+                           altitude: location.altitude, speed: speed, accuracy: 1000, timestamp: end),
+            ]
+            context.insert(TrackChunk(points: points, mode: mode, tripID: tripID))
+            // The place we were at ends when we set off, not when the signal came back.
+            if let stay, !stay.isDeleted, let departure = stay.departure, departure > start {
+                stay.departure = max(start, stay.arrival.addingTimeInterval(Tuning.stayMinimumDuration))
+            }
+            // And the place we got to began when we arrived, not when we noticed.
+            if location.timestamp.timeIntervalSince(end) >= Tuning.stayMinimumDuration {
+                if let here = openStay, here.location.distance(from: location) <= Tuning.stayRadius, here.arrival > end {
+                    here.arrival = end
+                } else if openStay == nil {
+                    let arrived = Stay(arrival: end, coordinate: location.coordinate)
+                    arrived.departure = location.timestamp
+                    KnownPlaces.applyName(to: arrived, in: context)
+                    context.insert(arrived)
+                    tagger.enqueue()
+                }
+            }
+            try? context.save()
+            Diagnostics.record("gap filled \(mode.rawValue) \(start.formatted(.iso8601))-\(end.formatted(.iso8601))")
+        }
     }
 
     // MARK: Battery saver
@@ -656,6 +739,12 @@ final class LocationEngine {
         let wait = Tuning.settleAfter - Date().timeIntervalSince(stay.arrival)
         settleTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(max(0, wait)))
+            // GPS goes quiet on a train underground and can call that still; the motion chip
+            // still feels the ride, so wait until it agrees.
+            while !Task.isCancelled, let self, self.openStay === stay, await self.classifier.isMoving() {
+                Diagnostics.record("settle held: still moving")
+                try? await Task.sleep(for: .seconds(120))
+            }
             guard let self, !Task.isCancelled, self.openStay === stay, self.activity == .stationary else { return }
             self.settle()
         }

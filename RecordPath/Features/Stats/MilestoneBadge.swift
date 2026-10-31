@@ -411,6 +411,7 @@ extension Milestone.Kind {
 /// The medal large, turning with your finger, with what it took or what's left.
 struct MilestoneDetailSheet: View {
     let status: MilestoneProgress.Status
+    @Environment(\.dismiss) private var dismiss
     @State private var tilt: CGSize = .zero
     @State private var spin: Double = 0
 
@@ -432,8 +433,11 @@ struct MilestoneDetailSheet: View {
 
             VStack(spacing: 6) {
                 Text(status.milestone.title).font(.title2.bold())
-                Text(status.milestone.kind.title).font(.subheadline).foregroundStyle(.secondary)
+                Text(status.milestone.scale ?? status.subjectLine ?? status.milestone.kind.title)
+                    .font(.subheadline).foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
             }
+            .padding(.horizontal)
 
             if let date = status.date {
                 Label(String(localized: "\(date.formatted(.dateTime.year().month().day().locale(appLocale))) 达成", bundle: .appLanguage),
@@ -447,25 +451,21 @@ struct MilestoneDetailSheet: View {
                     ProgressView(value: status.fraction)
                         .tint(status.milestone.kind.colors[1])
                         .frame(width: 220)
-                    Text(remaining).font(.subheadline).foregroundStyle(.secondary)
+                    Text(status.remaining).font(.subheadline).foregroundStyle(.secondary)
                 }
             }
             Spacer()
         }
         .frame(maxWidth: .infinity)
+        // Dragging the medal turns it, so it can't also close the sheet; this can.
+        .overlay(alignment: .topTrailing) {
+            Button("关闭", systemImage: "xmark") { dismiss() }
+                .labelStyle(.iconOnly)
+                .buttonStyle(.glass)
+                .buttonBorderShape(.circle)
+                .padding(16)
+        }
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
-    }
-
-    private var remaining: String {
-        let left = max(0, Double(status.milestone.threshold) - status.current)
-        let value = status.milestone.kind == .distance ? Int(left.rounded(.up)) : Int(left)
-        return switch status.milestone.kind {
-        case .distance: String(localized: "还差 \(value) 公里", bundle: .appLanguage)
-        case .countries: String(localized: "还差 \(value) 个国家和地区", bundle: .appLanguage)
-        case .provinces: String(localized: "还差 \(value) 个省份", bundle: .appLanguage)
-        case .cities: String(localized: "还差 \(value) 座城市", bundle: .appLanguage)
-        case .days: String(localized: "还差 \(value) 天", bundle: .appLanguage)
-        }
     }
 }

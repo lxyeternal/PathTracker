@@ -8049,6 +8049,256 @@
           }
         }
       }
+    },
+    "地铁": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subway"
+          }
+        }
+      }
+    },
+    "差不多是两个半马拉松": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About two and a half marathons"
+          }
+        }
+      }
+    },
+    "比北京到青岛的直线距离还远": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Further than Beijing to Qingdao as the crow flies"
+          }
+        }
+      }
+    },
+    "大约是北京到上海的直线距离": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About Beijing to Shanghai as the crow flies"
+          }
+        }
+      }
+    },
+    "比北京到新加坡的直线距离还远": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Further than Beijing to Singapore as the crow flies"
+          }
+        }
+      }
+    },
+    "从北极到赤道的距离": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From the North Pole to the equator"
+          }
+        }
+      }
+    },
+    "赤道一圈的长度": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Once around the equator"
+          }
+        }
+      }
+    },
+    "还差 %@ 公里": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ km to go"
+          }
+        }
+      }
+    },
+    "还差 %@ 个国家和地区": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ more countries and regions to go"
+          }
+        }
+      }
+    },
+    "还差 %@ 个省份": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ more provinces to go"
+          }
+        }
+      }
+    },
+    "还差 %@ 座城市": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ more cities to go"
+          }
+        }
+      }
+    },
+    "还差 %@ 天": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ more days to go"
+          }
+        }
+      }
+    },
+    "第 %lld 个国家和地区：%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Country or region no. %1$lld: %2$@"
+          }
+        }
+      }
+    },
+    "第 %lld 个省份：%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Province no. %1$lld: %2$@"
+          }
+        }
+      }
+    },
+    "第 %lld 座城市：%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "City no. %1$lld: %2$@"
+          }
+        }
+      }
+    },
+    "最近获得": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latest"
+          }
+        }
+      }
+    },
+    "第一枚奖章就在前面": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your first medal is just ahead"
+          }
+        }
+      }
+    },
+    "/ %lld 枚": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "/ %lld medals"
+          }
+        }
+      }
+    },
+    "已走 %@ 公里，不含飞行": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ km so far, not counting flights"
+          }
+        }
+      }
+    },
+    "已去过 %@ 个国家和地区": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ countries and regions so far"
+          }
+        }
+      }
+    },
+    "已点亮 %@ 个省份": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ provinces lit up"
+          }
+        }
+      }
+    },
+    "已去过 %@ 座城市": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ cities so far"
+          }
+        }
+      }
+    },
+    "已记录 %@ 天": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ days recorded"
+          }
+        }
+      }
+    },
+    "地面合计": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On the ground"
+          }
+        }
+      }
+    },
+    "另有飞行": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus flights"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
