@@ -10226,6 +10226,46 @@
           }
         }
       }
+    },
+    "沿途 %lld 站": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld stops along the way"
+          }
+        }
+      }
+    },
+    "已到 %lld 站": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld reached"
+          }
+        }
+      }
+    },
+    "下一站": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next stop"
+          }
+        }
+      }
+    },
+    "再走 %@ 到%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ more to %@"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

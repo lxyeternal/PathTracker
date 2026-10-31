@@ -58,3 +58,28 @@ private struct PreviewPortrait: View {
         .clipShape(.rect(cornerRadius: 26, style: .continuous))
     }
 }
+
+extension DesignPreviewTests {
+    @Test func journeyPage() throws {
+        guard let folder else { return }
+        let progress = JourneyProgress(route: .canal, travelled: 420_000)
+        let view = HStack(alignment: .top, spacing: 24) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 12) {
+                    ForEach(ClassicRoute.all.prefix(2)) { RoutePosterCard(route: $0, travelled: 420_000, selected: $0.id == "canal") }
+                }
+                HStack(spacing: 12) {
+                    ForEach(ClassicRoute.all.dropFirst(2)) { RoutePosterCard(route: $0, travelled: 420_000, selected: false) }
+                }
+            }
+            JourneyStops(progress: progress).frame(width: 360)
+        }
+        .padding(20)
+        .background(Color.white)
+        .environment(\.locale, Locale(identifier: "zh-Hans"))
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = 1.5
+        let data = try #require(renderer.uiImage?.pngData())
+        try data.write(to: URL(fileURLWithPath: folder).appending(path: "journey.png"))
+    }
+}
