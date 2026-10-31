@@ -71,6 +71,8 @@ final class Stay {
     var note: String?
     /// Where this visit came from: nil when recorded, "photos" when found in the photo library.
     var sourceRaw: String?
+    /// The place's own time zone ("Asia/Tokyo"), so its times read as they were there.
+    var timeZoneID: String?
     /// Photos posted for this visit.
     @Relationship(deleteRule: .cascade, inverse: \TripPhoto.stay) var photos: [TripPhoto]? = []
 
@@ -102,6 +104,14 @@ final class Stay {
     }
 
     var duration: TimeInterval { (departure ?? Date()).timeIntervalSince(arrival) }
+
+    /// The place's time zone when its clock differs from this device's at the time of the
+    /// visit; nil when they read the same.
+    var localTimeZone: TimeZone? {
+        guard let zone = timeZoneID.flatMap(TimeZone.init(identifier:)),
+              zone.secondsFromGMT(for: arrival) != TimeZone.current.secondsFromGMT(for: arrival) else { return nil }
+        return zone
+    }
 
     var category: PlaceCategory { PlaceCategory(rawValue: categoryRaw) }
     var isFromPhotos: Bool { sourceRaw == PhotoFootprints.source }

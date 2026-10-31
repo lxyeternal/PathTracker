@@ -45,8 +45,9 @@ enum Format {
         Int(count).formatted(.number.locale(appLocale))
     }
 
-    static func time(_ date: Date) -> String {
-        date.formatted(Date.FormatStyle(date: .omitted, time: .shortened, locale: appLocale))
+    /// The time of day, on the clock of `zone` when given (a place's own time zone).
+    static func time(_ date: Date, in zone: TimeZone? = nil) -> String {
+        date.formatted(Date.FormatStyle(date: .omitted, time: .shortened, locale: appLocale, timeZone: zone ?? .current))
     }
 
     static func dayTitle(_ date: Date) -> String {

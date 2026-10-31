@@ -1,5 +1,6 @@
 import Foundation
 import os
+import SwiftData
 
 /// China's 34 provincial-level divisions, laid out as a tile map: each sits roughly where it is
 /// geographically, without drawing any borders.
@@ -143,8 +144,9 @@ struct LightUpInsights {
     init(stays: [Stay]) {
         let calendar = Calendar.current
         let cityNames = CityNames.canonical(for: stays)
+        let passingThrough = StampBook.passingThrough(stays)
         for stay in stays {
-            guard let code = stay.countryCode else { continue }
+            guard let code = stay.countryCode, !passingThrough.contains(stay.persistentModelID) else { continue }
             countries.insert(code)
             guard let province = Province.containing(countryCode: code, region: stay.region, city: stay.city) else { continue }
             var visit = provinces[province.id] ?? Visit()

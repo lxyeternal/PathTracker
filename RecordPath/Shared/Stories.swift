@@ -1,5 +1,6 @@
 import Foundation
 import CoreLocation
+import SwiftData
 
 /// Where the person lives, as the history tells it: the place they called home, or else the
 /// place they spent the most time at.
@@ -104,8 +105,10 @@ enum LifeFirsts {
         var wentAbroad = false
         let cityNames = CityNames.canonical(for: stays)
         let homeCity = home?.cityName(in: cityNames)
+        let passingThrough = StampBook.passingThrough(stays)
         for stay in ordered {
-            if let code = stay.countryCode, countries.insert(code).inserted, code != homeCountry, homeCountry != nil {
+            let counted = !passingThrough.contains(stay.persistentModelID)
+            if counted, let code = stay.countryCode, countries.insert(code).inserted, code != homeCountry, homeCountry != nil {
                 let country = appLocale.localizedString(forRegionCode: code) ?? stay.country ?? code
                 let title = wentAbroad
                     ? String(localized: "第一次到\(country)", bundle: .appLanguage)
@@ -113,7 +116,7 @@ enum LifeFirsts {
                 firsts.append(LifeFirst(kind: wentAbroad ? .country : .abroad, date: stay.arrival, title: title, place: stay.city))
                 wentAbroad = true
             }
-            if let key = CityNames.key(stay), let city = cityNames[key], city != homeCity,
+            if counted, let key = CityNames.key(stay), let city = cityNames[key], city != homeCity,
                cities.insert("\(stay.countryCode ?? "")|\(city)").inserted, stay.countryCode == homeCountry || homeCountry == nil {
                 firsts.append(LifeFirst(kind: .city, date: stay.arrival,
                                         title: String(localized: "第一次到\(city)", bundle: .appLanguage), place: nil))
@@ -300,7 +303,8 @@ struct TravellerPortrait: Sendable {
             cycling = share { $0.mode == .cycling }
             riding = share { $0.mode == .automotive || $0.mode == .subway }
         }
-        let year = stays.filter { $0.arrival >= yearAgo }
+        let passingThrough = StampBook.passingThrough(stays)
+        let year = stays.filter { $0.arrival >= yearAgo && !passingThrough.contains($0.persistentModelID) }
         let cityNames = CityNames.canonical(for: stays)
         cities = Set(year.compactMap { CityNames.key($0).flatMap { cityNames[$0] } }).count
         countries = Set(year.compactMap(\.countryCode)).count

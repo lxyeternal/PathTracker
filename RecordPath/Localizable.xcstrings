@@ -9696,6 +9696,26 @@
           }
         }
       }
+    },
+    "当地时间": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "local time"
+          }
+        }
+      }
+    },
+    "当地时间（%@）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local time (%@)"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

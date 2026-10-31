@@ -201,7 +201,7 @@ struct PlaceVisitsView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(visit.arrival.formatted(.dateTime.year().month().day().weekday(.abbreviated).locale(appLocale)))
                                     .foregroundStyle(.primary)
-                                Text("\(Format.time(visit.arrival)) · 停留 \(Format.duration(visit.duration))")
+                                Text("\(Format.time(visit.arrival, in: visit.localTimeZone)) · 停留 \(Format.duration(visit.duration))")
                                     .font(.subheadline).foregroundStyle(.secondary)
                             }
                             Spacer()

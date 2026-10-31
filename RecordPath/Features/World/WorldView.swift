@@ -268,8 +268,9 @@ struct PlaceRow: View {
     }
 
     private var timeRange: String {
-        let end = stay.departure.map(Format.time) ?? String(localized: "现在", bundle: .appLanguage)
-        return "\(Format.time(stay.arrival)) – \(end)"
+        let zone = stay.localTimeZone
+        let end = stay.departure.map { Format.time($0, in: zone) } ?? String(localized: "现在", bundle: .appLanguage)
+        return "\(Format.time(stay.arrival, in: zone)) – \(end)"
     }
 }
 
