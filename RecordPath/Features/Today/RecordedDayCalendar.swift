@@ -92,7 +92,8 @@ struct RecordedDayCalendar: View {
         VStack(spacing: 14) {
             let columns = Array(repeating: GridItem(.flexible(), spacing: 0), count: 7)
             LazyVGrid(columns: columns, spacing: 6) {
-                ForEach(weekdaySymbols, id: \.self) { symbol in
+                // By position: in English two days share "T" and two "S".
+                ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { _, symbol in
                     Text(symbol).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                 }
                 ForEach(Array(cells.enumerated()), id: \.offset) { _, day in
@@ -156,8 +157,17 @@ struct RecordedDayCalendar: View {
         var days = Set<Date>()
         let chunks = FetchDescriptor<TrackChunk>(predicate: #Predicate { $0.startDate >= start && $0.startDate < end })
         for chunk in (try? context.fetch(chunks)) ?? [] { days.insert(calendar.startOfDay(for: chunk.startDate)) }
-        let stays = FetchDescriptor<Stay>(predicate: #Predicate { $0.arrival >= start && $0.arrival < end })
-        for stay in (try? context.fetch(stays)) ?? [] { days.insert(calendar.startOfDay(for: stay.arrival)) }
+        // Every day a stay touches, so a whole day spent at home still shows.
+        let stays = FetchDescriptor<Stay>(predicate: #Predicate { $0.arrival < end && ($0.departure ?? end) >= start })
+        for stay in (try? context.fetch(stays)) ?? [] {
+            var day = calendar.startOfDay(for: max(stay.arrival, start))
+            let last = min(stay.departure ?? Date(), end.addingTimeInterval(-1))
+            while day <= last {
+                days.insert(day)
+                guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
+                day = next
+            }
+        }
         recorded = days
     }
 

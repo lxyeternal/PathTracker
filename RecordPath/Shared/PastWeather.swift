@@ -17,6 +17,9 @@ enum PastWeather {
     private static let earliest = Date(timeIntervalSince1970: 1_627_776_000)
     private static var cache: [String: Day] = load()
     private static var asked: Set<String> = []
+    /// Days that haven't ended yet: their weather can still change, so it's kept in memory
+    /// for an hour and never written down.
+    private static var unfinished: [String: (day: Day, fetched: Date)] = [:]
 
     private static var url: URL { URL.cachesDirectory.appending(path: "past-weather.json") }
 
@@ -33,9 +36,14 @@ enum PastWeather {
         let key = key(coordinate, day)
         if let cached = cache[key] { return cached }
         let start = Calendar.current.startOfDay(for: day)
+        guard let end = Calendar.current.date(byAdding: .day, value: 1, to: start) else { return nil }
+        let isOver = end <= Date()
+        if !isOver, let recent = unfinished[key] {
+            if Date().timeIntervalSince(recent.fetched) < 3600 { return recent.day }
+            asked.remove(key)
+        }
         guard start >= earliest, start <= Date(), !asked.contains(key) else { return nil }
         asked.insert(key)
-        guard let end = Calendar.current.date(byAdding: .day, value: 1, to: start) else { return nil }
         do {
             // Rounded to ~1 km: the weather doesn't need more, and Apple gets no more than that.
             let rough = CLLocation(latitude: (coordinate.latitude * 100).rounded() / 100, longitude: (coordinate.longitude * 100).rounded() / 100)
@@ -45,6 +53,11 @@ enum PastWeather {
             let result = Day(condition: weather.condition.description, symbol: weather.symbolName,
                              high: weather.highTemperature.converted(to: .celsius).value,
                              low: weather.lowTemperature.converted(to: .celsius).value)
+            guard isOver else {
+                unfinished[key] = (result, Date())
+                return result
+            }
+            unfinished[key] = nil
             cache[key] = result
             if let data = try? JSONEncoder().encode(cache) { try? data.write(to: url, options: .atomic) }
             return result

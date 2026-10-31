@@ -93,7 +93,7 @@ struct FoundTripsSection: View {
     private func insert(_ found: TripFinder.Found) {
         let trip = Trip(title: found.title, startDate: found.start)
         trip.endDate = found.end
-        if let code = found.countryCode, code != "CN" { trip.coverEmoji = String.flag(for: code) } else { trip.coverEmoji = "🧳" }
+        if let code = found.countryCode, found.abroad { trip.coverEmoji = String.flag(for: code) } else { trip.coverEmoji = "🧳" }
         context.insert(trip)
     }
 

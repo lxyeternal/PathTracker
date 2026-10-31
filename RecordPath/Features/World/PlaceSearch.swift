@@ -141,13 +141,32 @@ struct PlaceVisitsRow: View {
 struct PlaceVisitsView: View {
     let place: PlaceVisits
     @Environment(AppNavigator.self) private var navigator
+    @Environment(\.dismiss) private var dismiss
     @State private var selected: Stay?
+    /// Visits deleted from this page, kept out of the list (and never touched again).
+    @State private var deleted: Set<PersistentIdentifier> = []
 
-    private var sortedVisits: [Stay] { place.visits.sorted { $0.arrival > $1.arrival } }
+    private var sortedVisits: [Stay] {
+        place.visits.filter { !deleted.contains($0.persistentModelID) }.sorted { $0.arrival > $1.arrival }
+    }
+
+    /// After a detail sheet closes, drops the visits it deleted; with none left, leaves the page.
+    private func pruneDeleted() {
+        let live = Set(PlaceSummaries.shared.stays.map(\.persistentModelID))
+        deleted = Set(place.visits.map(\.persistentModelID).filter { !live.contains($0) })
+        if deleted.count == place.visits.count { dismiss() }
+    }
 
     var body: some View {
-        let must = MustSee.place(for: place.latest)
-        List {
+        if let latest = sortedVisits.first, let first = sortedVisits.last {
+            content(latest: latest, first: first)
+        }
+    }
+
+    private func content(latest: Stay, first: Stay) -> some View {
+        let must = MustSee.place(for: latest)
+        let visits = sortedVisits
+        return List {
             if let must {
                 Section {
                     MustSeePlaceHeader(must: must, name: place.name)
@@ -155,9 +174,9 @@ struct PlaceVisitsView: View {
                 }
             }
             Section {
-                Map(initialPosition: .camera(MapCamera(centerCoordinate: place.latest.coordinate.onMap, distance: 1500))) {
-                    Annotation(place.name, coordinate: place.latest.coordinate.onMap) {
-                        PlaceIcon(category: place.latest.category, isLandmark: place.latest.isLandmark, size: 34)
+                Map(initialPosition: .camera(MapCamera(centerCoordinate: latest.coordinate.onMap, distance: 1500))) {
+                    Annotation(place.name, coordinate: latest.coordinate.onMap) {
+                        PlaceIcon(category: latest.category, isLandmark: latest.isLandmark, size: 34)
                             .overlay(Circle().stroke(.white, lineWidth: 2))
                     }
                 }
@@ -166,15 +185,15 @@ struct PlaceVisitsView: View {
                     .listRowInsets(EdgeInsets())
             }
             Section {
-                LabeledContent("到访次数", value: "\(place.visits.count)")
-                LabeledContent("累计停留", value: Format.duration(place.totalTime))
-                LabeledContent("第一次", value: place.first.arrival.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: appLocale)))
-                if let address = [place.latest.street, place.latest.city, place.latest.country].compactMap({ $0 }).first {
+                LabeledContent("到访次数", value: "\(visits.count)")
+                LabeledContent("累计停留", value: Format.duration(visits.reduce(0) { $0 + $1.duration }))
+                LabeledContent("第一次", value: first.arrival.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: appLocale)))
+                if let address = [latest.street, latest.city, latest.country].compactMap({ $0 }).first {
                     LabeledContent("位置", value: address)
                 }
             }
             Section {
-                ForEach(sortedVisits) { visit in
+                ForEach(visits) { visit in
                     Button {
                         navigator.show(day: visit.arrival)
                     } label: {
@@ -204,9 +223,9 @@ struct PlaceVisitsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button("编辑", systemImage: "pencil") { selected = place.latest }
+                Button("编辑", systemImage: "pencil") { selected = latest }
             }
         }
-        .sheet(item: $selected) { StayDetailView(stay: $0) }
+        .sheet(item: $selected, onDismiss: pruneDeleted) { StayDetailView(stay: $0) }
     }
 }

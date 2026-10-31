@@ -20,8 +20,11 @@ struct YearReport {
 
     let year: Int
     var daysRecorded = 0
+    /// Everything moved, flights included.
     var distance: Double = 0
     var flightDistance: Double = 0
+    /// Distance on the ground: the year's headline number, with flights said separately.
+    var groundDistance: Double { distance - flightDistance }
     var steps: Double = 0
     var walkingDistance: Double = 0
     var countries: [String] = []
@@ -40,7 +43,7 @@ struct YearReport {
     var isEmpty: Bool { daysRecorded == 0 }
 
     /// Ground distance as a share of the way round the equator.
-    var shareOfEquator: Double { (distance - flightDistance) / 40_075_000 }
+    var shareOfEquator: Double { groundDistance / 40_075_000 }
     var marathons: Double { walkingDistance / 42_195 }
 
     static func years(in stays: [Stay]) -> [Int] {
@@ -93,11 +96,15 @@ struct YearReport {
             stays.compactMap { Province.containing(countryCode: $0.countryCode, region: $0.region, city: $0.city)?.id }.removingDuplicates()
         }
         report.countries = codes(inYear)
-        report.newCountries = hasHistory ? report.countries.filter { !Set(codes(before)).contains($0) } : []
         report.cities = cityKeys(inYear)
-        report.newCities = hasHistory ? report.cities.filter { !Set(cityKeys(before)).contains($0) } : []
         report.provinces = provinceIDs(inYear)
-        report.newProvinces = hasHistory ? report.provinces.filter { !Set(provinceIDs(before)).contains($0) } : []
+        if hasHistory {
+            // Worked out once, not once per place.
+            let seenCountries = Set(before.compactMap(\.countryCode)), seenCities = Set(cityKeys(before)), seenProvinces = Set(provinceIDs(before))
+            report.newCountries = report.countries.filter { !seenCountries.contains($0) }
+            report.newCities = report.cities.filter { !seenCities.contains($0) }
+            report.newProvinces = report.provinces.filter { !seenProvinces.contains($0) }
+        }
 
         // Home is where the most time went; the favourite is where you went most, apart from home.
         let clusters = cluster(inYear)
@@ -130,13 +137,38 @@ struct YearReport {
         var name: String { (members.first { $0.customName != nil } ?? center).displayName }
     }
 
+    /// Groups stays within 150 m of the longest stay near them. Centres sit in a grid of
+    /// 150 m cells, so each stay only looks at the cells around it, not every cluster.
     private static func cluster(_ stays: [Stay]) -> [Cluster] {
         var clusters: [Cluster] = []
+        var centers: [CLLocation] = []
+        var grid: [Int64: [Int]] = [:]
+        let cell = KnownPlaces.radius
+        func coordinates(_ stay: Stay) -> (Int64, Int64) {
+            let y = stay.latitude * 111_320
+            let x = stay.longitude * 111_320 * cos(stay.latitude * .pi / 180)
+            return (Int64((x / cell).rounded(.down)), Int64((y / cell).rounded(.down)))
+        }
+        func key(_ x: Int64, _ y: Int64) -> Int64 { x &* 1_000_003 &+ y }
         for stay in stays.sorted(by: { $0.duration > $1.duration }) {
-            if let index = clusters.firstIndex(where: { $0.center.location.distance(from: stay.location) <= KnownPlaces.radius }) {
-                clusters[index].members.append(stay)
+            let location = stay.location
+            let (x, y) = coordinates(stay)
+            // The earliest cluster in reach, as a scan through all of them would find.
+            var found: Int?
+            for dx in -1...1 {
+                for dy in -1...1 {
+                    for candidate in grid[key(x + Int64(dx), y + Int64(dy))] ?? []
+                    where candidate < (found ?? .max) && centers[candidate].distance(from: location) <= KnownPlaces.radius {
+                        found = candidate
+                    }
+                }
+            }
+            if let found {
+                clusters[found].members.append(stay)
             } else {
+                grid[key(x, y), default: []].append(clusters.count)
                 clusters.append(Cluster(center: stay, members: [stay]))
+                centers.append(location)
             }
         }
         return clusters

@@ -80,10 +80,10 @@ struct MustSeePlaceView: View {
         .sensoryFeedback(.impact(weight: .light), trigger: burst)
         .task {
             withAnimation(.smooth(duration: 0.9)) { appeared = true }
-            async let mine: Void = loadPhotos()
-            async let theirs: Void = findOnMaps()
-            _ = await (mine, theirs)
+            await findOnMaps()
         }
+        // Your own photos, once the first visit is known (progress may still be loading).
+        .task(id: firstVisit) { await loadPhotos() }
     }
 
     // MARK: Hero

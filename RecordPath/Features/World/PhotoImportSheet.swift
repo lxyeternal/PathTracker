@@ -45,6 +45,7 @@ struct PhotoImportSheet: View {
         // Coming back from Settings with "All Photos" allowed.
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             access = PhotoFootprints.authorization
+            if phase == .denied, access == .authorized || access == .limited { phase = .intro }
         }
     }
 
@@ -83,7 +84,7 @@ struct PhotoImportSheet: View {
             Label("只读取时间和地点，照片不会被上传或复制", systemImage: "lock.fill")
                 .font(.footnote).foregroundStyle(.secondary)
             if lastRun > 0 {
-                Text("上次导入：\(Date(timeIntervalSince1970: lastRun).formatted(date: .abbreviated, time: .shortened))。再次扫描只会加入新的地方，不会重复。")
+                Text("上次导入：\(Date(timeIntervalSince1970: lastRun).formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: appLocale)))。再次扫描只会加入新的地方，不会重复。")
                     .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
                     .padding(.horizontal, 28)
             }

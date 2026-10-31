@@ -14,6 +14,11 @@ final class LiveRecording {
     private let health = HKHealthStore()
     private var activity: Activity<RecordingAttributes>?
     private var updateTask: Task<Void, Never>?
+    /// Chunks are saved only every twenty minutes or so; between saves the card counts the
+    /// engine's pending points on this beat.
+    private var tickTask: Task<Void, Never>?
+    /// The distance of the recording's saved chunks, read again only after a save.
+    private var savedDistance: (tripID: UUID, distance: Double)?
     private var saveObserver: NSObjectProtocol?
     private var lastSentDistance: Double = -1
     private let log = Logger(subsystem: "PathTracker", category: "LiveRecording")
@@ -25,7 +30,10 @@ final class LiveRecording {
 
     func activate() {
         saveObserver = NotificationCenter.default.addObserver(forName: ModelContext.didSave, object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.scheduleUpdate() }
+            Task { @MainActor in
+                self?.savedDistance = nil
+                self?.scheduleUpdate()
+            }
         }
         observeEngine()
         sync()
@@ -79,6 +87,7 @@ final class LiveRecording {
             Task { await running.end(nil, dismissalPolicy: .default) }
         }
         activity = Activity<RecordingAttributes>.activities.first { $0.attributes.tripID == trip?.id }
+        defer { syncTicking() }
         guard let trip else {
             activity = nil
             return
@@ -110,6 +119,22 @@ final class LiveRecording {
         }
     }
 
+    private func syncTicking() {
+        guard activity != nil else {
+            tickTask?.cancel()
+            tickTask = nil
+            return
+        }
+        guard tickTask == nil else { return }
+        tickTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(30))
+                guard !Task.isCancelled, let self else { return }
+                await self.update()
+            }
+        }
+    }
+
     private func update() async {
         guard let activity, let trip = activeTrip(), trip.id == activity.attributes.tripID else { return }
         let distance = distance(of: trip)
@@ -130,8 +155,15 @@ final class LiveRecording {
     }
 
     private func distance(of trip: Trip) -> Double {
-        let id: UUID? = trip.id
-        let chunks = (try? context.fetch(FetchDescriptor<TrackChunk>(predicate: #Predicate { $0.tripID == id }))) ?? []
-        return chunks.reduce(0) { $0 + $1.distance } + TrackPoint.distance(of: engine.pendingPoints)
+        let saved: Double
+        if let savedDistance, savedDistance.tripID == trip.id {
+            saved = savedDistance.distance
+        } else {
+            let id: UUID? = trip.id
+            let chunks = (try? context.fetch(FetchDescriptor<TrackChunk>(predicate: #Predicate { $0.tripID == id }))) ?? []
+            saved = chunks.reduce(0) { $0 + $1.distance }
+            savedDistance = (trip.id, saved)
+        }
+        return saved + TrackPoint.distance(of: engine.pendingPoints)
     }
 }

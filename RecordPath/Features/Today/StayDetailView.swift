@@ -214,6 +214,8 @@ struct StayDetailView: View {
             }
             .confirmationDialog("删除这条停留记录？", isPresented: $confirmingDelete, titleVisibility: .visible) {
                 Button("删除", role: .destructive) {
+                    DeletedPhotoVisits.remember(stay)
+                    PlaceSummaries.shared.forget([stay.persistentModelID])
                     context.delete(stay)
                     try? context.save()
                     engine.reloadAfterDataChange(discardPending: false)
@@ -301,8 +303,10 @@ struct StayDetailView: View {
     }
 
     private func save() {
-        let newName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let previousKind = Self.kind(of: stay)
+        var newName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        // A name that was only the old type's ("家") follows the type, rather than sticking.
+        if kind != previousKind, previousKind != .none, previousKind != .sight, newName == previousKind.name { newName = "" }
         if newName != (stay.customName ?? "") || kind != previousKind {
             let change: KnownPlaces.CategoryChange = switch kind {
             case .sight: .sight

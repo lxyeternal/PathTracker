@@ -31,7 +31,8 @@ struct PassportBook: View {
                 .aspectRatio(0.70, contentMode: .fit)
                 .padding(.horizontal, 18)
                 .shadow(color: .black.opacity(0.18), radius: 14, y: 8)
-                .id(pages.count)
+                // Rebuilt when any stamp changes, not only the page count: the pages are cached.
+                .id(book.passport.map(\.id))
             Text(page == 0 ? String(localized: "向左轻扫，翻开护照", bundle: .appLanguage)
                            : String(localized: "第 \(page) / \(pages.count - 1) 页", bundle: .appLanguage))
                 .font(.footnote)

@@ -45,6 +45,13 @@ struct ProfileEditView: View {
             // Signing in may fill in an email Apple provided; show it right away.
             if email.isEmpty, let newValue { email = newValue }
         }
+        .onChange(of: account.profile.displayName) { _, newValue in
+            // Likewise the name, so saving doesn't wipe the one Apple just gave.
+            if name.isEmpty, let newValue { name = newValue }
+        }
+        .onChange(of: account.profile.bio) { _, newValue in
+            if bio.isEmpty, let newValue { bio = newValue }
+        }
         .onAppear(perform: loadFields)
     }
 

@@ -181,7 +181,8 @@ enum PhotoFootprints {
         let snapshot = existing.map { (Known(arrival: $0.arrival, departure: max($0.departure ?? Date(), $0.arrival),
                                              latitude: $0.latitude, longitude: $0.longitude), $0.isFromPhotos) }
         let recorded = snapshot.filter { !$0.1 }.map(\.0)
-        let imported = snapshot.filter(\.1).map(\.0)
+        // Visits deleted by hand count as imported, so scanning again doesn't bring them back.
+        let imported = snapshot.filter(\.1).map(\.0) + DeletedPhotoVisits.all
 
         let found = await Task.detached(priority: .userInitiated) {
             let library = shotsInLibrary(progress: progress)
@@ -209,5 +210,40 @@ enum PhotoFootprints {
         adding(fresh.count, fresh.count)
         Diagnostics.record("photoImport scanned=\(summary.scanned) located=\(summary.withLocation) added=\(summary.visits) skipped=\(summary.skippedAlreadyRecorded)")
         return summary
+    }
+}
+
+/// Photo visits the person deleted. Scanning the library again skips them instead of adding
+/// them back. Kept in iCloud so another device's scan skips them too.
+enum DeletedPhotoVisits {
+    private static let key = "photoImport.deleted"
+    private static let limit = 3000
+
+    static var all: [PhotoFootprints.Known] {
+        stored.compactMap { row in
+            guard row.count == 4 else { return nil }
+            return PhotoFootprints.Known(arrival: Date(timeIntervalSince1970: row[0]), departure: Date(timeIntervalSince1970: row[1]),
+                                         latitude: row[2], longitude: row[3])
+        }
+    }
+
+    static func remember(_ stay: Stay) {
+        guard stay.isFromPhotos else { return }
+        let row = [stay.arrival.timeIntervalSince1970, max(stay.departure ?? stay.arrival, stay.arrival).timeIntervalSince1970,
+                   stay.latitude, stay.longitude]
+        let rows = Array((stored + [row]).suffix(limit))
+        UserDefaults.standard.set(rows, forKey: key)
+        NSUbiquitousKeyValueStore.default.set(rows, forKey: key)
+    }
+
+    static func clear() {
+        UserDefaults.standard.removeObject(forKey: key)
+        NSUbiquitousKeyValueStore.default.removeObject(forKey: key)
+    }
+
+    private static var stored: [[Double]] {
+        let local = UserDefaults.standard.array(forKey: key) as? [[Double]] ?? []
+        let synced = NSUbiquitousKeyValueStore.default.array(forKey: key) as? [[Double]] ?? []
+        return synced.count > local.count ? synced : local
     }
 }

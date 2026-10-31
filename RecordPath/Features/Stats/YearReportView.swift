@@ -11,9 +11,10 @@ struct YearReportView: View {
     @Environment(\.modelContext) private var context
     @Environment(ActivityProvider.self) private var activityProvider
     @Query(sort: \Stay.arrival) private var stays: [Stay]
-    @Query private var trips: [Trip]
 
     @State private var year = Calendar.current.component(.year, from: Date())
+    /// Whether `year` has been moved to the latest one with something in it.
+    @State private var choseYear = false
     @State private var data: StoryData?
     @State private var page = 0
     @State private var shareImage: Image?
@@ -56,11 +57,22 @@ struct YearReportView: View {
                     .overlay(alignment: .top) { storyBar(count: pages.count) }
                 }
             } else {
-                ProgressView().tint(.white)
+                VStack(spacing: 12) {
+                    ProgressView().tint(.white)
+                    Text("正在整理这一年…").font(.subheadline).foregroundStyle(.white.opacity(0.6))
+                }
             }
         }
         .preferredColorScheme(.dark)
-        .task(id: year) { await load() }
+        .task(id: year) {
+            if !choseYear {
+                choseYear = true
+                let initial = Self.defaultYear(among: YearReport.years(in: stays))
+                // Changing the year starts this task again for it.
+                if initial != year { year = initial; return }
+            }
+            await load()
+        }
         .sensoryFeedback(.selection, trigger: page)
     }
 
@@ -77,19 +89,7 @@ struct YearReportView: View {
                 }
             }
             HStack {
-                if YearReport.years(in: stays).count > 1 {
-                    Menu {
-                        Picker("年份", selection: $year) {
-                            ForEach(YearReport.years(in: stays), id: \.self) { Text(verbatim: String($0)).tag($0) }
-                        }
-                    } label: {
-                        Label(String(year), systemImage: "chevron.down")
-                            .font(.subheadline.weight(.semibold))
-                            .padding(.horizontal, 12).padding(.vertical, 6)
-                            .background(.white.opacity(0.15), in: .capsule)
-                    }
-                    .tint(.white)
-                }
+                yearPicker
                 Spacer()
                 Button { dismiss() } label: {
                     Image(systemName: "xmark")
@@ -105,6 +105,37 @@ struct YearReportView: View {
         .padding(.top, 8)
     }
 
+    /// The years with something in them, and the one showing.
+    private var pickableYears: [Int] {
+        Array(Set(YearReport.years(in: stays) + [year])).sorted(by: >)
+    }
+
+    @ViewBuilder private var yearPicker: some View {
+        if pickableYears.count > 1 {
+            Menu {
+                Picker("年份", selection: $year) {
+                    ForEach(pickableYears, id: \.self) { Text(verbatim: String($0)).tag($0) }
+                }
+            } label: {
+                Label(String(year), systemImage: "chevron.down")
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .background(.white.opacity(0.15), in: .capsule)
+            }
+            .tint(.white)
+        }
+    }
+
+    /// The latest year with something recorded; in early January, last year, which has only
+    /// just ended, if there's anything in it.
+    static func defaultYear(among years: [Int], now: Date = Date(), calendar: Calendar = .current) -> Int {
+        let current = calendar.component(.year, from: now)
+        if calendar.component(.month, from: now) == 1, calendar.component(.day, from: now) <= 14, years.contains(current - 1) {
+            return current - 1
+        }
+        return years.contains(current) ? current : years.filter { $0 < current }.max() ?? years.max() ?? current
+    }
+
     private var emptyYear: some View {
         VStack(spacing: 14) {
             Text(verbatim: String(year)).font(.system(size: 72, weight: .heavy, design: .rounded)).foregroundStyle(.white.opacity(0.3))
@@ -113,6 +144,8 @@ struct YearReportView: View {
         }
         .multilineTextAlignment(.center)
         .padding(32)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(alignment: .topLeading) { yearPicker.padding() }
         .overlay(alignment: .topTrailing) {
             Button("关闭", systemImage: "xmark") { dismiss() }.labelStyle(.iconOnly).padding()
         }
@@ -131,7 +164,8 @@ struct YearReportView: View {
         let movements = chunks.map { YearReport.Movement(start: $0.startDate, distance: $0.distance, mode: $0.mode) }
         let days = min(calendar.dateComponents([.day], from: start, to: min(end, Date())).day ?? 0, 366) + 1
         let steps = await activityProvider.activity(from: start, days: days)
-        let report = YearReport.make(year: year, stays: stays, movements: movements, steps: steps, trips: trips)
+        let report = await buildReport(year: year, movements: movements, steps: steps)
+        guard !Task.isCancelled else { return }
 
         let ground = chunks.filter { $0.mode != .flying }
         let routes = Self.homeArea(ground).map { RouteImage.Line(coordinates: $0.points.simplified(tolerance: 40).map(\.coordinate), color: $0.mode.color) }
@@ -156,6 +190,29 @@ struct YearReportView: View {
         }
         await loadPictures(yearStays: yearStays, interval: DateInterval(start: start, end: min(end, Date())),
                            longest: longest, report: report, size: size)
+    }
+
+    /// Works the report out on a background context, so years with thousands of places don't
+    /// hold up the screen; the two places it picks are looked up again here by id.
+    private func buildReport(year: Int, movements: [YearReport.Movement], steps: [DailyActivity]) async -> YearReport {
+        struct Box: @unchecked Sendable { var report: YearReport; var favorite: PersistentIdentifier?; var farthest: PersistentIdentifier? }
+        struct Input: @unchecked Sendable { let movements: [YearReport.Movement]; let steps: [DailyActivity] }
+        let container = context.container
+        let input = Input(movements: movements, steps: steps)
+        let box = await Task.detached(priority: .userInitiated) { () -> Box in
+            let background = ModelContext(container)
+            let stays = (try? background.fetch(FetchDescriptor<Stay>(sortBy: [SortDescriptor(\.arrival)]))) ?? []
+            let trips = (try? background.fetch(FetchDescriptor<Trip>())) ?? []
+            var report = YearReport.make(year: year, stays: stays, movements: input.movements, steps: input.steps, trips: trips)
+            let favorite = report.favoritePlace?.stay?.persistentModelID, farthest = report.farthestPlace?.stay?.persistentModelID
+            report.favoritePlace?.stay = nil
+            report.farthestPlace?.stay = nil
+            return Box(report: report, favorite: favorite, farthest: farthest)
+        }.value
+        var report = box.report
+        report.favoritePlace?.stay = box.favorite.flatMap { context.model(for: $0) as? Stay }
+        report.farthestPlace?.stay = box.farthest.flatMap { context.model(for: $0) as? Stay }
+        return report
     }
 
     /// The pictures behind the later pages: countries pinned on a map, the longest day's
@@ -465,7 +522,7 @@ private struct YearPoster: View {
                 Spacer()
                 Grid(alignment: .leading, horizontalSpacing: 20, verticalSpacing: 12) {
                     GridRow {
-                        stat(Format.distance(r.distance), String(localized: "移动距离", bundle: .appLanguage))
+                        stat(Format.distance(r.groundDistance), String(localized: "移动距离", bundle: .appLanguage))
                         stat("\(r.daysRecorded)", String(localized: "记录天数", bundle: .appLanguage))
                     }
                     GridRow {

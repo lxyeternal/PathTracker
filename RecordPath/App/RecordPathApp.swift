@@ -74,6 +74,7 @@ final class AppServices {
         liveRecording.activate()
         notifier = Notifier(context: container.mainContext, activity: activity)
         PlaceSummaries.shared.attach(container.mainContext)
+        Nationality.observeOtherDevices()
         _ = CloudSync.shared
         tagger.onTagged = { [notifier] stay in
             notifier.placeTagged(stay)

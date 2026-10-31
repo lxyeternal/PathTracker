@@ -60,7 +60,7 @@ struct TripCard: View {
         .clipShape(.rect(cornerRadius: 24, style: .continuous))
         .contentShape(.rect(cornerRadius: 24, style: .continuous))
         .foregroundStyle(.primary)
-        .task(id: "\(trip.id)-\(trip.endDate?.timeIntervalSince1970 ?? 0)") { await load() }
+        .task(id: "\(trip.id)-\(trip.startDate.timeIntervalSince1970)-\(trip.endDate?.timeIntervalSince1970 ?? 0)") { await load() }
     }
 
     private var days: Int {
@@ -115,7 +115,7 @@ struct TripCard: View {
         cities = CityGlow.glows(for: stays)
         photoCount = (trip.photos ?? []).count
 
-        let key = "\(trip.id)-\(end.timeIntervalSince1970)-\(colorScheme == .dark)"
+        let key = "\(trip.id)-\(start.timeIntervalSince1970)-\(end.timeIntervalSince1970)-\(colorScheme == .dark)"
         if let cached = Self.maps[key] {
             map = cached
         } else {

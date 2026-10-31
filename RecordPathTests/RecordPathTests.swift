@@ -721,12 +721,45 @@ struct YearReportTests {
         let report = YearReport.make(year: 2026, stays: stays, movements: movements, steps: [], trips: [])
         #expect(report.distance == 1_542_000)
         #expect(report.flightDistance == 1_500_000)
+        #expect(report.groundDistance == 42_000)
         #expect(report.longestDay?.distance == 30_000)
         #expect(report.favoritePlace?.name == "健身房")
         #expect(report.favoritePlace?.visits == 4)
         #expect(report.farthestPlace?.name == "京都")
         #expect(report.newCountries == ["JP"])
         #expect(report.countries.first == "CN")
+    }
+
+    @Test func reportOpensOnTheLatestYearWithSomethingInIt() {
+        let calendar = Calendar.current
+        func date(_ y: Int, _ m: Int, _ d: Int) -> Date { calendar.date(from: DateComponents(year: y, month: m, day: d, hour: 12))! }
+        #expect(YearReportView.defaultYear(among: [2026, 2025], now: date(2026, 10, 31)) == 2026)
+        #expect(YearReportView.defaultYear(among: [2025, 2024], now: date(2026, 10, 31)) == 2025)
+        #expect(YearReportView.defaultYear(among: [2026, 2025], now: date(2026, 1, 5)) == 2025)
+        #expect(YearReportView.defaultYear(among: [2026], now: date(2026, 1, 5)) == 2026)
+        #expect(YearReportView.defaultYear(among: [2026, 2025], now: date(2026, 1, 20)) == 2026)
+    }
+
+    @Test func homeCityUnderAnotherNameIsNotAFirst() {
+        let stays = [stay(nil, city: "上海", code: "CN", lat: 31.23, lon: 121.47, 2026, 3, 1, hours: 20),
+                     stay(nil, city: "上海", code: "CN", lat: 31.23, lon: 121.47, 2026, 3, 2, hours: 20),
+                     stay(nil, city: "Shanghai", code: "CN", lat: 31.20, lon: 121.44, 2026, 3, 3),
+                     stay(nil, city: "苏州", code: "CN", lat: 31.30, lon: 120.58, 2026, 3, 4)]
+        let home = HomeBase(latitude: 31.20, longitude: 121.44, countryCode: "CN", city: "Shanghai")
+        let firsts = LifeFirsts.find(stays: stays, chunks: [], home: home, country: "CN").firsts.filter { $0.kind == .city }
+        #expect(firsts.count == 1)
+        #expect(firsts.first?.title.contains("苏州") == true)
+    }
+
+    @Test func aShortHistoryDoesNotMakeEverythingNew() {
+        let now = Date()
+        let recent = (1...5).map { day -> Stay in
+            let s = Stay(arrival: now.addingTimeInterval(-Double(day) * 86_400),
+                         coordinate: CLLocationCoordinate2D(latitude: 31 + Double(day) * 0.01, longitude: 121))
+            s.departure = s.arrival.addingTimeInterval(3600)
+            return s
+        }
+        #expect(TravellerPortrait(stays: recent, chunks: [], home: nil, now: now).newPlaces == 0)
     }
 
     @Test func firstYearHasNothingToCallNew() {

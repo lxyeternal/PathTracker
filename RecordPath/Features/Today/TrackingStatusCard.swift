@@ -140,8 +140,10 @@ struct TrackingStatusCard: View {
 
     private func pauseUntilMorning() {
         let calendar = Calendar.current
-        let tomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: Date())) ?? Date()
-        withAnimation { engine.pause(until: tomorrow.addingTimeInterval(7 * 3600)) }
+        // Tapped after midnight, "tomorrow morning" is this morning.
+        let today = calendar.date(bySettingHour: 7, minute: 0, second: 0, of: Date()) ?? Date()
+        let morning = today > Date() ? today : calendar.date(byAdding: .day, value: 1, to: today) ?? today
+        withAnimation { engine.pause(until: morning) }
     }
 
     private func pauseText(_ date: Date) -> String {

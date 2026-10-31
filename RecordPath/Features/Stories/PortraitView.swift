@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// "这一年，你是……" as a small travel poster: the archetype's painted scene, its name set
+/// "过去一年，你是……" as a small travel poster: the archetype's painted scene, its name set
 /// large in serif over the bottom, the reason in the person's own numbers.
 struct PortraitFace: View {
     let portrait: TravellerPortrait
@@ -13,12 +13,13 @@ struct PortraitFace: View {
             LinearGradient(stops: [.init(color: .clear, location: 0.35), .init(color: .black.opacity(0.62), location: 1)],
                            startPoint: .top, endPoint: .bottom)
             VStack(alignment: .leading, spacing: large ? 10 : 7) {
-                Text(verbatim: "\(Calendar.current.component(.year, from: Date())) · \(String(localized: "旅人画像", bundle: .appLanguage))")
+                // The portrait covers the past 365 days, not the calendar year.
+                Text(verbatim: "\(String(localized: "旅人画像", bundle: .appLanguage)) · \(String(localized: "过去一年", bundle: .appLanguage))")
                     .font(.caption.weight(.semibold))
                     .tracking(2)
                     .opacity(0.85)
                 Spacer(minLength: 0)
-                Text("这一年，你是").font(.subheadline.weight(.medium)).opacity(0.85)
+                Text("过去一年，你是").font(.subheadline.weight(.medium)).opacity(0.85)
                 Text(archetype.title)
                     .font(.system(size: large ? 40 : 32, weight: .bold, design: .serif))
                     .minimumScaleFactor(0.7)
@@ -34,8 +35,8 @@ struct PortraitFace: View {
                             Label(trait.title, systemImage: trait.symbol)
                                 .font(.caption2.weight(.semibold))
                                 .padding(.horizontal, 9).padding(.vertical, 5)
-                                .background(.ultraThinMaterial.opacity(0.9), in: .capsule)
-                                .environment(\.colorScheme, .dark)
+                                // A plain tint: ImageRenderer drops materials from the share image.
+                                .background(Color.white.opacity(0.18), in: .capsule)
                         }
                     }
                     .lineLimit(1)
@@ -49,6 +50,27 @@ struct PortraitFace: View {
         .frame(height: large ? 460 : 340)
         .clipShape(.rect(cornerRadius: large ? 32 : 28, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: large ? 32 : 28, style: .continuous).strokeBorder(.white.opacity(0.12), lineWidth: 1))
+    }
+}
+
+/// Stands in for the portrait until there's enough of the year to draw one from.
+struct PortraitPlaceholderCard: View {
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: TravellerPortrait.Archetype.explorer.symbol)
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 56, height: 72)
+                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.background.tertiary))
+            VStack(alignment: .leading, spacing: 3) {
+                Text("旅人画像").font(.system(.headline, design: .serif)).foregroundStyle(.primary)
+                Text("再走一阵子，画像就会出现。").font(.subheadline).foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
     }
 }
 
@@ -109,7 +131,7 @@ struct PortraitSheet: View {
     }
 }
 
-/// "你的这一年" as a set of tiles: night and dawn as two skies, how you got around as one
+/// "你的过去一年" as a set of tiles: night and dawn as two skies, how you got around as one
 /// bar, new places and home as two rings, and the cities and countries as big numbers.
 struct YearInTiles: View {
     let portrait: TravellerPortrait
@@ -119,7 +141,7 @@ struct YearInTiles: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("你的这一年").font(.system(.title3, design: .serif, weight: .bold))
+            Text("你的过去一年").font(.system(.title3, design: .serif, weight: .bold))
             HStack(spacing: 12) {
                 skyTile(title: "夜里九点以后", value: portrait.night, symbol: "moon.stars.fill",
                         colors: [Color(red: 0.1, green: 0.1, blue: 0.3), Color(red: 0.35, green: 0.25, blue: 0.6)])

@@ -18,8 +18,10 @@ struct PostComposer: View {
     @State private var isSaving = false
     @FocusState private var textFocused: Bool
 
-    private var isEmpty: Bool {
-        chosenAssets.isEmpty && pickedImages.isEmpty && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    /// Something to post: photos, or a note that differs from what's there (clearing it counts).
+    private var hasChanges: Bool {
+        !chosenAssets.isEmpty || !pickedImages.isEmpty
+            || text.trimmingCharacters(in: .whitespacesAndNewlines) != (stay.note ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     var body: some View {
@@ -56,7 +58,7 @@ struct PostComposer: View {
                         ProgressView()
                     } else {
                         Button("发布", systemImage: "paperplane.fill", action: save)
-                            .disabled(isEmpty)
+                            .disabled(!hasChanges)
                     }
                 }
             }
@@ -67,7 +69,7 @@ struct PostComposer: View {
             }
             .onChange(of: pickerItems) { _, items in load(items) }
             .sensoryFeedback(.selection, trigger: chosenAssets.count)
-            .interactiveDismissDisabled(!isEmpty && text != (stay.note ?? ""))
+            .interactiveDismissDisabled(hasChanges)
         }
     }
 

@@ -149,7 +149,9 @@ final class Notifier {
             defaults.set(Array(reached), forKey: Keys.knownMilestones)
             return
         }
-        let new = progress.reached.filter { !known.contains($0.id) }
+        // Only recent ones are news: milestones that appear because old places were imported
+        // or synced (a first launch, a photo import) are history and are just marked known.
+        let new = progress.reached.filter { !known.contains($0.id) && Date().timeIntervalSince($0.date) < 3 * 86_400 }
         defaults.set(Array(known.union(reached)), forKey: Keys.knownMilestones)
         for item in new {
             Celebrations.shared.add(Celebrations.Item(id: "milestone.\(item.id)", kind: .milestone, title: item.milestone.title,
@@ -164,7 +166,16 @@ final class Notifier {
     /// Special stamps and completed sets earned since the last look, each time the stamps are
     /// worked out again in the background. Only recent ones get a ceremony: stamps that appear
     /// because old places were imported or synced are history.
-    private let knownStamps = SyncedSet(key: "stamps.known")
+    @ObservationIgnored private var knownStamps = SyncedSet(key: "stamps.known")
+
+    /// After everything is deleted: forget which milestones and stamps were already known, so
+    /// the next ones are history-checked from scratch.
+    func forgetHistory() {
+        UserDefaults.standard.removeObject(forKey: Keys.knownMilestones)
+        UserDefaults.standard.removeObject(forKey: "stamps.known")
+        NSUbiquitousKeyValueStore.default.removeObject(forKey: "stamps.known")
+        knownStamps = SyncedSet(key: "stamps.known")
+    }
 
     func checkStamps(_ book: StampBook) {
         let earned = book.earnedOnce

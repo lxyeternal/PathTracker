@@ -92,6 +92,12 @@ final class Celebrations {
         save()
     }
 
+    /// Drops everything waiting, when all the data is deleted.
+    func removeAll() {
+        pending.removeAll()
+        save()
+    }
+
     func finish(_ item: Item) {
         pending.removeAll { $0.id == item.id }
         save()

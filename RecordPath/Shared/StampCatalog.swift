@@ -156,10 +156,11 @@ struct CityStampStyle {
         let here = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
         let candidates = catalog.filter { countryCode == nil || $0.country == countryCode }
         if let byName = candidates.first(where: { $0.names.contains { normalize($0) == name } }) { return byName }
-        // Geocoders name the same city many ways ("Kuta", "Denpasar"); close enough counts.
+        // Geocoders name the same city many ways ("Kuta", "Denpasar"); close enough counts, but
+        // not so far that a neighbouring city (佛山 beside 广州) takes its stamp.
         return candidates
             .map { ($0, CLLocation(latitude: $0.latitude, longitude: $0.longitude).distance(from: here)) }
-            .filter { $0.1 < 30_000 }
+            .filter { $0.1 < 12_000 }
             .min { $0.1 < $1.1 }?.0
     }
 

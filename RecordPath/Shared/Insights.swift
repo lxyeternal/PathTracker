@@ -155,7 +155,8 @@ struct WorldInsights {
                 summary.cities[city, default: 0] += 1
                 cities.insert("\(code)|\(city)")
             }
-            if stay.isLandmark, let name = stay.placeName, landmarkNames.insert(name).inserted {
+            // By name within a city: another town's "Old Town" is another place.
+            if stay.isLandmark, let name = stay.placeName, landmarkNames.insert("\(name)|\(stay.city ?? "")").inserted {
                 summary.landmarks.append(name)
                 landmarks.append(stay)
             }

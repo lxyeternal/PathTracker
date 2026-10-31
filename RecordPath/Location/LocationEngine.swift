@@ -231,13 +231,19 @@ final class LocationEngine {
         }
     }
 
-    private func stop() {
+    /// `keepingSession` is for a pause: GPS stops, but the background session stays so the
+    /// recording can start again from the background when the pause ends.
+    private func stop(keepingSession: Bool = false) {
         Diagnostics.record("stop paused=\(isPaused)")
         updatesTask?.cancel()
         updatesTask = nil
         unsettle()
-        backgroundSession?.invalidate()
-        backgroundSession = nil
+        // A new session only takes effect in the foreground, so without this one a wake-up
+        // after the pause couldn't turn GPS back on.
+        if !keepingSession {
+            backgroundSession?.invalidate()
+            backgroundSession = nil
+        }
         manager.stopMonitoringVisits()
         // While paused, keep the cheap significant-change wake-ups so recording can resume on time.
         if !isPaused { manager.stopMonitoringSignificantLocationChanges() }
@@ -291,7 +297,7 @@ final class LocationEngine {
         Diagnostics.record("pause until=\(date.formatted(.iso8601))")
         pausedUntil = date
         UserDefaults.standard.set(date, forKey: Keys.pausedUntil)
-        if activeTripID == nil { stop() }
+        if activeTripID == nil { stop(keepingSession: true) }
         schedulePauseEnd()
     }
 
@@ -328,6 +334,8 @@ final class LocationEngine {
     // MARK: Trips
 
     func beginTrip(_ trip: Trip) {
+        // What was recorded before belongs to the all-day track, not to this trip.
+        flushChunk(carryOver: true)
         activeTripID = trip.id
         UserDefaults.standard.set(trip.id.uuidString, forKey: Keys.tripID)
         if updatesTask == nil { start() } else { restart() }
@@ -340,10 +348,12 @@ final class LocationEngine {
             try? context.save()
             return
         }
+        // The trip's last stretch is saved as part of it.
+        flushChunk(carryOver: true)
         activeTripID = nil
         UserDefaults.standard.removeObject(forKey: Keys.tripID)
         // Back to all-day recording if it is on; otherwise a manual recording simply stops.
-        if isEnabled { restart() } else { stop() }
+        if isRecording { restart() } else { stop(keepingSession: isPaused) }
         try? context.save()
     }
 
@@ -358,7 +368,7 @@ final class LocationEngine {
         if update.stationary {
             if activity != .stationary { Diagnostics.record("stationary") }
             activity = .stationary
-            if let location = update.location ?? currentLocation { promoteAnchorIfStill(at: location) }
+            if let location = stillLocation(update.location) { promoteAnchorIfStill(at: location) }
             flushChunk(carryOver: true)
             scheduleSettle()
             return
@@ -379,6 +389,17 @@ final class LocationEngine {
         if !noteFlight(to: location) { bridgeGap(to: location) }
         record(location)
         detectStay(with: location)
+    }
+
+    /// Where a stationary update says we are, held to the same accuracy as any other fix;
+    /// otherwise the last fix that was accepted.
+    private func stillLocation(_ location: CLLocation?) -> CLLocation? {
+        if let location, location.horizontalAccuracy > 0, location.horizontalAccuracy <= Tuning.maxAccuracy,
+           abs(location.timestamp.timeIntervalSinceNow) < Tuning.gapBreak,
+           location.timestamp >= lastAcceptedLocation?.timestamp ?? .distantPast {
+            return location
+        }
+        return lastAcceptedLocation
     }
 
     /// Drops fixes that imply an impossible speed (a fix from the wrong tower in a subway, a
@@ -488,8 +509,10 @@ final class LocationEngine {
         } else if let stay = stay ?? lastClosedStay().flatMap({ stay in
             stay.departure.map { location.timestamp.timeIntervalSince($0) < 6 * 3600 } == true ? stay : nil
         }) {
-            from = stay.location
             earliest = stay.departure ?? stay.arrival.addingTimeInterval(Tuning.stayMinimumDuration)
+            // `stay.location` is stamped now; the journey can't have begun before we left.
+            from = CLLocation(coordinate: stay.location.coordinate, altitude: 0, horizontalAccuracy: 10,
+                              verticalAccuracy: -1, timestamp: earliest)
         } else { return }
         let distance = location.distance(from: from)
         let silence = location.timestamp.timeIntervalSince(from.timestamp)
@@ -581,13 +604,36 @@ final class LocationEngine {
         Diagnostics.record("visit arrival=\(visit.arrivalDate.formatted(.iso8601)) departure=\(visit.departureDate == .distantFuture ? "-" : visit.departureDate.formatted(.iso8601))")
         guard !usesLiveUpdates, isRecording else { return }
         let arrived = visit.arrivalDate != .distantPast ? visit.arrivalDate : Date()
+        let location = CLLocation(latitude: visit.coordinate.latitude, longitude: visit.coordinate.longitude)
         if visit.departureDate == .distantFuture {
             guard openStay == nil else { return }
-            let location = CLLocation(latitude: visit.coordinate.latitude, longitude: visit.coordinate.longitude)
             beginStay(from: (location, arrived, visit.coordinate.latitude, visit.coordinate.longitude, 1))
-        } else if let stay = openStay {
-            close(stay, at: visit.departureDate)
+            return
         }
+        // A departure only ends the open stay if it's the same place; visits arrive late and
+        // can describe somewhere we've already left.
+        if let stay = openStay, location.distance(from: stay.location) <= 200 {
+            // Leaving before we arrived is an earlier visit here, not this one.
+            if visit.departureDate > stay.arrival { close(stay, at: visit.departureDate) }
+            return
+        }
+        // A whole visit we never saw begin is kept as a stay, unless one already covers it.
+        guard visit.arrivalDate != .distantPast,
+              visit.departureDate.timeIntervalSince(visit.arrivalDate) >= Tuning.stayMinimumDuration,
+              !hasStay(overlapping: visit.arrivalDate, visit.departureDate) else { return }
+        let stay = Stay(arrival: visit.arrivalDate, coordinate: visit.coordinate)
+        stay.departure = visit.departureDate
+        KnownPlaces.applyName(to: stay, in: context)
+        context.insert(stay)
+        try? context.save()
+        tagger.enqueue()
+    }
+
+    private func hasStay(overlapping start: Date, _ end: Date) -> Bool {
+        let earliest = start.addingTimeInterval(-2 * 86_400)
+        let descriptor = FetchDescriptor<Stay>(predicate: #Predicate { $0.arrival < end && $0.arrival > earliest })
+        let stays = (try? context.fetch(descriptor)) ?? []
+        return stays.contains { ($0.departure ?? .distantFuture) > start }
     }
 
     private func record(_ location: CLLocation) {
@@ -616,12 +662,21 @@ final class LocationEngine {
         PendingTrackStore.save(pendingPoints)
         guard points.count >= 2, TrackPoint.distance(of: points) > 15 else { return }
 
-        let tripID = activeTripID
+        // Saved right away so nothing is lost if iOS suspends us; split into legs afterwards.
+        let chunk = TrackChunk(points: points, mode: MotionClassifier.mode(forSpeeds: points.map(\.speed)), tripID: activeTripID)
+        context.insert(chunk)
+        try? context.save()
         Task {
             // A walk to the bus stop and the ride after it are saved as two legs, not one.
             let legs = await classifier.legs(of: points)
-            for leg in legs where leg.points.count >= 2 {
-                context.insert(TrackChunk(points: leg.points, mode: leg.mode, tripID: tripID))
+            guard chunk.modelContext != nil, !chunk.isDeleted else { return }
+            if legs.count > 1 {
+                for leg in legs where leg.points.count >= 2 {
+                    context.insert(TrackChunk(points: leg.points, mode: leg.mode, tripID: chunk.tripID))
+                }
+                context.delete(chunk)
+            } else if let leg = legs.first {
+                chunk.modeRaw = leg.mode.rawValue
             }
             Diagnostics.record("chunk points=\(points.count) distance=\(Int(TrackPoint.distance(of: points)))m legs=\(legs.map(\.mode.rawValue).joined(separator: ","))")
             try? context.save()
@@ -834,13 +889,15 @@ final class LocationEngine {
     private func restoreOpenStay() {
         let descriptor = FetchDescriptor<Stay>(predicate: #Predicate { $0.departure == nil },
                                                sortBy: [SortDescriptor(\.arrival, order: .reverse)])
+        // Not recording here: an open stay belongs to another device that is, so leave it be.
+        guard isRecording else {
+            openStay = nil
+            return
+        }
         let open = (try? context.fetch(descriptor)) ?? []
         openStay = open.first
         // Another device or an old crash may have left extra open stays behind.
         for stale in open.dropFirst() { stale.departure = stale.arrival.addingTimeInterval(Tuning.stayMinimumDuration) }
-        if !isRecording, let stay = openStay {
-            close(stay, at: Date())
-        }
     }
 }
 

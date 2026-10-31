@@ -11,6 +11,12 @@ struct HomeBase: Sendable {
 
     var location: CLLocation { CLLocation(latitude: latitude, longitude: longitude) }
 
+    /// Home's city under the same name `CityNames.canonical` gives the stays, so "Shanghai"
+    /// and "上海" are the same place when they're compared.
+    func cityName(in names: [String: String]) -> String? {
+        city.map { names["\(countryCode ?? "")|\($0)"] ?? $0 }
+    }
+
     static func find(in stays: [Stay]) -> HomeBase? {
         if let home = stays.first(where: { $0.categoryRaw == "home" }) {
             return HomeBase(latitude: home.latitude, longitude: home.longitude, countryCode: home.countryCode, city: home.city)
@@ -97,6 +103,7 @@ enum LifeFirsts {
         var countries = Set<String>(), cities = Set<String>()
         var wentAbroad = false
         let cityNames = CityNames.canonical(for: stays)
+        let homeCity = home?.cityName(in: cityNames)
         for stay in ordered {
             if let code = stay.countryCode, countries.insert(code).inserted, code != homeCountry, homeCountry != nil {
                 let country = appLocale.localizedString(forRegionCode: code) ?? stay.country ?? code
@@ -106,7 +113,7 @@ enum LifeFirsts {
                 firsts.append(LifeFirst(kind: wentAbroad ? .country : .abroad, date: stay.arrival, title: title, place: stay.city))
                 wentAbroad = true
             }
-            if let key = CityNames.key(stay), let city = cityNames[key], city != home?.city,
+            if let key = CityNames.key(stay), let city = cityNames[key], city != homeCity,
                cities.insert("\(stay.countryCode ?? "")|\(city)").inserted, stay.countryCode == homeCountry || homeCountry == nil {
                 firsts.append(LifeFirst(kind: .city, date: stay.arrival,
                                         title: String(localized: "第一次到\(city)", bundle: .appLanguage), place: nil))
@@ -264,15 +271,15 @@ struct TravellerPortrait: Sendable {
     var reason: String {
         func percent(_ value: Double) -> String { value.formatted(.percent.precision(.fractionLength(0)).locale(appLocale)) }
         return switch archetype {
-        case .nightWalker: String(localized: "这一年 \(percent(night)) 的路，是晚上九点以后走的。", bundle: .appLanguage)
-        case .earlyRiser: String(localized: "这一年 \(percent(early)) 的路，是早上八点以前走的。", bundle: .appLanguage)
-        case .cityCollector: String(localized: "这一年去了 \(cities) 座城市，每一座都留下了你的名字。", bundle: .appLanguage)
-        case .globetrotter: String(localized: "这一年走过 \(countries) 个国家和地区，世界在你脚下变小了。", bundle: .appLanguage)
+        case .nightWalker: String(localized: "过去一年 \(percent(night)) 的路，是晚上九点以后走的。", bundle: .appLanguage)
+        case .earlyRiser: String(localized: "过去一年 \(percent(early)) 的路，是早上八点以前走的。", bundle: .appLanguage)
+        case .cityCollector: String(localized: "过去一年去了 \(cities) 座城市，每一座都留下了你的名字。", bundle: .appLanguage)
+        case .globetrotter: String(localized: "过去一年走过 \(countries) 个国家和地区，世界在你脚下变小了。", bundle: .appLanguage)
         case .explorer: String(localized: "最近三个月去的地方，\(percent(newPlaces)) 是第一次去。", bundle: .appLanguage)
         case .homebody: String(localized: "最近三个月，\(percent(atHome)) 的时间在家。家是最好的地方。", bundle: .appLanguage)
-        case .rider: String(localized: "这一年 \(percent(cycling)) 的路是骑车走的，风一直在你身边。", bundle: .appLanguage)
-        case .wanderer: String(localized: "这一年 \(percent(onFoot)) 的路是一步一步走出来的。", bundle: .appLanguage)
-        case .commuter: String(localized: "这一年 \(percent(riding)) 的路在车上和地铁里，城市在窗外流过。", bundle: .appLanguage)
+        case .rider: String(localized: "过去一年 \(percent(cycling)) 的路是骑车走的，风一直在你身边。", bundle: .appLanguage)
+        case .wanderer: String(localized: "过去一年 \(percent(onFoot)) 的路是一步一步走出来的。", bundle: .appLanguage)
+        case .commuter: String(localized: "过去一年 \(percent(riding)) 的路在车上和地铁里，城市在窗外流过。", bundle: .appLanguage)
         case .slowWalker: String(localized: "不急不忙，每一段路都慢慢走。", bundle: .appLanguage)
         }
     }
@@ -305,8 +312,11 @@ struct TravellerPortrait: Sendable {
                 Int64((stay.latitude / 0.002).rounded(.down)) &* 1_000_003 &+ Int64((stay.longitude / 0.002).rounded(.down))
             }
             let before = Set(stays.filter { $0.arrival < quarterAgo }.map(cell))
-            let places = Set(recent.map(cell))
-            newPlaces = Double(places.subtracting(before).count) / Double(places.count)
+            // Without history from before the past three months, everything looks new.
+            if !before.isEmpty {
+                let places = Set(recent.map(cell))
+                newPlaces = Double(places.subtracting(before).count) / Double(places.count)
+            }
             if let home {
                 let time = recent.reduce(0) { $0 + min($1.duration, 3 * 86_400) }
                 let homeTime = recent.filter { $0.location.distance(from: home.location) < 200 }.reduce(0) { $0 + min($1.duration, 3 * 86_400) }
@@ -338,7 +348,7 @@ enum Echoes {
 
         // Back in a city at the same time of year.
         if let today = stays.first(where: { calendar.isDate($0.arrival, inSameDayAs: now) || ($0.departure == nil && !$0.isFromPhotos) }),
-           let here = city(today), here != home?.city {
+           let here = city(today), here != home?.cityName(in: cityNames) {
             let year = calendar.component(.year, from: now)
             var years: [Int] = []
             var memory: Date?

@@ -92,6 +92,7 @@ struct TripsView: View {
                     ProfileToolbarButton(showingSettings: $showingSettings)
                 }
             }
+            .onChange(of: list) { year = 0 }
             .navigationDestination(for: Trip.self) { TripDetailView(trip: $0) }
             .sheet(isPresented: $showingNewTrip) { NewTripSheet() }
             .sheet(isPresented: $showingNewRecording) { NewRecordingSheet() }
@@ -105,7 +106,7 @@ struct TripsView: View {
 
     private func byYear(_ items: [Trip]) -> [(year: Int, trips: [Trip])] {
         Dictionary(grouping: items) { Calendar.current.component(.year, from: $0.startDate) }
-            .filter { year == 0 || $0.key == year }
+            .filter { year == 0 || $0.key == year || !years(of: items).contains(year) }
             .map { ($0.key, $0.value.sorted { $0.startDate > $1.startDate }) }
             .sorted { $0.year > $1.year }
     }

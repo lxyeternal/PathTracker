@@ -1114,6 +1114,14 @@ enum PostcardMail {
         return card
     }
 
+    /// Takes back a card not yet delivered, with its notification, when its trip is deleted.
+    static func cancel(for tripID: UUID) {
+        let cards = all.filter { $0.tripID == tripID && !$0.delivered }
+        guard !cards.isEmpty else { return }
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: cards.map { "postcard.\($0.id)" })
+        save(all.filter { $0.tripID != tripID || $0.delivered })
+    }
+
     /// Cards whose day has come, opened the next time the app is in front.
     static func deliverDue() {
         var cards = all

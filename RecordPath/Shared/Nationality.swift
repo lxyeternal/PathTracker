@@ -8,12 +8,29 @@ enum Nationality {
 
     static var code: String? {
         get {
-            UserDefaults.standard.string(forKey: key) ?? NSUbiquitousKeyValueStore.default.string(forKey: key)
+            // iCloud first, so a change made on another device wins.
+            NSUbiquitousKeyValueStore.default.string(forKey: key) ?? UserDefaults.standard.string(forKey: key)
         }
         set {
             UserDefaults.standard.set(newValue, forKey: key)
-            NSUbiquitousKeyValueStore.default.set(newValue, forKey: key)
+            if let newValue {
+                NSUbiquitousKeyValueStore.default.set(newValue, forKey: key)
+            } else {
+                NSUbiquitousKeyValueStore.default.removeObject(forKey: key)
+            }
         }
+    }
+
+    /// Recomputes what depends on it when another device changes it.
+    @MainActor
+    static func observeOtherDevices() {
+        NotificationCenter.default.addObserver(forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
+                                               object: NSUbiquitousKeyValueStore.default, queue: .main) { note in
+            let keys = note.userInfo?[NSUbiquitousKeyValueStoreChangedKeysKey] as? [String] ?? []
+            guard keys.contains(key) else { return }
+            MainActor.assumeIsolated { PlaceSummaries.shared.refresh() }
+        }
+        NSUbiquitousKeyValueStore.default.synchronize()
     }
 
     /// Every country and region, by name in the app's language.
