@@ -31,32 +31,12 @@ struct DesignPreviewTests {
 }
 
 extension DesignPreviewTests {
-    @Test func tilesAndPoster() throws {
+    @Test func yearTiles() throws {
         guard let folder else { return }
         var portrait = TravellerPortrait()
         portrait.night = 0.42; portrait.early = 0.12; portrait.onFoot = 0.35; portrait.cycling = 0.2; portrait.riding = 0.45
         portrait.newPlaces = 0.62; portrait.atHome = 0.48; portrait.cities = 18; portrait.countries = 9
-        var painting = LightPainting()
-        var lines: [(points: [CGPoint], mode: MovementMode)] = []
-        for i in 0..<60 {
-            let a = Double(i) * 0.7
-            let pts = (0..<30).map { j -> CGPoint in
-                let t = Double(j) / 29
-                return CGPoint(x: 0.5 + cos(a) * 0.35 * t + sin(t * 6 + a) * 0.03, y: 0.42 + sin(a) * 0.3 * t + cos(t * 5) * 0.02)
-            }
-            lines.append((pts, [.walking, .cycling, .automotive][i % 3]))
-        }
-        painting.lines = lines
-        painting.places = (0..<25).map { i in CGPoint(x: 0.3 + Double(i % 5) * 0.1, y: 0.25 + Double(i / 5) * 0.08) }
-        painting.center = .init(latitude: 31.23, longitude: 121.47)
-        let view = HStack(alignment: .top, spacing: 16) {
-            YearInTiles(portrait: portrait, appeared: true).frame(width: 360)
-            VStack(spacing: 12) {
-                ForEach(LightPainting.Palette.allCases) { palette in
-                    LightPoster(painting: painting, title: "上海", subtitle: "2026 · 441 公里", palette: palette).frame(width: 220)
-                }
-            }
-        }
+        let view = YearInTiles(portrait: portrait, appeared: true).frame(width: 360)
         .padding(16)
         .background(Color(white: 0.96))
         let renderer = ImageRenderer(content: view)

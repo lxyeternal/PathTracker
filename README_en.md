@@ -161,7 +161,6 @@ At the bottom of Stats, a set of cards about you:
 - **Traveller portrait**: from the past year, are you a night walker, a city collector or a curious explorer? With your own numbers, ready to share.
 - **How far you've come**: the distance you've travelled on the ground laid along the Grand Canal, China's Highway 318, the Silk Road or Route 66, lighting up each town you pass, each with a line about it.
 - **Firsts**: first time abroad, first night away, first time out at 3 a.m., first time in each city and at each place for a lifetime, year by year; and the ends of your map: furthest north, south, east, west and from home.
-- **Light painting**: every path you've taken drawn as light on black, the ones you take most burning brightest, like a long exposure. Your city or everywhere, this year or all time, as a poster to share.
 - **Your year**: page by page like a story, with glowing city maps, a turning dotted globe, your longest day's route, a wall of photos and a page of **this year's passport**, ending in a poster to share.
 
 <p align="center">
