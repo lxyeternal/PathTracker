@@ -9,6 +9,12 @@ struct PassportBook: View {
     let book: StampBook
     var onSelect: (Stamp) -> Void = { _ in }
     @State private var page = 0
+    private var style = PassportStyle.shared
+
+    init(book: StampBook, onSelect: @escaping (Stamp) -> Void = { _ in }) {
+        self.book = book
+        self.onSelect = onSelect
+    }
 
     static let perPage = 4
 
@@ -20,19 +26,24 @@ struct PassportBook: View {
         let stampPages = stampPages
         // An empty page waits at the back for the next stamp, unless the last one has room.
         let blankAtBack = stampPages.last.map { $0.count == Self.perPage } ?? true
-        let pages: [AnyView] = [AnyView(PassportCover())]
-            + [AnyView(PassportDataPage(book: book))]
+        let theme = style.theme
+        let pages: [AnyView] = [AnyView(PassportCover(theme: theme))]
+            + [AnyView(PassportDataPage(book: book, theme: theme))]
             + stampPages.enumerated().map { index, stamps in
-                AnyView(PassportStampPage(stamps: stamps, number: index + 1, onSelect: onSelect))
+                AnyView(PassportStampPage(stamps: stamps, number: index + 1, theme: theme, onSelect: onSelect))
             }
-            + (blankAtBack ? [AnyView(PassportStampPage(stamps: [], number: stampPages.count + 1, onSelect: onSelect))] : [])
-        VStack(spacing: 10) {
+            + (blankAtBack ? [AnyView(PassportStampPage(stamps: [], number: stampPages.count + 1, theme: theme, onSelect: onSelect))] : [])
+        VStack(spacing: 12) {
             PageCurl(pages: pages, current: $page)
                 .aspectRatio(0.70, contentMode: .fit)
-                .padding(.horizontal, 18)
-                .shadow(color: .black.opacity(0.18), radius: 14, y: 8)
+                // A passport on the table, not a page filling the screen.
+                .frame(maxWidth: 268)
+                .shadow(color: .black.opacity(0.10), radius: 3, y: 2)
+                .shadow(color: .black.opacity(0.16), radius: 18, y: 12)
                 // Rebuilt when any stamp changes, not only the page count: the pages are cached.
-                .id(book.passport.map(\.id))
+                .id(book.passport.map(\.id) + [theme.rawValue])
+                .transition(.opacity.combined(with: .scale(scale: 0.97)))
+                .frame(maxWidth: .infinity)
             Text(page == 0 ? String(localized: "向左轻扫，翻开护照", bundle: .appLanguage)
                            : String(localized: "第 \(page) / \(pages.count - 1) 页", bundle: .appLanguage))
                 .font(.footnote)
@@ -40,13 +51,18 @@ struct PassportBook: View {
                 .monospacedDigit()
                 .contentTransition(.numericText())
                 .animation(.smooth, value: page)
+            PassportThemePicker(selection: Binding(get: { style.theme }, set: { style.theme = $0 }))
+                .padding(.top, 6)
         }
+        .onChange(of: style.theme) { page = 0 }
     }
 }
 
 /// The burgundy cover, gold foil catching the light now and then.
 struct PassportCover: View {
     var compact = false
+    /// The chosen theme unless given.
+    var theme: PassportTheme?
     @State private var shine = false
 
     static let leather = Color(red: 0.37, green: 0.08, blue: 0.13)
@@ -54,15 +70,16 @@ struct PassportCover: View {
                                               Color(red: 0.95, green: 0.84, blue: 0.56)], startPoint: .topLeading, endPoint: .bottomTrailing)
 
     var body: some View {
+        let theme = theme ?? PassportStyle.shared.theme
         GeometryReader { proxy in
             let unit = proxy.size.width / 300
             ZStack {
                 UnevenRoundedRectangle(cornerRadii: .init(topLeading: 4 * unit, bottomLeading: 4 * unit, bottomTrailing: 18 * unit, topTrailing: 18 * unit),
                                        style: .continuous)
-                    .fill(Self.leather.gradient)
+                    .fill(theme.leather.gradient)
                     .overlay { Grain().opacity(0.25).clipShape(.rect(cornerRadius: 18 * unit)) }
-                foil(unit: unit)
-                    .foregroundStyle(Self.gold)
+                foil(unit: unit, theme: theme)
+                    .foregroundStyle(theme.foil)
                 // A slow glint across the foil.
                 ZStack {
                     LinearGradient(colors: [.clear, .white.opacity(0.75), .clear], startPoint: .leading, endPoint: .trailing)
@@ -72,7 +89,7 @@ struct PassportCover: View {
                 }
                 .frame(width: proxy.size.width, height: proxy.size.height)
                 .clipped()
-                .mask { foil(unit: unit) }
+                .mask { foil(unit: unit, theme: theme) }
                 .allowsHitTesting(false)
                 // The spine's stitching.
                 Rectangle().fill(.black.opacity(0.18)).frame(width: 6 * unit).frame(maxWidth: .infinity, alignment: .leading)
@@ -84,7 +101,7 @@ struct PassportCover: View {
         }
     }
 
-    private func foil(unit: CGFloat) -> some View {
+    private func foil(unit: CGFloat, theme: PassportTheme) -> some View {
         VStack(spacing: 0) {
             Spacer(minLength: 0)
             Text(verbatim: "护照").font(.system(size: 34 * unit, weight: .semibold)).tracking(14 * unit)
@@ -92,9 +109,11 @@ struct PassportCover: View {
             ZStack {
                 Circle().stroke(lineWidth: 2.2 * unit)
                 Circle().inset(by: 9 * unit).stroke(lineWidth: 0.8 * unit)
-                Image(systemName: "globe.asia.australia.fill").font(.system(size: 58 * unit, weight: .light))
+                Image(systemName: theme.emblem).resizable().scaledToFit()
+                    .frame(width: theme == .burgundy ? 66 * unit : 60 * unit, height: theme == .burgundy ? 66 * unit : 60 * unit)
                 ForEach(0..<12) { i in
-                    Image(systemName: "star.fill").font(.system(size: 6 * unit))
+                    // Resized rather than set in type: fonts stop shrinking at a point or so.
+                    Image(systemName: "star.fill").resizable().scaledToFit().frame(width: 6 * unit, height: 6 * unit)
                         .offset(y: -63 * unit)
                         .rotationEffect(.degrees(Double(i) * 30))
                 }
@@ -105,7 +124,8 @@ struct PassportCover: View {
             Text(verbatim: "WAYTRACE").font(.custom("AcademyEngravedLetPlain", fixedSize: 12 * unit)).tracking(5 * unit).padding(.top, 2 * unit)
             Spacer(minLength: 0)
             Image(systemName: "dot.radiowaves.left.and.right")
-                .font(.system(size: 16 * unit))
+                .resizable().scaledToFit()
+                .frame(width: 22 * unit, height: 14 * unit)
                 .padding(.bottom, 22 * unit)
         }
     }
@@ -129,6 +149,9 @@ private struct Grain: View {
 /// lines along the bottom.
 private struct PassportDataPage: View {
     let book: StampBook
+    let theme: PassportTheme
+
+    private var printed: Color { theme.printed }
 
     private var countries: Int { book.countries.count }
 
@@ -136,7 +159,7 @@ private struct PassportDataPage: View {
         GeometryReader { proxy in
             let unit = proxy.size.width / 300
             ZStack(alignment: .topLeading) {
-                StampPaper(style: .passport)
+                StampPaper(theme: theme)
                 VStack(alignment: .leading, spacing: 12 * unit) {
                     HStack {
                         Text(verbatim: "漫迹护照 · WAYTRACE PASSPORT")
@@ -144,13 +167,13 @@ private struct PassportDataPage: View {
                         Spacer()
                         Text(verbatim: "P").font(.system(size: 12 * unit, weight: .bold, design: .monospaced))
                     }
-                    .foregroundStyle(Self.printed)
+                    .foregroundStyle(printed)
                     HStack(alignment: .top, spacing: 14 * unit) {
                         Text(book.home.map { String.flag(for: $0) } ?? "🌏")
                             .font(.system(size: 54 * unit))
                             .frame(width: 92 * unit, height: 118 * unit)
-                            .background(Self.printed.opacity(0.08), in: .rect(cornerRadius: 6 * unit))
-                            .overlay(RoundedRectangle(cornerRadius: 6 * unit).stroke(Self.printed.opacity(0.3), lineWidth: 0.6))
+                            .background(printed.opacity(0.08), in: .rect(cornerRadius: 6 * unit))
+                            .overlay(RoundedRectangle(cornerRadius: 6 * unit).stroke(printed.opacity(0.3), lineWidth: 0.6))
                         VStack(alignment: .leading, spacing: 8 * unit) {
                             field("签发国 / ISSUED BY", book.home.map { WorldInsights.countryName(code: $0, fallback: nil) } ?? "—", unit: unit)
                             field("签发日期 / DATE OF ISSUE", book.since.map(Self.date) ?? "—", unit: unit)
@@ -165,12 +188,12 @@ private struct PassportDataPage: View {
                     Spacer(minLength: 0)
                     VStack(alignment: .leading, spacing: 2 * unit) {
                         Text(verbatim: "持照人签名 / SIGNATURE")
-                            .font(.custom("AvenirNextCondensed-Medium", fixedSize: 8 * unit)).foregroundStyle(Self.printed.opacity(0.6))
+                            .font(.custom("AvenirNextCondensed-Medium", fixedSize: 8 * unit)).foregroundStyle(printed.opacity(0.6))
                         Text(verbatim: "Waytrace Traveller")
                             .font(.custom("SnellRoundhand-Bold", fixedSize: 24 * unit))
                             .foregroundStyle(Color(red: 0.12, green: 0.2, blue: 0.45))
                             .rotationEffect(.degrees(-3))
-                        Rectangle().fill(Self.printed.opacity(0.3)).frame(width: 170 * unit, height: 0.6)
+                        Rectangle().fill(printed.opacity(0.3)).frame(width: 170 * unit, height: 0.6)
                     }
                     Spacer(minLength: 0)
                     VStack(alignment: .leading, spacing: 2 * unit) {
@@ -178,7 +201,7 @@ private struct PassportDataPage: View {
                         Text(mrz.1)
                     }
                     .font(.system(size: 10.5 * unit, weight: .medium, design: .monospaced))
-                    .foregroundStyle(Self.printed.opacity(0.85))
+                    .foregroundStyle(printed.opacity(0.85))
                     .lineLimit(1)
                     .minimumScaleFactor(0.5)
                 }
@@ -191,8 +214,8 @@ private struct PassportDataPage: View {
 
     private func field(_ label: String, _ value: String, unit: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 1 * unit) {
-            Text(verbatim: label).font(.custom("AvenirNextCondensed-Medium", fixedSize: 8 * unit)).foregroundStyle(Self.printed.opacity(0.6))
-            Text(value).font(.system(size: 14 * unit, weight: .semibold)).foregroundStyle(Self.printed).lineLimit(1).minimumScaleFactor(0.6)
+            Text(verbatim: label).font(.custom("AvenirNextCondensed-Medium", fixedSize: 8 * unit)).foregroundStyle(printed.opacity(0.6))
+            Text(value).font(.system(size: 14 * unit, weight: .semibold)).foregroundStyle(printed).lineLimit(1).minimumScaleFactor(0.6)
         }
     }
 
@@ -211,6 +234,7 @@ private struct PassportDataPage: View {
 private struct PassportStampPage: View {
     let stamps: [Stamp]
     let number: Int
+    let theme: PassportTheme
     let onSelect: (Stamp) -> Void
 
     /// Where each of the four lands, as fractions of the page.
@@ -225,24 +249,24 @@ private struct PassportStampPage: View {
         GeometryReader { proxy in
             let unit = proxy.size.width / 300
             ZStack {
-                StampPaper(style: .passport)
+                StampPaper(theme: theme)
                 VStack {
                     Text(verbatim: "签证 · VISAS").font(.custom("AvenirNextCondensed-DemiBold", fixedSize: 9 * unit)).tracking(3 * unit)
                     Spacer()
                     Text(verbatim: "— \(number) —").font(.system(size: 9 * unit, design: .monospaced))
                 }
-                .foregroundStyle(StampPaper.line)
+                .foregroundStyle(theme.guilloche)
                 .padding(.vertical, 12 * unit)
 
                 if stamps.isEmpty {
                     VStack(spacing: 8 * unit) {
                         RoundedRectangle(cornerRadius: 10 * unit)
-                            .stroke(StampPaper.line, style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
+                            .stroke(theme.guilloche, style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
                             .frame(width: 150 * unit, height: 96 * unit)
                         Text("出国旅行时，入境的那一刻会自动盖在这里")
                             .font(.system(size: 11 * unit))
                             .multilineTextAlignment(.center)
-                            .foregroundStyle(StampPaper.line.mix(with: .black, by: 0.3))
+                            .foregroundStyle(theme.guilloche.mix(with: .black, by: 0.3))
                             .frame(width: 180 * unit)
                     }
                 }

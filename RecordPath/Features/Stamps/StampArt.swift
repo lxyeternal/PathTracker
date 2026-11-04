@@ -872,25 +872,33 @@ struct SeededRandom {
 /// The page stamps are pressed on. Warm paper in light and dark mode alike: it's an object.
 struct StampPaper: View {
     enum Style { case passport, seals, book }
+    /// The security print on passport pages.
+    enum Pattern { case waves, lattice, ripples, rosette }
     var style: Style = .passport
+    var paper: Color = Self.color
+    var ink: Color = Self.line
+    var pattern: Pattern = .waves
 
     static let color = Color(red: 0.965, green: 0.945, blue: 0.895)
     static let line = Color(red: 0.86, green: 0.82, blue: 0.72)
 
+    init(style: Style = .passport) {
+        self.style = style
+    }
+
+    init(theme: PassportTheme) {
+        style = .passport
+        paper = theme.paper
+        ink = theme.guilloche
+        pattern = theme.pattern
+    }
+
     var body: some View {
         Canvas { context, size in
-            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Self.color))
+            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(paper))
             switch style {
             case .passport:
-                // The fine wavy lines printed on passport pages.
-                for row in stride(from: 0, through: size.height, by: 9) {
-                    var wave = Path()
-                    for x in stride(from: 0, through: size.width, by: 4) {
-                        let y = row + 3 * sin(x / 26 + row / 40) + 1.5 * sin(x / 9 + row)
-                        if x == 0 { wave.move(to: CGPoint(x: x, y: y)) } else { wave.addLine(to: CGPoint(x: x, y: y)) }
-                    }
-                    context.stroke(wave, with: .color(Self.line.opacity(0.35)), lineWidth: 0.5)
-                }
+                Self.draw(pattern, in: &context, size: size, ink: ink)
             case .seals:
                 for x in stride(from: size.width / 6, to: size.width, by: size.width / 6) {
                     context.stroke(Path { $0.move(to: CGPoint(x: x, y: 0)); $0.addLine(to: CGPoint(x: x, y: size.height)) },
@@ -899,9 +907,57 @@ struct StampPaper: View {
             case .book:
                 for y in stride(from: 12, to: size.height, by: 16) {
                     for x in stride(from: 12, to: size.width, by: 16) {
-                        context.fill(Path(ellipseIn: CGRect(x: x, y: y, width: 1.4, height: 1.4)), with: .color(Self.line.opacity(0.6)))
+                        context.fill(Path(ellipseIn: CGRect(x: x, y: y, width: 1.4, height: 1.4)), with: .color(ink.opacity(0.6)))
                     }
                 }
+            }
+        }
+    }
+
+    private static func wave(from start: CGFloat, to end: CGFloat, step: CGFloat, _ point: (CGFloat) -> CGPoint) -> Path {
+        var path = Path()
+        for t in stride(from: start, through: end, by: step) {
+            if t == start { path.move(to: point(t)) } else { path.addLine(to: point(t)) }
+        }
+        return path
+    }
+
+    private static func draw(_ pattern: Pattern, in context: inout GraphicsContext, size: CGSize, ink: Color) {
+        let stroke = GraphicsContext.Shading.color(ink.opacity(0.35))
+        switch pattern {
+        case .waves:
+            // The fine wavy lines printed on passport pages.
+            for row in stride(from: 0, through: size.height, by: 9) {
+                context.stroke(wave(from: 0, to: size.width, step: 4) { x in
+                    CGPoint(x: x, y: row + 3 * sin(x / 26 + row / 40) + 1.5 * sin(x / 9 + row))
+                }, with: stroke, lineWidth: 0.5)
+            }
+        case .lattice:
+            // Two families of waves crossing into a fine woven net.
+            for row in stride(from: -size.width, through: size.height, by: 11) {
+                context.stroke(wave(from: 0, to: size.width, step: 4) { x in
+                    CGPoint(x: x, y: row + x * 0.45 + 2.5 * sin(x / 14))
+                }, with: stroke, lineWidth: 0.45)
+                context.stroke(wave(from: 0, to: size.width, step: 4) { x in
+                    CGPoint(x: x, y: row + (size.width - x) * 0.45 + 2.5 * sin(x / 14 + 1.6))
+                }, with: stroke, lineWidth: 0.45)
+            }
+        case .ripples:
+            // Long, slow swells, like contour lines on a map.
+            for row in stride(from: -20, through: size.height + 20, by: 7) {
+                context.stroke(wave(from: 0, to: size.width, step: 3) { x in
+                    CGPoint(x: x, y: row + 9 * sin(x / 48 + row / 23) * cos(row / 70))
+                }, with: stroke, lineWidth: 0.45)
+            }
+        case .rosette:
+            // A guilloché rosette radiating from the middle of the page.
+            let center = CGPoint(x: size.width / 2, y: size.height * 0.55)
+            let reach = hypot(size.width, size.height) * 0.62
+            for radius in stride(from: 14, through: reach, by: 8) {
+                context.stroke(wave(from: 0, to: 2 * .pi + 0.02, step: 0.02) { angle in
+                    let r = radius + 2.6 * sin(angle * 18 + radius / 11)
+                    return CGPoint(x: center.x + r * cos(angle), y: center.y + r * sin(angle))
+                }, with: stroke, lineWidth: 0.45)
             }
         }
     }

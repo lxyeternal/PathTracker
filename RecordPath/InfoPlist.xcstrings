@@ -31,6 +31,16 @@
         }
       }
     },
+    "NSCameraUsageDescription": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take a photo of a visa page in your passport to read its country, type and expiry date. Reading happens on your iPhone; the photo is never saved or uploaded."
+          }
+        }
+      }
+    },
     "NSHealthShareUsageDescription": {
       "localizations": {
         "en": {
