@@ -152,9 +152,9 @@ struct StatsView: View {
                        caption: snapped(selectedDay).map(dayLabel) ?? String(localized: "日均", bundle: .appLanguage))
                 Chart {
                     ForEach(bucketed(\.steps), id: \.date) { item in
-                        BarMark(x: .value("日期", item.date, unit: bucketUnit), y: .value("步数", item.value))
+                        BarMark(x: .value("日期", item.date, unit: bucketUnit), y: .value("步数", item.value), width: .ratio(0.55))
                             .foregroundStyle(Color.orange.gradient)
-                            .cornerRadius(4)
+                            .cornerRadius(6, style: .continuous)
                             .opacity(selectedDay == nil || Calendar.current.isDate(item.date, equalTo: selectedDay!, toGranularity: bucketUnit) ? 1 : 0.35)
                     }
                     if averageSteps > 0 && period != .year && selectedDay == nil {
@@ -170,6 +170,7 @@ struct StatsView: View {
                 }
                 .chartXSelection(value: $selectedDay)
                 .sensoryFeedback(.selection, trigger: snapped(selectedDay))
+                .chartYAxis { yAxis }
                 .chartXAxis { xAxis }
                 .frame(height: 180)
                 .overlay { if daily.allSatisfy({ $0.steps == 0 }) && !isLoading { activityProvider.isAuthorizationRequested
@@ -191,9 +192,9 @@ struct StatsView: View {
                     ForEach(Array(groundMovement.keys), id: \.self) { day in
                         ForEach(MovementMode.allCases, id: \.self) { mode in
                             if let value = groundMovement[day]?[mode], value > 0 {
-                                BarMark(x: .value("日期", day, unit: bucketUnit), y: .value("距离", value / 1000))
+                                BarMark(x: .value("日期", day, unit: bucketUnit), y: .value("距离", value / 1000), width: .ratio(0.55))
                                     .foregroundStyle(by: .value("方式", mode.title))
-                                    .cornerRadius(3)
+                                    .cornerRadius(4, style: .continuous)
                                     .opacity(snapped(distanceSelection).map { Calendar.current.isDate($0, equalTo: day, toGranularity: bucketUnit) } ?? true ? 1 : 0.3)
                             }
                         }
@@ -208,8 +209,8 @@ struct StatsView: View {
                 .chartForegroundStyleScale(domain: usedModes.map(\.title), range: usedModes.map(\.color))
                 .chartLegend(.hidden)
                 .chartYAxis {
-                    AxisMarks { value in
-                        AxisGridLine()
+                    AxisMarks(values: .automatic(desiredCount: 3)) { value in
+                        AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(.quaternary)
                         AxisValueLabel { if let km = value.as(Double.self) { Text(Measurement(value: km, unit: UnitLength.kilometers).formatted(.measurement(width: .abbreviated, usage: .asProvided, numberFormatStyle: .number.precision(.fractionLength(0))).locale(appLocale))) } }
                     }
                 }
@@ -459,9 +460,17 @@ struct StatsView: View {
 
     // MARK: Helpers
 
+    /// A few fine rules across, faint, with their values beside them.
+    private var yAxis: some AxisContent {
+        AxisMarks(values: .automatic(desiredCount: 3)) { _ in
+            AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(.quaternary)
+            AxisValueLabel()
+        }
+    }
+
     private var xAxis: some AxisContent {
+        // No vertical rules: the bars mark the days well enough on their own.
         AxisMarks(values: .automatic(desiredCount: period == .week ? 7 : 5)) { value in
-            AxisGridLine()
             AxisValueLabel(centered: period != .month, collisionResolution: .greedy) {
                 if let date = value.as(Date.self) {
                     let format: Date.FormatStyle = period == .year ? .dateTime.month(.abbreviated)

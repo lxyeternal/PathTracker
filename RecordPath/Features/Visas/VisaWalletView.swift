@@ -119,6 +119,7 @@ struct VisaWalletView: View {
 
     private func card(_ document: TravelDocument) -> some View {
         VisaCard(document: document)
+            .cardSheen(selected == document.id)
             .matchedGeometryEffect(id: document.id, in: namespace)
             .shadow(color: .black.opacity(0.08), radius: 1.5, y: -1)
             .shadow(color: .black.opacity(0.12), radius: 14, y: selected == document.id ? 10 : -2)
@@ -185,7 +186,7 @@ struct VisaWalletView: View {
     }
 
     /// How much of each stacked card shows: its header strip.
-    private static let strip: CGFloat = 46
+    private static let strip: CGFloat = 41
 
     private func startScan() {
         if LiveVisaScanner.isAvailable { scanning = true } else { choosingPhoto = true }
@@ -231,30 +232,28 @@ struct EditorRequest: Identifiable {
 
 // MARK: - Summary
 
+/// One quiet line over the cards: how many are good, and the next to run out.
 private struct WalletSummary: View {
     let documents: [TravelDocument]
 
     var body: some View {
         let valid = documents.filter { !$0.isExpired && $0.kind != .passport }
-        let soon = documents.filter(\.isExpiringSoon)
-        HStack(spacing: 12) {
-            tile(value: "\(valid.count)", label: "有效签证", symbol: "checkmark.seal.fill", tint: .green)
-            tile(value: "\(soon.count)", label: "即将到期", symbol: "hourglass", tint: soon.isEmpty ? .secondary : .orange)
-            if let next = documents.filter({ !$0.isExpired }).min(by: { $0.expires < $1.expires }) {
-                tile(value: next.daysLeft().formatted(), label: "最近到期（天）", symbol: "calendar", tint: .blue)
+        let next = documents.filter { !$0.isExpired }.min { $0.expires < $1.expires }
+        VStack(alignment: .leading, spacing: 4) {
+            Text(String(localized: "\(valid.count) 张有效签证", bundle: .appLanguage))
+                .font(.title2.weight(.bold))
+                .contentTransition(.numericText())
+            if let next {
+                HStack(spacing: 6) {
+                    Circle().fill(next.isExpiringSoon ? Color.orange : .green).frame(width: 7, height: 7)
+                    Text(String(localized: "\(next.kind == .passport ? String(localized: "护照", bundle: .appLanguage) : next.countryName) \(next.daysLeft()) 天后到期", bundle: .appLanguage))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
-    }
-
-    private func tile(value: String, label: LocalizedStringKey, symbol: String, tint: Color) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Image(systemName: symbol).font(.subheadline.weight(.semibold)).foregroundStyle(tint)
-            Text(value).font(.title2.weight(.bold)).monospacedDigit().contentTransition(.numericText())
-            Text(label).font(.caption).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(.background.secondary, in: .rect(cornerRadius: 20, style: .continuous))
+        .padding(.horizontal, 4)
+        .padding(.top, 4)
     }
 }
 
@@ -327,10 +326,13 @@ private struct WalletEmptyState: View {
 /// The 90 days in any 180, counted from where the person has actually been.
 struct SchengenCard: View {
     let visa: TravelDocument
+    /// Inside another sheet: no background of its own.
+    var plain = false
     private var summaries = PlaceSummaries.shared
 
-    init(visa: TravelDocument) {
+    init(visa: TravelDocument, plain: Bool = false) {
         self.visa = visa
+        self.plain = plain
     }
 
     var body: some View {
@@ -363,9 +365,9 @@ struct SchengenCard: View {
                 }
             }
         }
-        .padding(18)
+        .padding(plain ? 0 : 18)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
+        .background(plain ? AnyShapeStyle(.clear) : AnyShapeStyle(.background.secondary), in: .rect(cornerRadius: 24, style: .continuous))
     }
 }
 
@@ -386,13 +388,29 @@ struct VisaDetails: View {
         self.onDelete = onDelete
     }
 
+    private var tint: Color { document.isExpired ? .red : document.isExpiringSoon ? .orange : .green }
+
+    /// Laid out like the back of a pass in Wallet: one sheet, its parts divided by hairlines.
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            validity(document)
-            if document.kind == .passport { passportRule(document) }
-            if document.isSchengen, !document.isExpired { SchengenCard(visa: document) }
-            if document.kind != .passport { usage(document) }
-            details(document)
+        VStack(spacing: 18) {
+            VStack(alignment: .leading, spacing: 0) {
+                header.padding(18)
+                if document.kind == .passport {
+                    hairline
+                    passportRule.padding(18)
+                }
+                if document.isSchengen, !document.isExpired {
+                    hairline
+                    SchengenCard(visa: document, plain: true).padding(18)
+                }
+                if document.kind != .passport {
+                    hairline
+                    usage.padding(18)
+                }
+                hairline
+                fields.padding(18)
+            }
+            .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
             HStack(spacing: 12) {
                 Button("编辑", systemImage: "square.and.pencil", action: onEdit)
                     .frame(maxWidth: .infinity)
@@ -402,57 +420,55 @@ struct VisaDetails: View {
             .buttonStyle(.glass)
             .controlSize(.large)
         }
-        .onAppear { withAnimation(.spring(response: 0.9, dampingFraction: 0.85).delay(0.2)) { appeared = true } }
+        .onAppear { withAnimation(.spring(response: 1.1, dampingFraction: 0.85).delay(0.25)) { appeared = true } }
         .confirmationDialog("删除这张\(document.kind == .passport ? String(localized: "护照", bundle: .appLanguage) : String(localized: "签证", bundle: .appLanguage))？",
                             isPresented: $confirmingDelete, titleVisibility: .visible) {
             Button("删除", role: .destructive, action: onDelete)
         }
     }
 
-    /// How far through its life it is, as a bar from issue to expiry.
-    private func validity(_ document: TravelDocument) -> some View {
+    private var hairline: some View { Rectangle().fill(.separator).frame(height: 0.5).padding(.leading, 18) }
+
+    /// How long is left, as a ring that empties toward the expiry.
+    private var header: some View {
         let days = document.daysLeft()
         let start = document.issued ?? document.added
         let total = max(document.expires.timeIntervalSince(start), 1)
-        let progress = min(max(Date.now.timeIntervalSince(start) / total, 0), 1)
-        let tint: Color = document.isExpired ? .red : document.isExpiringSoon ? .orange : .green
-        return VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline) {
-                if days >= 0 {
-                    Text("还剩").font(.subheadline).foregroundStyle(.secondary)
-                    Text(days.formatted()).font(.system(size: 40, weight: .bold, design: .rounded)).monospacedDigit()
-                        .foregroundStyle(tint)
-                    Text("天").font(.headline)
-                } else {
-                    Text("已过期 \((-days).formatted()) 天").font(.title2.weight(.bold)).foregroundStyle(.red)
+        let remaining = min(max(document.expires.timeIntervalSince(.now) / total, 0), 1)
+        return HStack(spacing: 18) {
+            ZStack {
+                Circle().stroke(tint.opacity(0.14), lineWidth: 8)
+                Circle()
+                    .trim(from: 0, to: appeared ? remaining : 0)
+                    .stroke(tint.gradient, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                VStack(spacing: -2) {
+                    Text(days >= 0 ? days.formatted() : (-days).formatted())
+                        .font(.system(size: days >= 1_000 ? 22 : 26, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .contentTransition(.numericText())
+                    Text(days >= 0 ? "天" : "天前").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
                 }
-                Spacer()
+            }
+            .frame(width: 92, height: 92)
+            VStack(alignment: .leading, spacing: 6) {
                 Text(document.isExpired ? "已过期" : document.isExpiringSoon ? "即将到期" : "有效")
-                    .font(.caption.weight(.semibold))
+                    .font(.caption.weight(.bold))
                     .foregroundStyle(tint)
-                    .padding(.horizontal, 10).padding(.vertical, 5)
-                    .background(tint.opacity(0.14), in: .capsule)
-            }
-            GeometryReader { proxy in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(.quaternary)
-                    Capsule().fill(tint.gradient).frame(width: max(8, proxy.size.width * (appeared ? progress : 0)))
+                    .padding(.horizontal, 9).padding(.vertical, 4)
+                    .background(tint.opacity(0.13), in: .capsule)
+                Text(String(localized: "\(document.expires.formatted(Date.FormatStyle(date: .long, time: .omitted, locale: appLocale))) 到期", bundle: .appLanguage))
+                    .font(.headline)
+                if let issued = document.issued {
+                    Text(String(localized: "签发于 \(issued.formatted(Date.FormatStyle(date: .long, time: .omitted, locale: appLocale)))", bundle: .appLanguage))
+                        .font(.subheadline).foregroundStyle(.secondary)
                 }
             }
-            .frame(height: 8)
-            .animation(.spring(response: 0.9, dampingFraction: 0.85).delay(0.15), value: appeared)
-            HStack {
-                Text((document.issued ?? document.added).formatted(.dateTime.year().month().day().locale(appLocale)))
-                Spacer()
-                Text(document.expires.formatted(.dateTime.year().month().day().locale(appLocale)))
-            }
-            .font(.caption).foregroundStyle(.secondary).monospacedDigit()
+            Spacer(minLength: 0)
         }
-        .padding(18)
-        .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
     }
 
-    private func passportRule(_ document: TravelDocument) -> some View {
+    private var passportRule: some View {
         let short = document.daysLeft() < 183
         return Label {
             Text(short ? "护照有效期已不足 6 个月。很多国家要求入境时护照还剩 6 个月以上，出发前记得先换发。"
@@ -463,13 +479,10 @@ struct VisaDetails: View {
             Image(systemName: short ? "exclamationmark.triangle.fill" : "info.circle.fill")
                 .foregroundStyle(short ? .orange : .blue)
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background.secondary, in: .rect(cornerRadius: 20, style: .continuous))
     }
 
     /// Entries made with it so far, from the places recorded while it was valid.
-    private func usage(_ document: TravelDocument) -> some View {
+    private var usage: some View {
         let start = document.issued ?? .distantPast
         let covered = document.coveredCountries
         let stays = summaries.stays
@@ -487,12 +500,12 @@ struct VisaDetails: View {
         }
         return HStack(spacing: 14) {
             Image(systemName: "airplane.arrival")
-                .font(.title3)
-                .foregroundStyle(.white)
-                .frame(width: 44, height: 44)
-                .background(Color.indigo.gradient, in: .circle)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(.indigo)
+                .frame(width: 38, height: 38)
+                .background(Color.indigo.opacity(0.12), in: .circle)
             VStack(alignment: .leading, spacing: 2) {
-                Text("用这张签证去过").font(.subheadline).foregroundStyle(.secondary)
+                Text("用这张签证去过").font(.caption).foregroundStyle(.secondary)
                 Text(entries == 0 ? String(localized: "还没有用过", bundle: .appLanguage)
                                   : String(localized: "\(entries) 次入境 · 共 \(days.count) 天", bundle: .appLanguage))
                     .font(.headline)
@@ -503,52 +516,52 @@ struct VisaDetails: View {
                         .font(.caption).foregroundStyle(entries >= allowed ? .orange : .secondary)
                 }
             }
-            Spacer()
+            Spacer(minLength: 0)
         }
-        .padding(16)
-        .background(.background.secondary, in: .rect(cornerRadius: 20, style: .continuous))
     }
 
-    private func details(_ document: TravelDocument) -> some View {
-        VStack(spacing: 0) {
-            if document.kind != .passport {
-                row("类型", document.category.isEmpty ? "—" : document.category)
-                row("入境次数", document.entries.title)
-                if let stay = document.stayDays { row("每次停留", String(localized: "\(stay) 天", bundle: .appLanguage)) }
+    /// The details two to a row, label over value, as on the back of a pass.
+    private var fields: some View {
+        var items: [(LocalizedStringKey, String)] = []
+        if document.kind != .passport {
+            items.append(("类型", document.category.isEmpty ? "—" : document.category))
+            items.append(("入境次数", document.entries.title))
+            if let stay = document.stayDays { items.append(("每次停留", String(localized: "\(stay) 天", bundle: .appLanguage))) }
+        }
+        if let post = document.post, !post.isEmpty { items.append(("签发地", post.capitalized)) }
+        if !document.holder.isEmpty { items.append(("持有人", document.holder)) }
+        if let issued = document.issued { items.append(("签发日期", issued.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: appLocale)))) }
+        items.append(("到期日期", document.expires.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: appLocale))))
+        return VStack(alignment: .leading, spacing: 16) {
+            LazyVGrid(columns: [GridItem(.flexible(), alignment: .topLeading), GridItem(.flexible(), alignment: .topLeading)],
+                      alignment: .leading, spacing: 16) {
+                ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                    field(item.0) { Text(item.1) }
+                }
             }
             if !document.number.isEmpty {
-                HStack {
-                    Text("号码").foregroundStyle(.secondary)
-                    Spacer()
-                    Text(showsNumber ? document.number : String(repeating: "•", count: max(4, document.number.count - 3)) + document.number.suffix(3))
-                        .monospaced()
-                        .contentTransition(.interpolate)
-                    Button(showsNumber ? "隐藏" : "显示", systemImage: showsNumber ? "eye.slash" : "eye") {
-                        withAnimation(.snappy) { showsNumber.toggle() }
+                field("号码") {
+                    HStack(spacing: 8) {
+                        Text(showsNumber ? document.number : String(repeating: "•", count: max(4, document.number.count - 3)) + document.number.suffix(3))
+                            .monospaced()
+                            .contentTransition(.interpolate)
+                        Button(showsNumber ? "隐藏" : "显示", systemImage: showsNumber ? "eye.slash" : "eye") {
+                            withAnimation(.snappy) { showsNumber.toggle() }
+                        }
+                        .labelStyle(.iconOnly)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                     }
-                    .labelStyle(.iconOnly)
-                    .foregroundStyle(.secondary)
                 }
-                .padding(.horizontal, 16).padding(.vertical, 13)
-                Divider().padding(.leading, 16)
             }
-            if !document.holder.isEmpty { row("持有人", document.holder) }
-            if let issued = document.issued { row("签发日期", issued.formatted(Date.FormatStyle(date: .long, time: .omitted, locale: appLocale))) }
-            row("到期日期", document.expires.formatted(Date.FormatStyle(date: .long, time: .omitted, locale: appLocale)), last: document.notes.isEmpty)
-            if !document.notes.isEmpty { row("备注", document.notes, last: true) }
+            if !document.notes.isEmpty { field("备注") { Text(document.notes) } }
         }
-        .background(.background.secondary, in: .rect(cornerRadius: 20, style: .continuous))
     }
 
-    private func row(_ label: LocalizedStringKey, _ value: String, last: Bool = false) -> some View {
-        VStack(spacing: 0) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(label).foregroundStyle(.secondary)
-                Spacer(minLength: 16)
-                Text(value).multilineTextAlignment(.trailing)
-            }
-            .padding(.horizontal, 16).padding(.vertical, 13)
-            if !last { Divider().padding(.leading, 16) }
+    private func field<Value: View>(_ label: LocalizedStringKey, @ViewBuilder value: () -> Value) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(label).font(.caption).foregroundStyle(.secondary)
+            value().font(.body.weight(.medium)).lineLimit(2)
         }
     }
 }
