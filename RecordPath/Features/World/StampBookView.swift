@@ -138,6 +138,7 @@ struct StampBookView: View {
             PassportBook(book: book) { stamp in
                 openCountry = summaries.world.countries.first { $0.code == stamp.countryCode }
             }
+            VisaShelf()
             ProgressHeader(lit: insights.countries.count, total: Continent.all.reduce(0) { $0 + $1.regions.count },
                            title: "去过的国家和地区", tint: .red,
                            detail: String(localized: "跨越 \(insights.continentsVisited) 个大洲", bundle: .appLanguage))

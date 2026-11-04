@@ -78,6 +78,7 @@ final class AppServices {
         notifier = Notifier(context: container.mainContext, activity: activity)
         PlaceSummaries.shared.attach(container.mainContext)
         ParallelSharing.shared.attach(container)
+        RouteAtlas.shared.attach(container)
         Nationality.observeOtherDevices()
         _ = CloudSync.shared
         tagger.onTagged = { [notifier] stay in
@@ -95,6 +96,8 @@ final class AppServices {
             DemoData.generate(in: container.mainContext)
             if ProcessInfo.processInfo.arguments.contains("-stressData") { DemoData.photoStress(in: container.mainContext) }
         }
+        // Launched with -sampleVisas: a passport and a few visas, for the wallet's screenshots.
+        if ProcessInfo.processInfo.arguments.contains("-sampleVisas") { TravelDocuments.shared.loadSamples() }
         // Followed by a kind ("province", "city", ...) for just that one.
         let arguments = ProcessInfo.processInfo.arguments
         if let flag = arguments.firstIndex(of: "-ceremonySamples") {

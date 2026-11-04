@@ -6,6 +6,8 @@ struct TrackMap: View {
     let chunks: [TrackChunk]
     let stays: [Stay]
     var livePoints: [TrackPoint] = []
+    /// Roads travelled on other days, drawn faintly underneath.
+    var pastLines: [AtlasLine] = []
     var interactive = true
     var showsUser = false
     var mapStyle: MapStyle = .standard(elevation: .realistic, pointsOfInterest: .excludingAll)
@@ -24,6 +26,10 @@ struct TrackMap: View {
 
     var body: some View {
         Map(position: $position, interactionModes: interactive ? .all : []) {
+            ForEach(pastLines.indices, id: \.self) { index in
+                MapPolyline(coordinates: pastLines[index].coordinates(.city))
+                    .stroke(Color.primary.opacity(0.22), style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+            }
             ForEach(lines) { line in
                 MapPolyline(coordinates: line.coordinates)
                     .stroke(.white.opacity(0.9), style: StrokeStyle(lineWidth: 7, lineCap: .round, lineJoin: .round))

@@ -67,6 +67,7 @@ struct WorldView: View {
             .navigationDestination(for: StampBookRoute.self) { _ in
                 StampBookView()
             }
+            .navigationDestination(for: VisaWalletRoute.self) { _ in VisaWalletView() }
             .navigationDestination(for: GalleryRoute.self) { _ in GalleryView() }
             .navigationDestination(for: MustSeeRoute.self) { MustSeeView(list: $0.list) }
             .navigationDestination(for: Province.self) { ProvinceDetailView(province: $0) }
@@ -378,20 +379,43 @@ private struct WorldMapScreen: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppNavigator.self) private var navigator
     @State private var selected: Stay?
+    @AppStorage("world.layer") private var layer: Layer = .places
+
+    enum Layer: String { case places, routes }
 
     var body: some View {
         NavigationStack {
-            WorldMap(dots: dots, interactive: true, focused: true, onSelect: { selected = $0 })
-                .ignoresSafeArea()
-                .navigationTitle("全部足迹")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("关闭", systemImage: "xmark") { dismiss() }
-                    }
+            ZStack {
+                switch layer {
+                case .places:
+                    WorldMap(dots: dots, interactive: true, focused: true, onSelect: { selected = $0 })
+                        .ignoresSafeArea()
+                        .transition(.opacity)
+                case .routes:
+                    RouteAtlasView()
+                        .transition(.opacity)
                 }
-                .sheet(item: $selected) { StayDetailView(stay: $0) }
-                .onChange(of: navigator.jumpCount) { dismiss() }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("关闭", systemImage: "xmark") { dismiss() }
+                }
+                ToolbarItem(placement: .principal) {
+                    Picker("显示", selection: $layer.animation(.smooth(duration: 0.45))) {
+                        Text("地点").tag(Layer.places)
+                        Text("路线").tag(Layer.routes)
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 180)
+                }
+            }
+            .sensoryFeedback(.selection, trigger: layer)
+            .toolbarColorScheme(layer == .routes ? .dark : nil, for: .navigationBar)
+            .sheet(item: $selected) { StayDetailView(stay: $0) }
+            .onChange(of: navigator.jumpCount) { dismiss() }
         }
+        .preferredColorScheme(layer == .routes ? .dark : nil)
     }
 }

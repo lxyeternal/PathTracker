@@ -10296,6 +10296,986 @@
           }
         }
       }
+    },
+    "%@ 起会陆续多出可用天数。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Days start coming back from %@."
+          }
+        }
+      }
+    },
+    "%@ 还剩 %lld 天到期": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ expires in %lld days"
+          }
+        }
+      }
+    },
+    "%@签证还有 %lld 天到期": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your %@ visa expires in %lld days"
+          }
+        }
+      }
+    },
+    "%lld 张有效签证": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld valid visas"
+          }
+        }
+      }
+    },
+    "%lld 次入境 · 共 %lld 天": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld entries · %lld days"
+          }
+        }
+      }
+    },
+    "一次": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Single"
+          }
+        }
+      }
+    },
+    "一次入境": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Single entry"
+          }
+        }
+      }
+    },
+    "两次": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Double"
+          }
+        }
+      }
+    },
+    "两次入境": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Double entry"
+          }
+        }
+      }
+    },
+    "今天到期": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expires today"
+          }
+        }
+      }
+    },
+    "从照片中识别": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read from a Photo"
+          }
+        }
+      }
+    },
+    "从照片识别": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From a Photo"
+          }
+        }
+      }
+    },
+    "以往路线": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Past Routes"
+          }
+        }
+      }
+    },
+    "入境次数": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entries"
+          }
+        }
+      }
+    },
+    "入境次数已经用完": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All entries used"
+          }
+        }
+      }
+    },
+    "全部年份": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All Years"
+          }
+        }
+      }
+    },
+    "出门走走，路线会在这里亮起来。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Head out and your routes will light up here."
+          }
+        }
+      }
+    },
+    "删除这张%@？": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete this %@?"
+          }
+        }
+      }
+    },
+    "到期前 90 天、30 天和 7 天会各提醒你一次。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You'll be reminded 90, 30 and 7 days before it expires."
+          }
+        }
+      }
+    },
+    "到期日": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expiry"
+          }
+        }
+      }
+    },
+    "到期日是 %@。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It expires on %@."
+          }
+        }
+      }
+    },
+    "到期日期": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expiry Date"
+          }
+        }
+      }
+    },
+    "到期日期来自签证底部的机读码，已通过校验。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The expiry date comes from the machine-readable lines and passed its check."
+          }
+        }
+      }
+    },
+    "即将到期": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expiring Soon"
+          }
+        }
+      }
+    },
+    "可选": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optional"
+          }
+        }
+      }
+    },
+    "号码": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Number"
+          }
+        }
+      }
+    },
+    "商务": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Business"
+          }
+        }
+      }
+    },
+    "国家或地区": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Country or Region"
+          }
+        }
+      }
+    },
+    "在这天的路线下面显示以前走过的路": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows roads from other days under this day's route"
+          }
+        }
+      }
+    },
+    "填写签发日期": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Issue Date"
+          }
+        }
+      }
+    },
+    "墨绿": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forest"
+          }
+        }
+      }
+    },
+    "多次": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multiple"
+          }
+        }
+      }
+    },
+    "多次入境": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multiple entries"
+          }
+        }
+      }
+    },
+    "夜黑": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Midnight"
+          }
+        }
+      }
+    },
+    "天可用": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "days left"
+          }
+        }
+      }
+    },
+    "学生": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Student"
+          }
+        }
+      }
+    },
+    "已从照片读出，请核对一遍。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read from the photo. Please check it over."
+          }
+        }
+      }
+    },
+    "已过期": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expired"
+          }
+        }
+      }
+    },
+    "已过期 %@ 天": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expired %@ days ago"
+          }
+        }
+      }
+    },
+    "很多国家要求入境时护照还剩 6 个月以上。到期前 6 个月，这里会提醒你。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Many countries require at least 6 months' validity on entry. You'll be reminded here 6 months before it runs out."
+          }
+        }
+      }
+    },
+    "很多国家要求护照有效期还剩 6 个月以上，记得提前换发。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Many countries require at least 6 months' validity, so renew it early."
+          }
+        }
+      }
+    },
+    "手动填写": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fill In by Hand"
+          }
+        }
+      }
+    },
+    "手动添加电子签": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add an eVisa by Hand"
+          }
+        }
+      }
+    },
+    "手动添加签证": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a Visa by Hand"
+          }
+        }
+      }
+    },
+    "扫描签证": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan a Visa"
+          }
+        }
+      }
+    },
+    "把签证放进来": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep your visas here"
+          }
+        }
+      }
+    },
+    "把签证页放进框里，对准底部两行字母": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fit the visa page in the frame, with its two lines of letters at the bottom"
+          }
+        }
+      }
+    },
+    "护照号码": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passport Number"
+          }
+        }
+      }
+    },
+    "护照有效期已不足 6 个月。很多国家要求入境时护照还剩 6 个月以上，出发前记得先换发。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your passport has less than 6 months left. Many countries require at least 6 months' validity on entry, so renew it before you travel."
+          }
+        }
+      }
+    },
+    "护照还有 %lld 天到期": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your passport expires in %lld days"
+          }
+        }
+      }
+    },
+    "拍下护照上的签证，记住每张什么时候到期": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan the visas in your passport and remember when each one expires"
+          }
+        }
+      }
+    },
+    "持有人": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Holder"
+          }
+        }
+      }
+    },
+    "持有人姓名": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Holder's Name"
+          }
+        }
+      }
+    },
+    "收起，显示所有卡片": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collapse and show all cards"
+          }
+        }
+      }
+    },
+    "旅游": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tourist"
+          }
+        }
+      }
+    },
+    "显示": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show"
+          }
+        }
+      }
+    },
+    "更新护照": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update Passport"
+          }
+        }
+      }
+    },
+    "最近 180 天里，你在申根区待了 %lld 天，还能再待 %lld 天。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In the last 180 days you've spent %lld days in the Schengen area. You can stay %lld more."
+          }
+        }
+      }
+    },
+    "最近到期（天）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next Expiry (days)"
+          }
+        }
+      }
+    },
+    "有效": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Valid"
+          }
+        }
+      }
+    },
+    "有效期至": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Valid until"
+          }
+        }
+      }
+    },
+    "有效签证": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Valid Visas"
+          }
+        }
+      }
+    },
+    "机读码": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MRZ"
+          }
+        }
+      }
+    },
+    "正在整理全部路线…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gathering all your routes…"
+          }
+        }
+      }
+    },
+    "正在识别签证…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reading the visa…"
+          }
+        }
+      }
+    },
+    "每次停留": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Per Stay"
+          }
+        }
+      }
+    },
+    "每次停留 %lld 天": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld days per stay"
+          }
+        }
+      }
+    },
+    "没能读出到期日期，请手动填写。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't read the expiry date. Please fill it in."
+          }
+        }
+      }
+    },
+    "添加护照": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Passport"
+          }
+        }
+      }
+    },
+    "照片越清晰、越平整，识别越准。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A sharp, flat photo reads best."
+          }
+        }
+      }
+    },
+    "用相机对准护照上的签证页，就能自动读出国家、类型和有效期。哪张快到期、还能停留多久，一眼就知道，到期前也会提醒你。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Point the camera at a visa page in your passport and its country, type and dates are read for you. See at a glance which ones are running out and how long you can still stay, with a reminder before each expires."
+          }
+        }
+      }
+    },
+    "用这些信息": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use These"
+          }
+        }
+      }
+    },
+    "用这张签证去过": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Used for"
+          }
+        }
+      }
+    },
+    "申根 90/180 天": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schengen 90/180"
+          }
+        }
+      }
+    },
+    "申根区": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schengen Area"
+          }
+        }
+      }
+    },
+    "电子签": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "eVisa"
+          }
+        }
+      }
+    },
+    "短期滞在": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temporary Visitor"
+          }
+        }
+      }
+    },
+    "签发国": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Issuing Country"
+          }
+        }
+      }
+    },
+    "签发日期": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Issue Date"
+          }
+        }
+      }
+    },
+    "签证": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visa"
+          }
+        }
+      }
+    },
+    "签证信息只保存在你的 iCloud 里。识别在手机上完成，画面和照片不会保存或上传。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visa details are kept only in your iCloud. Reading happens on your iPhone; nothing from the camera or your photos is saved or uploaded."
+          }
+        }
+      }
+    },
+    "签证号码": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visa Number"
+          }
+        }
+      }
+    },
+    "签证夹": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visa Wallet"
+          }
+        }
+      }
+    },
+    "类型，比如 B1/B2、C、旅游": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type, e.g. B1/B2, C, Tourist"
+          }
+        }
+      }
+    },
+    "藏青": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Navy"
+          }
+        }
+      }
+    },
+    "证件": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document"
+          }
+        }
+      }
+    },
+    "读好了": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        }
+      }
+    },
+    "走过": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Travelled"
+          }
+        }
+      }
+    },
+    "还剩": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Left"
+          }
+        }
+      }
+    },
+    "还剩 %lld 天": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld days left"
+          }
+        }
+      }
+    },
+    "还没有用过": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not used yet"
+          }
+        }
+      }
+    },
+    "还能再入境 %lld 次": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld more entries allowed"
+          }
+        }
+      }
+    },
+    "这张签证已删除": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This visa was deleted"
+          }
+        }
+      }
+    },
+    "这里还没有路线": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No routes yet"
+          }
+        }
+      }
+    },
+    "酒红": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Burgundy"
+          }
+        }
+      }
+    },
+    "限制每次停留天数": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limit Days per Stay"
+          }
+        }
+      }
+    },
+    "隐藏": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide"
+          }
+        }
+      }
+    },
+    "你在“签证夹”里添加的护照和签证信息（国家、类型、号码、姓名、日期等）只保存在这台设备和你自己的 iCloud 中，用来显示有效期和提醒你，不会共享给任何人，包括“平行足迹”里的朋友。扫描签证时，相机画面和照片只在手机上用来识别文字，不会保存或上传。你可以随时在签证夹里删除它们。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The passport and visa details you add to the Visa Wallet (country, type, number, name and dates) are kept only on this device and in your own iCloud, to show how long each is valid and remind you before it runs out. They are never shared with anyone, including friends in Parallel Footprints. When you scan a visa, the camera picture and photos are used on your iPhone only to read the text; they are never saved or uploaded. You can delete them in the Visa Wallet at any time."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
