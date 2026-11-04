@@ -11346,6 +11346,66 @@
           }
         }
       }
+    },
+    "已停留 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Here for %@"
+          }
+        }
+      }
+    },
+    "%@ 到期": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expires %@"
+          }
+        }
+      }
+    },
+    "签发于 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Issued %@"
+          }
+        }
+      }
+    },
+    "天前": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "days ago"
+          }
+        }
+      }
+    },
+    "签发地": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Issued In"
+          }
+        }
+      }
+    },
+    "%@ %lld 天后到期": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ expires in %lld days"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -143,7 +143,8 @@ private struct FoundTripCard: View {
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.glassProminent)
+                .buttonStyle(.glass)
+                .tint(.accentColor)
                 .controlSize(.small)
                 .padding(.top, 6)
             }

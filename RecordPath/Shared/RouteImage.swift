@@ -87,9 +87,12 @@ enum RouteImage {
 struct RouteSketch: View {
     let lines: [RouteImage.Line]
     var tint: Color
+    /// Just the line, without the dotted ground and tinted card: for small, quiet places.
+    var bare = false
 
     var body: some View {
         Canvas { context, size in
+            if !bare {
             let spacing: CGFloat = 9
             var grid = Path()
             for x in stride(from: spacing / 2, to: size.width, by: spacing) {
@@ -98,6 +101,7 @@ struct RouteSketch: View {
                 }
             }
             context.fill(grid, with: .color(tint.opacity(0.18)))
+            }
 
             let all = lines.flatMap(\.coordinates)
             guard all.count > 1 else { return }
@@ -117,11 +121,13 @@ struct RouteSketch: View {
                 let p = local(c)
                 return CGPoint(x: offset.x + (p.x - minX) * scale, y: offset.y + (p.y - minY) * scale)
             }
-            let style = StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round)
+            let style = StrokeStyle(lineWidth: bare ? 2.2 : 3, lineCap: .round, lineJoin: .round)
             for line in lines where line.coordinates.count > 1 {
                 var path = Path()
                 path.addLines(line.coordinates.map(place))
-                context.stroke(path, with: .color(line.color.opacity(0.25)), style: StrokeStyle(lineWidth: 7, lineCap: .round, lineJoin: .round))
+                if !bare {
+                    context.stroke(path, with: .color(line.color.opacity(0.25)), style: StrokeStyle(lineWidth: 7, lineCap: .round, lineJoin: .round))
+                }
                 context.stroke(path, with: .color(line.color), style: style)
             }
             if let first = lines.first?.coordinates.first, let last = lines.last?.coordinates.last {
@@ -132,6 +138,7 @@ struct RouteSketch: View {
                 context.stroke(Path(ellipseIn: CGRect(x: e.x - 4.5, y: e.y - 4.5, width: 9, height: 9)), with: .color(.white), lineWidth: 2)
             }
         }
-        .background(LinearGradient(colors: [tint.opacity(0.07), tint.opacity(0.16)], startPoint: .topLeading, endPoint: .bottomTrailing))
+        .background(bare ? AnyShapeStyle(.clear)
+                         : AnyShapeStyle(LinearGradient(colors: [tint.opacity(0.07), tint.opacity(0.16)], startPoint: .topLeading, endPoint: .bottomTrailing)))
     }
 }
