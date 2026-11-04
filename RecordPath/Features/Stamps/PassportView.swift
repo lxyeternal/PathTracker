@@ -51,8 +51,11 @@ struct PassportBook: View {
                 .monospacedDigit()
                 .contentTransition(.numericText())
                 .animation(.smooth, value: page)
-            PassportThemePicker(selection: Binding(get: { style.theme }, set: { style.theme = $0 }))
-                .padding(.top, 6)
+            if !style.hasChosen {
+                PassportFirstChoice(style: style)
+                    .padding(.top, 6)
+                    .transition(.asymmetric(insertion: .opacity, removal: .opacity.combined(with: .scale(scale: 0.95, anchor: .top))))
+            }
         }
         .onChange(of: style.theme) { page = 0 }
     }

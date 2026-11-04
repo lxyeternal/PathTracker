@@ -31,6 +31,7 @@ struct SettingsView: View {
             Form {
                 accountSection
                 languageSection
+                passportSection
                 trackingSection
                 notificationsSection
                 permissionsSection
@@ -127,6 +128,20 @@ struct SettingsView: View {
             }
         } footer: {
             Text("系统权限弹窗的语言会在下次打开 App 时更新。")
+        }
+    }
+
+    /// The passport's cover and pages, chosen the first time it's opened.
+    private var passportSection: some View {
+        Section {
+            PassportThemePicker(selection: Binding(get: { PassportStyle.shared.theme },
+                                                   set: { PassportStyle.shared.theme = $0; PassportStyle.shared.hasChosen = true }))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+        } header: {
+            Text("护照样式")
+        } footer: {
+            Text("封面和内页的纸张、底纹会一起换。")
         }
     }
 

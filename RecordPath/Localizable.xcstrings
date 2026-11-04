@@ -11276,6 +11276,56 @@
           }
         }
       }
+    },
+    "选一本你喜欢的护照": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick the passport you like"
+          }
+        }
+      }
+    },
+    "就选这本": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This One"
+          }
+        }
+      }
+    },
+    "以后可以在设置里更换": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can change it later in Settings"
+          }
+        }
+      }
+    },
+    "护照样式": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passport Style"
+          }
+        }
+      }
+    },
+    "封面和内页的纸张、底纹会一起换。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The cover changes together with the pages' paper and print."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

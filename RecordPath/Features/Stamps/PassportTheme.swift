@@ -95,6 +95,15 @@ enum PassportTheme: String, CaseIterable, Identifiable {
 final class PassportStyle {
     static let shared = PassportStyle()
     private static let key = "passport.theme"
+    private static let chosenKey = "passport.themeChosen"
+
+    /// Set once the person has picked a cover; until then the passport offers the four.
+    var hasChosen: Bool {
+        didSet {
+            UserDefaults.standard.set(hasChosen, forKey: Self.chosenKey)
+            NSUbiquitousKeyValueStore.default.set(hasChosen, forKey: Self.chosenKey)
+        }
+    }
 
     var theme: PassportTheme {
         didSet {
@@ -106,11 +115,15 @@ final class PassportStyle {
     private init() {
         let stored = NSUbiquitousKeyValueStore.default.string(forKey: Self.key) ?? UserDefaults.standard.string(forKey: Self.key)
         theme = stored.flatMap(PassportTheme.init(rawValue:)) ?? .burgundy
+        hasChosen = NSUbiquitousKeyValueStore.default.bool(forKey: Self.chosenKey) || UserDefaults.standard.bool(forKey: Self.chosenKey)
         NotificationCenter.default.addObserver(forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
                                                object: NSUbiquitousKeyValueStore.default, queue: .main) { note in
             let keys = note.userInfo?[NSUbiquitousKeyValueStoreChangedKeysKey] as? [String] ?? []
-            guard keys.contains(Self.key) else { return }
+            guard keys.contains(Self.key) || keys.contains(Self.chosenKey) else { return }
             MainActor.assumeIsolated {
+                if NSUbiquitousKeyValueStore.default.bool(forKey: Self.chosenKey), !PassportStyle.shared.hasChosen {
+                    PassportStyle.shared.hasChosen = true
+                }
                 if let raw = NSUbiquitousKeyValueStore.default.string(forKey: Self.key), let theme = PassportTheme(rawValue: raw),
                    theme != PassportStyle.shared.theme {
                     PassportStyle.shared.theme = theme
@@ -148,5 +161,29 @@ struct PassportThemePicker: View {
             }
         }
         .sensoryFeedback(.selection, trigger: selection)
+    }
+}
+
+/// The first time the passport is opened: the four covers to try, and a button to settle on
+/// one. Once chosen it steps aside; Settings has it after that.
+struct PassportFirstChoice: View {
+    @Bindable var style: PassportStyle
+
+    var body: some View {
+        VStack(spacing: 14) {
+            Text("选一本你喜欢的护照").font(.subheadline.weight(.semibold))
+            PassportThemePicker(selection: $style.theme)
+            Button {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) { style.hasChosen = true }
+            } label: {
+                Text("就选这本").font(.subheadline.weight(.semibold)).padding(.horizontal, 10)
+            }
+            .buttonStyle(.glassProminent)
+            Text("以后可以在设置里更换").font(.caption).foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 18)
+        .frame(maxWidth: .infinity)
+        .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
+        .sensoryFeedback(.success, trigger: style.hasChosen)
     }
 }
