@@ -11326,6 +11326,26 @@
           }
         }
       }
+    },
+    "关闭手电筒": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn Off Flashlight"
+          }
+        }
+      }
+    },
+    "打开手电筒": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn On Flashlight"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

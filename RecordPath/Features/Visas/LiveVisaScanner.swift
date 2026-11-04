@@ -1,5 +1,6 @@
 import SwiftUI
 import VisionKit
+import AVFoundation
 
 /// Point the camera at a visa and it reads itself: the text is recognised live, frame after
 /// frame, and the moment the machine-readable lines pass their check the scan completes on
@@ -11,6 +12,11 @@ struct LiveVisaScanner: View {
     @State private var reading = VisaScanner.Reading()
     @State private var finished = false
     @State private var pulse = false
+    @State private var torch = false
+    /// Checked readings from successive frames; a few that agree settle it.
+    @State private var confirmations: [VisaScanner.Reading] = []
+
+    private static let framesToAgree = 3
 
     @MainActor static var isAvailable: Bool { DataScannerViewController.isSupported && DataScannerViewController.isAvailable }
 
@@ -68,6 +74,18 @@ struct LiveVisaScanner: View {
                         .glassEffect(.regular.interactive(), in: .circle)
                         .foregroundStyle(.white)
                     Spacer()
+                    if Self.hasTorch {
+                        Button(torch ? "关闭手电筒" : "打开手电筒", systemImage: torch ? "flashlight.on.fill" : "flashlight.off.fill") {
+                            torch.toggle()
+                        }
+                        .labelStyle(.iconOnly)
+                        .font(.title3.weight(.semibold))
+                        .frame(width: 44, height: 44)
+                        .glassEffect(torch ? .regular.tint(.yellow).interactive() : .regular.interactive(), in: .circle)
+                        .foregroundStyle(torch ? .black : .white)
+                        .contentTransition(.symbolEffect(.replace))
+                        .sensoryFeedback(.impact(weight: .light), trigger: torch)
+                    }
                 }
                 .padding(.horizontal, 20)
                 Spacer()
@@ -78,6 +96,8 @@ struct LiveVisaScanner: View {
         .sensoryFeedback(.success, trigger: finished)
         .animation(.spring(response: 0.45, dampingFraction: 0.75), value: finished)
         .onAppear { withAnimation(.easeInOut(duration: 1.1).repeatForever()) { pulse = true } }
+        .onChange(of: torch) { Self.setTorch(torch) }
+        .onDisappear { Self.setTorch(false) }
     }
 
     /// What has been read so far, ticking off as each piece is found.
@@ -141,12 +161,31 @@ struct LiveVisaScanner: View {
         merged.entries = fresh.entries ?? merged.entries
         merged.stayDays = fresh.stayDays ?? merged.stayDays
         reading = merged
-        if merged.verified { finish() }
+        guard fresh.verified else { return }
+        // Check digits vouch for the number and dates; a few agreeing frames vouch for the
+        // name too, which has no check digit of its own.
+        confirmations.append(fresh)
+        let agreeing = confirmations.filter { $0.number == fresh.number && $0.expires == fresh.expires }
+        guard agreeing.count >= Self.framesToAgree else { return }
+        var votes: [String: Int] = [:]
+        for candidate in agreeing { if let holder = candidate.holder { votes[holder, default: 0] += 1 } }
+        reading.holder = votes.max { a, b in a.value == b.value ? a.key.count < b.key.count : a.value < b.value }?.key ?? reading.holder
+        finish()
+    }
+
+    private static var hasTorch: Bool { AVCaptureDevice.default(for: .video)?.hasTorch ?? false }
+
+    /// The scanner's camera is the device's back camera, so its torch is the one to light.
+    private static func setTorch(_ on: Bool) {
+        guard let device = AVCaptureDevice.default(for: .video), device.hasTorch, (try? device.lockForConfiguration()) != nil else { return }
+        device.torchMode = on ? .on : .off
+        device.unlockForConfiguration()
     }
 
     private func finish() {
         guard !finished else { return }
         finished = true
+        torch = false
         let result = reading
         Task {
             try? await Task.sleep(for: .seconds(0.9))
