@@ -192,7 +192,7 @@ enum VisaScanner {
         return field
     }
 
-    /// The name as printed on the page, "GUO, WENBO" or "WENBO GUO", when it's a fuller
+    /// The name as printed on the page, "DOE, JOHN" or "JOHN DOE", when it's a fuller
     /// version of what the machine lines gave: OCR drops a letter there now and then.
     static func printedName(surname: String, given: String, in lines: [String]) -> String? {
         guard surname.count >= 2 else { return nil }
