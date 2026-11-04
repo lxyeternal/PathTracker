@@ -1,6 +1,7 @@
 import Foundation
 import Vision
 import UIKit
+import CoreImage
 
 /// Reads a visa from a photo, on the device. The two machine-readable lines at the foot of a
 /// visa are the reliable part — country, number, name and the expiry date, each with a check
@@ -15,6 +16,8 @@ enum VisaScanner {
         var post: String?
         var issued: Date?
         var expires: Date?
+        /// From the machine lines; kept only to tell it apart from the visa's own dates.
+        var birth: Date?
         var entries: TravelDocument.Entries?
         var stayDays: Int?
         /// The expiry came from the machine-readable lines and its check digit matched.
@@ -23,11 +26,34 @@ enum VisaScanner {
     }
 
     static func read(_ image: UIImage) async -> Reading {
-        let lines = await recognize(image)
-        return parse(lines)
+        parse(await lines(of: image))
     }
 
-    private static func recognize(_ image: UIImage) async -> [String] {
+    /// Everything legible on the page. When the machine lines don't come through, they are
+    /// read once more from the bottom of the page alone, enlarged and in high contrast, the
+    /// way dedicated MRZ readers do; both readings go into the parse.
+    static func lines(of image: UIImage) async -> [String] {
+        let lines = await recognize(image)
+        guard !parse(lines).verified, let zone = machineZone(of: image) else { return lines }
+        return lines + (await recognize(zone, languages: ["en-US"]))
+    }
+
+    /// The lower part of the page, where the machine lines are, enlarged, grey and crisp.
+    static func machineZone(of image: UIImage) -> UIImage? {
+        let upright = UIGraphicsImageRenderer(size: image.size).image { _ in image.draw(at: .zero) }
+        guard let cgImage = upright.cgImage else { return nil }
+        let width = CGFloat(cgImage.width), height = CGFloat(cgImage.height)
+        let crop = CGRect(x: 0, y: height * 0.55, width: width, height: height * 0.45).integral
+        guard let zone = cgImage.cropping(to: crop) else { return nil }
+        let scale = min(3, max(1, 2_400 / width))
+        let filtered = CIImage(cgImage: zone)
+            .applyingFilter("CIColorControls", parameters: [kCIInputSaturationKey: 0, kCIInputContrastKey: 1.35])
+            .applyingFilter("CILanczosScaleTransform", parameters: [kCIInputScaleKey: scale])
+        guard let output = CIContext().createCGImage(filtered, from: filtered.extent) else { return nil }
+        return UIImage(cgImage: output)
+    }
+
+    private static func recognize(_ image: UIImage, languages: [String] = ["en-US", "zh-Hans", "ja-JP", "fr-FR", "de-DE", "pt-BR"]) async -> [String] {
         guard let cgImage = image.cgImage else { return [] }
         return await withCheckedContinuation { continuation in
             let request = VNRecognizeTextRequest { request, _ in
@@ -37,7 +63,7 @@ enum VisaScanner {
                 continuation.resume(returning: sorted.compactMap { $0.topCandidates(1).first?.string })
             }
             request.recognitionLevel = .accurate
-            request.recognitionLanguages = ["en-US", "zh-Hans", "ja-JP", "fr-FR", "de-DE"]
+            request.recognitionLanguages = languages
             request.usesLanguageCorrection = false
             let handler = VNImageRequestHandler(cgImage: cgImage, orientation: CGImagePropertyOrientation(image.imageOrientation))
             DispatchQueue.global(qos: .userInitiated).async {
@@ -50,7 +76,12 @@ enum VisaScanner {
 
     static func parse(_ lines: [String]) -> Reading {
         var reading = Reading()
-        if let mrz = machineReadable(lines) { apply(mrz, to: &reading) }
+        if let mrz = machineReadable(lines) {
+            apply(mrz, to: &reading)
+            if !mrz.givenNames.contains(" "), let fuller = printedName(surname: mrz.surname, given: mrz.givenNames, in: lines) {
+                reading.holder = "\(mrz.surname) \(fuller)"
+            }
+        }
         let text = lines.joined(separator: "\n")
         let upper = text.uppercased()
 
@@ -60,6 +91,7 @@ enum VisaScanner {
             else if upper.contains("JAPAN") || text.contains("日本国") { reading.country = "JP" }
             else if upper.contains("UNITED KINGDOM") { reading.country = "GB" }
             else if upper.contains("CANADA") { reading.country = "CA" }
+            else if upper.contains("BRASIL/BRAZIL") || upper.contains("REPUBLICA FEDERATIVA DO BRASIL") { reading.country = "BR" }
             else if upper.contains("REPUBLIC OF KOREA") || text.contains("대한민국") { reading.country = "KR" }
         }
         reading.post = post(in: lines)
@@ -67,10 +99,17 @@ enum VisaScanner {
         reading.stayDays = reading.stayDays ?? stayDays(in: upper, text: text)
         if reading.category == nil { reading.category = category(in: upper, country: reading.country) }
 
-        let dates = allDates(in: text)
+        let calendar = Calendar.current
+        // The holder's birthday is printed too; it's neither the start nor the end of anything.
+        let dates = allDates(in: text).filter { date in reading.birth.map { !calendar.isDate($0, inSameDayAs: date) } ?? true }
+            .filter { $0 > calendar.date(byAdding: .year, value: -15, to: .now)! }
         if reading.expires == nil, let last = dates.max() { reading.expires = last }
-        if let first = dates.min(), first < (reading.expires ?? .distantFuture) {
-            reading.issued = dates.filter { $0 < (reading.expires ?? .distantFuture) }.min()
+        if let expires = reading.expires {
+            // The latest date before the expiry within ten years of it: the issue date, or the
+            // first day of validity, either of which is where the visa's life starts.
+            let floor = calendar.date(byAdding: .year, value: -10, to: expires)!
+            reading.issued = labelled(lines, labels: issueLabels).filter { $0 < expires && $0 >= floor }.first
+                ?? dates.filter { $0 < expires && $0 >= floor && !calendar.isDate($0, inSameDayAs: expires) }.max()
         }
         return reading
     }
@@ -82,33 +121,95 @@ enum VisaScanner {
         let surname: String
         let givenNames: String
         let number: String
+        let birth: Date?
         let expiry: Date?
         let expiryChecked: Bool
     }
 
+    /// A line as the machine wrote it: capitals, digits and fillers. Anything else OCR saw
+    /// there — «, ‹, *, a stray bracket — can only have been a filler.
+    static func machineLine(_ line: String) -> String {
+        String(line.uppercased().filter { $0 != " " }.map { c -> Character in
+            (c.isASCII && (c.isUppercase || c.isNumber)) || c == "<" ? c : "<"
+        })
+    }
+
     static func machineReadable(_ lines: [String]) -> MRZ? {
-        let cleaned = lines.map { line in
-            line.uppercased()
-                .replacingOccurrences(of: " ", with: "")
-                .replacingOccurrences(of: "«", with: "<")
-                .replacingOccurrences(of: "‹", with: "<")
+        let cleaned = lines.map(machineLine)
+        // The first line ends in fillers and OCR often drops some; the second's fields sit at
+        // fixed places, and only its last check digit may go missing.
+        // OCR sometimes puts a stray fragment between the two: look a few lines on for the second.
+        let pairs = cleaned.indices.flatMap { i in
+            cleaned[(i + 1)..<min(i + 4, cleaned.count)].map { (cleaned[i], $0) }
         }
-        func machineLike(_ line: String) -> Bool { line.allSatisfy { $0.isUppercase && $0.isASCII || $0.isNumber || $0 == "<" } }
-        // The first line ends in fillers, and OCR often drops some of them: only the second,
-        // whose fields sit at fixed places, has to come through whole.
-        for (first, second) in zip(cleaned, cleaned.dropFirst())
-        where (first.first == "V" || first.first == "P") && first.count >= 12 && second.count >= 28 && machineLike(first) && machineLike(second) {
-            let one = Array(first), two = Array(second)
-            let issuer = String(one[2..<5]).replacingOccurrences(of: "<", with: "")
-            let names = String(one[5...]).components(separatedBy: "<<")
-            let surname = names.first?.replacingOccurrences(of: "<", with: " ").trimmingCharacters(in: .whitespaces) ?? ""
-            let given = names.dropFirst().filter { !$0.isEmpty }.joined(separator: " ").replacingOccurrences(of: "<", with: " ")
-                .trimmingCharacters(in: .whitespaces)
-            let number = String(two[0..<9]).replacingOccurrences(of: "<", with: "")
-            let expiryDigits = numeric(String(two[21..<27]))
-            let checked = check(expiryDigits) == two[27]
-            return MRZ(documentType: one[0], issuer: issuer, surname: surname, givenNames: given, number: number,
-                       expiry: date(yymmdd: expiryDigits, future: true), expiryChecked: checked)
+        for (first, second) in pairs
+        where (first.first == "V" || first.first == "P") && first.count >= 12 && second.count >= 27
+            && first.filter({ $0 == "<" }).count >= 2 && second.prefix(9).contains(where: \.isNumber)
+            && second.dropFirst(10).prefix(3).allSatisfy({ !$0.isNumber || "0125686".contains($0) }) {
+            let one = Array(first)
+            var two = Array(second)
+            // Each field is digits or letters by definition: put right what OCR swapped.
+            func set(_ range: Range<Int>, _ fix: (String) -> String) {
+                guard range.upperBound <= two.count else { return }
+                two.replaceSubrange(range, with: Array(fix(String(two[range]))))
+            }
+            set(9..<10, numeric); set(10..<13, alphabetic); set(13..<20, numeric); set(21..<27, numeric)
+            if two.count > 27 { set(27..<28, numeric) }
+            let number = corrected(String(two[0..<9]), check: two[9])
+            let birthDigits = String(two[13..<19]), expiryDigits = String(two[21..<27])
+            let numberOK = check(number) == two[9], birthOK = check(birthDigits) == two[19]
+            // Without its own check digit the expiry still stands when the rest of the line checks out.
+            let expiryOK = two.count > 27 ? check(expiryDigits) == two[27] : numberOK && birthOK
+            let issuer = alphabetic(String(one[2..<5])).replacingOccurrences(of: "<", with: "")
+            // SURNAME<<GIVEN<NAMES<<<<: anything after the next double filler is noise.
+            let names = String(one[5...]).components(separatedBy: "<<").filter { !$0.isEmpty }
+            func name(_ part: String?) -> String {
+                alphabetic(part ?? "").replacingOccurrences(of: "<", with: " ").trimmingCharacters(in: .whitespaces)
+            }
+            let given = names.count > 1 && names[1].count > 1 ? name(names[1]) : ""
+            return MRZ(documentType: one[0], issuer: issuer, surname: name(names.first), givenNames: given,
+                       number: number.replacingOccurrences(of: "<", with: ""),
+                       birth: date(yymmdd: birthDigits, future: false), expiry: date(yymmdd: expiryDigits, future: true),
+                       expiryChecked: expiryOK)
+        }
+        return nil
+    }
+
+    /// A document number OCR may have misread: tries the letters and digits that look alike,
+    /// a few at a time, until one reading matches its check digit.
+    static func corrected(_ field: String, check digit: Character) -> String {
+        if check(field) == digit { return field }
+        let swaps: [Character: Character] = ["0": "O", "O": "0", "1": "I", "I": "1", "5": "S", "S": "5", "8": "B", "B": "8",
+                                             "2": "Z", "Z": "2", "6": "G", "G": "6", "D": "0", "Q": "0"]
+        let chars = Array(field)
+        let doubtful = chars.indices.filter { swaps[chars[$0]] != nil }.prefix(6)
+        for mask in 1..<(1 << doubtful.count) {
+            var attempt = chars
+            for (bit, index) in doubtful.enumerated() where mask & (1 << bit) != 0 { attempt[index] = swaps[chars[index]]! }
+            let candidate = String(attempt)
+            if check(candidate) == digit { return candidate }
+        }
+        return field
+    }
+
+    /// The name as printed on the page, "GUO, WENBO" or "WENBO GUO", when it's a fuller
+    /// version of what the machine lines gave: OCR drops a letter there now and then.
+    static func printedName(surname: String, given: String, in lines: [String]) -> String? {
+        guard surname.count >= 2 else { return nil }
+        for line in lines {
+            let words = line.uppercased().components(separatedBy: CharacterSet.letters.inverted).filter { $0.count >= 2 }
+            guard words.contains(surname) else { continue }
+            for word in words where word != surname && word.count >= given.count && word.count <= given.count + 2 {
+                // The machine's reading must be the printed one with a letter or two missing.
+                var rest = Substring(word)
+                if given.allSatisfy({ c in
+                    guard let at = rest.firstIndex(of: c) else { return false }
+                    rest = rest[rest.index(after: at)...]
+                    return true
+                }), word != given {
+                    return word
+                }
+            }
         }
         return nil
     }
@@ -120,8 +221,24 @@ enum VisaScanner {
         reading.number = mrz.number.isEmpty ? nil : mrz.number
         let name = [mrz.surname, mrz.givenNames].filter { !$0.isEmpty }.joined(separator: " ")
         reading.holder = name.isEmpty ? nil : name
-        reading.expires = mrz.expiry
+        reading.birth = mrz.birth
+        if mrz.expiryChecked { reading.expires = mrz.expiry }
         reading.verified = mrz.expiryChecked && mrz.expiry != nil
+    }
+
+    /// In a field that must be letters — names, country codes — the digits OCR mistook for them.
+    private static func alphabetic(_ text: String) -> String {
+        String(text.map { c -> Character in
+            switch c {
+            case "0": "O"
+            case "1": "I"
+            case "2": "Z"
+            case "5": "S"
+            case "6": "G"
+            case "8": "B"
+            default: c
+            }
+        })
     }
 
     /// OCR reads digits as letters now and then: in a field that must be digits, fix the usual ones.
@@ -160,6 +277,17 @@ enum VisaScanner {
         return Calendar.current.date(from: DateComponents(year: year, month: mm, day: dd))
     }
 
+    private static let issueLabels = ["ISSUE DATE", "DATE OF ISSUE", "DATA DE EMISS", "AUSSTELLUNGSDATUM", "発給日", "签发日期"]
+
+    /// Dates printed right after one of the labels, in order.
+    private static func labelled(_ lines: [String], labels: [String]) -> [Date] {
+        lines.indices.compactMap { i in
+            guard labels.contains(where: { lines[i].uppercased().contains($0) }) else { return nil }
+            return lines[(i + 1)...].prefix(3).lazy.compactMap { allDates(in: $0).first }.first
+                ?? allDates(in: lines[i]).first
+        }
+    }
+
     /// The line after "Issuing Post Name" or "Issued in".
     private static func post(in lines: [String]) -> String? {
         for (label, value) in zip(lines, lines.dropFirst()) {
@@ -185,7 +313,7 @@ enum VisaScanner {
     }
 
     private static func stayDays(in upper: String, text: String) -> Int? {
-        let patterns = [#"DURATION OF STAY\D{0,20}(\d{1,3})"#, #"DUREE DU SEJOUR\D{0,20}(\d{1,3})"#, #"(\d{1,3})\s*(DAYS|JOURS|TAGE)"#,
+        let patterns = [#"DURATION OF STAY\D{0,20}(\d{1,3})"#, #"DUREE DU SEJOUR\D{0,20}(\d{1,3})"#, #"(\d{1,3})\s*(DAYS|JOURS|TAGE|DIAS|DÍAS|GIORNI)"#,
                         #"停留期间?\D{0,6}(\d{1,3})"#, #"(\d{1,3})\s*日"#, #"(\d{1,3})\s*天"#]
         for pattern in patterns {
             guard let regex = try? NSRegularExpression(pattern: pattern) else { continue }
@@ -199,9 +327,12 @@ enum VisaScanner {
     }
 
     private static func category(in upper: String, country: String?) -> String? {
-        if let match = upper.range(of: #"\b(B1/B2|B-1/B-2|B1|B2|F-?1|J-?1|H-?1B|L-?1|O-?1)\b"#, options: .regularExpression) {
+        // "B1/B2", which OCR also reads as B1/82 or 81/B2.
+        if upper.range(of: #"\b[B8]-?1\s?/\s?[B8]-?2\b"#, options: .regularExpression) != nil { return "B1/B2" }
+        if let match = upper.range(of: #"\b(B1|B2|F-?1|J-?1|H-?1B|L-?1|O-?1)\b"#, options: .regularExpression) {
             return String(upper[match]).replacingOccurrences(of: "-", with: "")
         }
+        if country == "BR", upper.contains("VIVIS") { return "VIVIS" }
         if country == TravelDocument.schengen {
             if upper.range(of: #"TYPE[^\n]{0,30}\bC\b"#, options: .regularExpression) != nil { return "C" }
             if upper.range(of: #"TYPE[^\n]{0,30}\bD\b"#, options: .regularExpression) != nil { return "D" }
@@ -236,6 +367,16 @@ enum VisaScanner {
             guard g.count == 3, let d = Int(g[0]), let m = months.firstIndex(of: g[1]), var y = Int(g[2]) else { return }
             if y < 100 { y += 2000 }
             add(y, m + 1, d)
+        }
+        // Bilingual months, 28 SET/SEP 1998: the English one after the slash.
+        each(#"(\d{1,2})\s?[A-Z]{3}\s?/\s?(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s?(\d{4})"#, in: upper) { g in
+            guard g.count == 3, let d = Int(g[0]), let m = months.firstIndex(of: g[1]), let y = Int(g[2]) else { return }
+            add(y, m + 1, d)
+        }
+        // Two-digit years, 17-06-25, as on Schengen stickers.
+        each(#"\b(\d{2})-(\d{2})-(\d{2})\b"#, in: text) { g in
+            guard g.count == 3, let d = Int(g[0]), let m = Int(g[1]), let y = Int(g[2]) else { return }
+            add(2000 + y, m, d)
         }
         each(#"\b(\d{1,2})[./-](\d{1,2})[./-](\d{4})\b"#, in: text) { g in
             guard g.count == 3, let d = Int(g[0]), let m = Int(g[1]), let y = Int(g[2]) else { return }
