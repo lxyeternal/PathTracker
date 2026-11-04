@@ -39,6 +39,8 @@
   <a href="#-trips">Trips</a> ·
   <a href="#-the-world-youve-seen">Places</a> ·
   <a href="#-passport-and-stamps">Passport and stamps</a> ·
+  <a href="#-visa-wallet">Visa wallet</a> ·
+  <a href="#-parallel-footprints">Parallel footprints</a> ·
   <a href="#-places-for-a-lifetime">Places for a lifetime</a> ·
   <a href="#-moments-that-make-you-pause">Moments</a> ·
   <a href="#-apple-watch">Apple Watch</a> ·
@@ -62,7 +64,7 @@
 | **How you got there** | The iPhone's motion coprocessor and your speed tell walking, running, cycling, driving and flying apart, each drawn in its own colour. A subway ride with no signal is filled in from the phone's own motion history and drawn dashed. |
 | **Where you were** | A few minutes in one place becomes a stay, named as the shop, sight, city and country it is. |
 | **Easy on the battery** | Location sleeps while the phone is still. After ten minutes in one place GPS turns off entirely, replaced by a 150 m geofence that wakes it when you leave. |
-| **Timeline** | Each day reads stay → journey → stay, every place with the photos you took there. |
+| **Timeline** | Each day runs down a fine line: the times in the margin, each place a node on it with the photos you took there, and each journey a single line saying how you went, how far and how long, with the route traced beside it. Turn on Past Routes to see the roads you've taken around there on other days, beneath today's. |
 
 **Bring back the past from Photos**: the places your photos and videos were taken fill in where you went before the app existed. New users can do it in the last step of onboarding or from the Trips tab, and the passport opens as the years of stamps land. Run it again any time from Settings; only new places are added. Everything is read on the phone; photos are never uploaded.
 
@@ -86,10 +88,12 @@
 - **Countries and regions**: filter by continent (All · Asia · Europe…), search, and sort by days, most recent or earliest, so a long list never means endless scrolling.
 - **Country pages**: the country outlined (the app draws no borders for mainland China, Hong Kong, Macao or Taiwan), each city you visited a glow of light, then the country's entry stamps and every city's stamp.
 - **Every visit**: grouped as runs of days in one city. A long history shows a year at a time, with a twelve-month bar chart on top; tap a month to jump to it.
+- **Every road**: switch All Places to Routes and every road you've travelled lies on one night map. Streets you take every day glow brighter with each pass; a one-off detour is a faint stroke. Filter by year or by walking, cycling, driving and flying, with the distance and days totted up below. Years of tracks are drawn at three levels of detail, so the map still pans smoothly.
 
 <p align="center">
   <img src="docs/images/places.jpg" width="190" alt="Places">
   <img src="docs/images/country.jpg" width="190" alt="Country page">
+  <img src="docs/images/routes.jpg" width="190" alt="Every road">
 </p>
 
 ---
@@ -121,6 +125,35 @@ The places you've been aren't a number. They're stamps, pressed one by one into 
 | Keepsakes and sets | Gold foil | A line of light runs across it; a set's cities gather into its stamp |
 
 Stamps not yet earned are **blind-embossed**: paper-coloured, in relief, every character readable but uninked.
+
+**Four passports**: burgundy, navy, forest and midnight. Pick one the first time you open it: the cover's leather and gold or silver foil change together with the pages' paper and security print. Change it later in Settings; iCloud keeps every device the same.
+
+---
+
+## 🪪 Visa wallet
+
+<p align="center">
+  <img src="docs/images/visa-wallet.jpg" width="190" alt="Visa wallet">
+  <img src="docs/images/visa-detail.jpg" width="190" alt="A visa">
+</p>
+
+The visas in your passport, stacked like cards in Apple Wallet, each showing how many days it has left.
+
+- **Laid out like the real ones**: the US foil with its Issuing Post Name, Control Number and red visa number over a bridge; the Schengen sticker's VALID FOR and DURATION OF STAY; Japan's bilingual 査証 VISA; and, for Australia and New Zealand, which put no label in the passport, a grant notice. No seals, emblems or security designs are copied, and every card carries a faint Waytrace mark.
+- **Point and it's read**: aim the camera at a visa page and its country, type, entries, length of stay and dates are read live, with a torch if you need it. The two machine-readable lines are corrected field by field and checked against their check digits for the number, birth date and expiry; a few agreeing frames settle it, and the name is checked against the one printed above. Or read it from a photo, or type it in.
+- **Leaf through it like Wallet**: tap a card and it rises to the top while the rest settle into a pile below; tilt the phone and it leans with a slow glint of light. Its back shows the days left as a ring and the details in a grid.
+- **The sums done for you**: the Schengen 90/180 rule worked out from the days you've actually been there; how many times each visa has been used and for how long; a warning when your passport has under six months left. Reminders 90, 30 and 7 days before anything runs out.
+- Visas live only in your own iCloud; reading happens on your iPhone, and nothing from the camera or your photos is saved or uploaded.
+
+---
+
+## 👥 Parallel footprints
+
+See where your footprints and a friend's overlap: **passing within the same hour**, **in the same city on the same day**, or **at the same place at different times**.
+
+- It appears only once you've invited each other and both agreed to share; no contacts, no groups, a friend is whoever accepted your invitation link.
+- Only a summary is shared: the rough area you were in each day (about 20 km) and the square of about 1 km you were in each hour. Nothing within 2 km of home, work or school, no place names, exact coordinates, routes or photos.
+- Shared through iCloud and compared on each phone; stop at any time and the summary is deleted from iCloud.
 
 ---
 
@@ -192,6 +225,9 @@ Waytrace **has no server of its own**. Your routes, places, trips and photos liv
 | Storage and sync | SwiftData with a CloudKit private database; stamps are worked out from stays rather than stored; seen-stamp state and postcards sync through iCloud key-value storage |
 | Background location | `CLLocationUpdate.liveUpdates` + `CLBackgroundActivitySession`; a `CLMonitor` geofence during long stays, with significant-change as a backstop |
 | Places | `MKReverseGeocodingRequest`, `MKLocalPointsOfInterestRequest`; WGS-84 → GCJ-02 for maps in China |
+| Every road | Each track simplified ahead of time at street, city and country detail, cached locally and read incrementally; drawn in layers of `MKMultiPolyline`, so overlaps brighten on their own |
+| Visa reading | VisionKit `DataScannerViewController` live, Vision for photos; ICAO 9303 machine lines corrected per field and verified by check digit, with multi-frame voting; Core Motion drives the cards' sheen |
+| Parallel footprints | CloudKit zone sharing (`CKShare`), summaries uploaded by day only when they change |
 | Motion and health | CoreMotion for how you travel, HealthKit for steps |
 | Apple Watch | watchOS SwiftUI app, WidgetKit complications, `HKWorkoutSession`, WatchConnectivity |
 | Live Activities | ActivityKit: Lock Screen, Dynamic Island, watch Smart Stack |
@@ -213,7 +249,8 @@ RecordPath/
 ├── Features/
 │   ├── Today/          Today, timeline, on this day
 │   ├── World/          Places, country pages, continent filter
-│   ├── Stamps/         Passport, stamp drawing, landing motion, keepsakes
+│   ├── Stamps/         Passport, passport styles, stamp drawing, landing motion, keepsakes
+│   ├── Visas/          Visa wallet, visa cards, live scanning
 │   ├── Trips/          Trips, postcards
 │   ├── Celebration/    Stamping ceremonies, back again, milestones
 │   ├── Stats/          Stats, your year

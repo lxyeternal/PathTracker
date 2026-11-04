@@ -186,7 +186,7 @@ struct VisaWalletView: View {
     }
 
     /// How much of each stacked card shows: its header strip.
-    private static let strip: CGFloat = 41
+    private static let strip: CGFloat = 38
 
     private func startScan() {
         if LiveVisaScanner.isAvailable { scanning = true } else { choosingPhoto = true }
