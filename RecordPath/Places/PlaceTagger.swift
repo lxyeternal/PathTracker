@@ -73,6 +73,7 @@ final class PlaceTagger {
         descriptor.fetchLimit = 120
         guard let stays = try? context.fetch(descriptor), !stays.isEmpty else {
             await fillTimeZones()
+            await localizeNames()
             return
         }
 
@@ -117,6 +118,67 @@ final class PlaceTagger {
         }
         try? context.save()
         Diagnostics.record("timeZones filled lookups=\(lookups) missing=\(missing.count)")
+    }
+
+    /// Names are stored in the language they were looked up in, so a phone that changed language,
+    /// or places named before lookups asked for the app's language, read "Beijing" in a Chinese
+    /// app. Those are looked up again, once per language. Only the names change: nothing here
+    /// announces a place as new. Photo visits copy a named neighbour, as they do when first named.
+    private func localizeNames() async {
+        let key = "tagger.namesLanguage"
+        let chinese = appLocale.language.languageCode == .chinese
+        let language = chinese ? "zh" : "en"
+        guard UserDefaults.standard.string(forKey: key) != language else { return }
+        func fits(_ name: String?) -> Bool { name.map { CityNames.hasHan($0) == chinese } ?? true }
+
+        let tagged = TagState.tagged.rawValue
+        let all = (try? context.fetch(FetchDescriptor<Stay>(predicate: #Predicate { $0.tagStateRaw == tagged },
+                                                            sortBy: [SortDescriptor(\.arrival, order: .reverse)]))) ?? []
+        for stay in all {
+            if let city = stay.city, let street = stay.street, street.hasPrefix(city + city) { stay.street = String(street.dropFirst(city.count)) }
+        }
+        var named = PhotoGrid()
+        var lookups = 0
+        defer { try? context.save() }
+        for stay in all where !fits(stay.city) || !fits(stay.country) {
+            if Self.isGone(stay) { continue }
+            if stay.isFromPhotos, let neighbour = named.nearest(to: stay, within: 3_000) {
+                stay.country = neighbour.country
+                stay.city = neighbour.city
+                stay.region = neighbour.region
+                continue
+            }
+            guard let request = MKReverseGeocodingRequest(location: stay.location) else { continue }
+            request.preferredLocale = appLocale
+            do {
+                let item = try await request.mapItems.first
+                if Self.isGone(stay) { continue }
+                if let item, let address = item.addressRepresentations {
+                    Self.applyNames(of: item, address: address, to: stay)
+                    named.add(stay)
+                }
+            } catch let error as NSError where Self.isThrottled(error) || error.domain == NSURLErrorDomain
+                        || (error.domain == MKErrorDomain && error.code == Int(MKError.serverFailure.rawValue)) {
+                // Picked up again from where the names still don't fit, next time.
+                Diagnostics.record("names language \(language) paused after \(lookups)")
+                return
+            } catch {}
+            lookups += 1
+            if lookups % 10 == 0 { try? context.save() }
+            try? await Task.sleep(for: .milliseconds(2000))
+        }
+        UserDefaults.standard.set(language, forKey: key)
+        Diagnostics.record("names language \(language) lookups=\(lookups)")
+    }
+
+    private static func applyNames(of item: MKMapItem, address: MKAddressRepresentations, to stay: Stay) {
+        stay.country = address.regionName
+        stay.city = CityName.normalized(cityName: address.cityName,
+                                        shortContext: address.cityWithContext(.short),
+                                        countryCode: address.region?.identifier,
+                                        regionName: address.regionName)
+        stay.region = address.cityWithContext
+        stay.street = CityName.street(item.address?.shortAddress, name: item.name, city: address.cityName)
     }
 
     /// Photo visits can number in the thousands. Named places go into a grid of ~3 km cells
@@ -251,17 +313,12 @@ final class PlaceTagger {
         }
         do {
             guard let request = MKReverseGeocodingRequest(location: location) else { return .done }
+            request.preferredLocale = appLocale
             let item = try await request.mapItems.first
             if Self.isGone(stay) { return .done }
             if let item, let address = item.addressRepresentations {
-                stay.country = address.regionName
                 stay.countryCode = address.region?.identifier
-                stay.city = CityName.normalized(cityName: address.cityName,
-                                                shortContext: address.cityWithContext(.short),
-                                                countryCode: address.region?.identifier,
-                                                regionName: address.regionName)
-                stay.region = address.cityWithContext
-                stay.street = item.address?.shortAddress ?? item.name
+                Self.applyNames(of: item, address: address, to: stay)
             }
             if let zone = item?.timeZone?.identifier { stay.timeZoneID = zone }
         } catch let error as NSError where Self.isThrottled(error) {
@@ -412,9 +469,21 @@ extension String {
 /// Turns MapKit's city into the city people mean: "London" rather than "City of Westminster,
 /// London", and "Tokyo" rather than one of its 23 wards.
 enum CityName {
+    /// A Chinese short address is the city and the place run together, even when the place
+    /// already starts with the city: "北京北京首都国际机场".
+    static func street(_ address: String?, name: String?, city: String?) -> String? {
+        guard let address else { return name }
+        if let name, let city, name.hasPrefix(city), address == city + name { return name }
+        return address
+    }
+
     private static let tokyoNames: Set<String> = ["Tokyo", "東京", "東京都", "东京", "东京都", "도쿄", "도쿄도"]
 
     static func normalized(cityName: String?, shortContext: String?, countryCode: String?, regionName: String? = nil) -> String? {
+        // In Chinese the context reads "日本东京千代田区", with no separators to split on below.
+        if countryCode == "JP", let context = shortContext, context.contains("东京") || context.contains("東京") {
+            return "东京"
+        }
         // Hong Kong and Macau are one city each; geocoding reports their districts ("Central").
         if countryCode == "HK" || countryCode == "MO" {
             let chinese = (regionName ?? cityName ?? "").unicodeScalars.contains { (0x4E00...0x9FFF).contains($0.value) }
@@ -432,6 +501,8 @@ enum CityName {
         if countryCode == "JP", parts.count >= 2, tokyoNames.contains(parts[1]) {
             return parts[1].hasSuffix("都") ? String(parts[1].dropLast()) : parts[1]
         }
+        // A river or a lake can lead the context: "Huangpu River, Shanghai".
+        if let cityName, parts.dropFirst().contains(cityName) { return cityName }
         return parts.first ?? cityName?.split(separator: ",").first.map { $0.trimmingCharacters(in: .whitespaces) }
     }
 }

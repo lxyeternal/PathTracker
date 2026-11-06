@@ -399,6 +399,10 @@ struct CityNameTests {
     @Test(arguments: [
         ("Minato", "Minato, Tokyo", "JP", "Tokyo"),
         ("港区", "港区, 东京都", "JP", "东京"),
+        ("千代田区", "日本东京千代田区", "JP", "东京"),
+        ("Shanghai", "Huangpu River, Shanghai", "CN", "Shanghai"),
+        ("Hangzhou", "West Lake, Hangzhou, Zhejiang", "CN", "Hangzhou"),
+        ("杭州", "西湖 中国浙江杭州", "CN", "杭州"),
         ("Kyoto", "Kyoto, Kyoto", "JP", "Kyoto"),
         ("City of Westminster, London", "London, England", "GB", "London"),
         ("New York", "New York, NY", "US", "New York"),
@@ -414,6 +418,14 @@ struct CityNameTests {
     @Test func hongKongAndMacauAreOneCityEach() {
         #expect(CityName.normalized(cityName: "中环", shortContext: "中国香港特别行政区中环", countryCode: "HK", regionName: "中国香港特别行政区") == "香港")
         #expect(CityName.normalized(cityName: "Central", shortContext: "Central, Central", countryCode: "HK", regionName: "Hong Kong SAR, China") == "Hong Kong")
+    }
+
+    @Test func aPlaceNamedAfterItsCityIsNotDoubled() {
+        #expect(CityName.street("北京北京首都国际机场", name: "北京首都国际机场", city: "北京") == "北京首都国际机场")
+        #expect(CityName.street("上海延安东路", name: "延安东路", city: "上海") == "上海延安东路")
+        #expect(CityName.street("Beijing Capital International Airport, Beijing", name: "Beijing Capital International Airport", city: "Beijing")
+                == "Beijing Capital International Airport, Beijing")
+        #expect(CityName.street(nil, name: "Eiffel Tower", city: "Paris") == "Eiffel Tower")
     }
 
     @Test func fallsBackToCityNameWithoutContext() {

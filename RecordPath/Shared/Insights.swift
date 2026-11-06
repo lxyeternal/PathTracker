@@ -287,7 +287,7 @@ enum CityNames {
         return result
     }
 
-    private static func hasHan(_ text: String) -> Bool {
+    static func hasHan(_ text: String) -> Bool {
         text.unicodeScalars.contains { (0x4E00...0x9FFF).contains($0.value) || (0x3400...0x4DBF).contains($0.value) }
     }
 }

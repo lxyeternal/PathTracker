@@ -115,7 +115,9 @@ struct TripCard: View {
         cities = CityGlow.glows(for: stays)
         photoCount = (trip.photos ?? []).count
 
-        let key = "\(trip.id)-\(start.timeIntervalSince1970)-\(end.timeIntervalSince1970)-\(colorScheme == .dark)"
+        // The pins are drawn in the cities' order, which changes as places are added or renamed.
+        let places = cities.prefix(4).map { "\($0.center.latitude),\($0.center.longitude)" }.joined(separator: ";")
+        let key = "\(trip.id)-\(start.timeIntervalSince1970)-\(end.timeIntervalSince1970)-\(colorScheme == .dark)-\(places)"
         if let cached = Self.maps[key] {
             map = cached
         } else {

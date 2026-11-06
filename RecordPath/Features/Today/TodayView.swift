@@ -284,7 +284,7 @@ struct DayContentView: View {
                       symbol: moved ? "point.topright.arrow.triangle.backward.to.point.bottomleft.scurvepath" : "figure.walk",
                       tint: moved ? .blue : .green)
             Divider().frame(height: 34)
-            DayFigure(value: "\(stays.count)", label: "个地点", symbol: "mappin.and.ellipse", tint: .pink)
+            DayFigure(value: "\(stays.count)", label: stays.count == 1 && appLocale.language.languageCode != .chinese ? "place" : "个地点", symbol: "mappin.and.ellipse", tint: .pink)
         }
         .padding(.vertical, 12)
         .background(.background.secondary, in: .rect(cornerRadius: 22, style: .continuous))

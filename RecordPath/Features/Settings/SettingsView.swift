@@ -292,7 +292,7 @@ struct SettingsView: View {
         } footer: {
             VStack(alignment: .leading, spacing: 6) {
                 if photoImportRun > 0 {
-                    Text("上次从相册导入：\(Date(timeIntervalSince1970: photoImportRun).formatted(date: .abbreviated, time: .omitted))。重新导入只会补上新的地方，不会重复。")
+                    Text("上次从相册导入：\(Date(timeIntervalSince1970: photoImportRun).formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: appLocale)))。重新导入只会补上新的地方，不会重复。")
                 }
                 if PhotoFootprints.authorization == .limited {
                     Text("漫迹目前只能访问部分照片，导入可能不完整。可在系统设置里改为“完全访问”后重新导入。")
