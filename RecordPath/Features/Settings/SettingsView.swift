@@ -334,7 +334,7 @@ struct SettingsView: View {
     }
 
     private var aboutSection: some View {
-        Section("关于") {
+        Section {
             ShareLink(item: Diagnostics.fileURL, preview: SharePreview("Waytrace-diagnostics.log")) {
                 Label("导出诊断日志", systemImage: "doc.text.magnifyingglass")
             }
@@ -347,6 +347,15 @@ struct SettingsView: View {
                 Label("联系我们", systemImage: "envelope.fill")
             }
             LabeledContent("版本", value: Bundle.main.versionString)
+        } header: {
+            Text("关于")
+        } footer: {
+            // Chinese law asks for the filing number somewhere plain to see, linked to the registry.
+            Link(AppInfo.filingNumber, destination: AppInfo.filingRegistry)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 12)
         }
     }
 
@@ -467,6 +476,9 @@ enum AppInfo {
     static var name: String { String(localized: "漫迹", bundle: .appLanguage) }
     static var exportFileName: String { "Waytrace.gpx" }
     static let supportEmail = "honywendev@gmail.com"
+    /// The app's ICP filing in mainland China.
+    static let filingNumber = "陇ICP备2026010974号-1A"
+    static let filingRegistry = URL(string: "https://beian.miit.gov.cn/")!
     static var supportURL: URL {
         URL(string: "mailto:\(supportEmail)?subject=Waytrace%20\(Bundle.main.versionString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")!
     }
