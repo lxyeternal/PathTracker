@@ -379,7 +379,6 @@ struct VisaDetails: View {
     let onDelete: () -> Void
     private var summaries = PlaceSummaries.shared
     @State private var confirmingDelete = false
-    @State private var showsNumber = false
     @State private var appeared = false
 
     init(document: TravelDocument, onEdit: @escaping () -> Void, onDelete: @escaping () -> Void) {
@@ -540,18 +539,11 @@ struct VisaDetails: View {
                 }
             }
             if !document.number.isEmpty {
+                // Printed in full on the card above, so hiding it here would protect nothing.
                 field("号码") {
-                    HStack(spacing: 8) {
-                        Text(showsNumber ? document.number : String(repeating: "•", count: max(4, document.number.count - 3)) + document.number.suffix(3))
-                            .monospaced()
-                            .contentTransition(.interpolate)
-                        Button(showsNumber ? "隐藏" : "显示", systemImage: showsNumber ? "eye.slash" : "eye") {
-                            withAnimation(.snappy) { showsNumber.toggle() }
-                        }
-                        .labelStyle(.iconOnly)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    }
+                    Text(document.number)
+                        .monospaced()
+                        .textSelection(.enabled)
                 }
             }
             if !document.notes.isEmpty { field("备注") { Text(document.notes) } }

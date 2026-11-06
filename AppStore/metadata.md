@@ -144,9 +144,13 @@ All data stays on the device and in the user's own iCloud private database (Swif
 
 Photos: "Light Up from Photos" reads only the location and date of photos on the device to create visits; no photo is uploaded.
 
+Camera: the visa wallet (Footprints > Passport > Visa Wallet) can read a visa with the camera. Text is recognised on the device; no image is saved or uploaded. Visas can also be entered by hand.
+
 HealthKit: steps and walking distance are read for statistics; recordings from Apple Watch are saved as workouts.
 
-To try the app without walking around: Settings › Light Up from Photos fills in places from the photo library; recorded days appear after a short walk. A demo video of background recording is attached.
+Parallel Footprints is optional and needs the user's consent. It shares a summary of footprints only with friends the user invites, through CloudKit sharing.
+
+To try the app without walking around: Settings > Light Up from Photos fills in places from the photo library; recorded days appear after a short walk.
 
 ## 截图
 

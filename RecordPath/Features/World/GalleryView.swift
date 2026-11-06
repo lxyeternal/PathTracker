@@ -121,16 +121,24 @@ struct GalleryPreview: View {
                             .multilineTextAlignment(.leading)
                     }
                 } else {
-                    // A collage: one large, two small.
+                    // A collage: one large, two small; fewer photos simply take the room.
                     GeometryReader { proxy in
                         let gap: CGFloat = 4
-                        let large = (proxy.size.width - gap) * 0.62
+                        let large = (proxy.size.width - gap) * (photos.count == 2 ? 0.5 : 0.62)
                         let small = proxy.size.width - large - gap
                         HStack(spacing: gap) {
-                            tile(0).frame(width: large, height: proxy.size.height)
-                            VStack(spacing: gap) {
-                                tile(1).frame(width: small, height: (proxy.size.height - gap) / 2)
-                                tile(2).frame(width: small, height: (proxy.size.height - gap) / 2)
+                            if photos.count == 1 {
+                                tile(0).frame(width: proxy.size.width, height: proxy.size.height)
+                            } else {
+                                tile(0).frame(width: large, height: proxy.size.height)
+                                if photos.count == 2 {
+                                    tile(1).frame(width: small, height: proxy.size.height)
+                                } else {
+                                    VStack(spacing: gap) {
+                                        tile(1).frame(width: small, height: (proxy.size.height - gap) / 2)
+                                        tile(2).frame(width: small, height: (proxy.size.height - gap) / 2)
+                                    }
+                                }
                             }
                         }
                     }
@@ -144,12 +152,7 @@ struct GalleryPreview: View {
         .buttonStyle(PressableStyle())
     }
 
-    @ViewBuilder
     private func tile(_ index: Int) -> some View {
-        if index < photos.count {
-            PhotoThumbnail(photo: photos[index], square: false)
-        } else {
-            Color.secondary.opacity(0.12)
-        }
+        PhotoThumbnail(photo: photos[index], square: false)
     }
 }
