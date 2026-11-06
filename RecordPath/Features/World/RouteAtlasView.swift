@@ -243,12 +243,18 @@ struct RouteAtlasMap: UIViewRepresentable {
         func update(_ map: MKMapView, lines: [AtlasLine], kind: RouteKind) {
             let changed = lines.count != self.lines.count || lines.first?.start != self.lines.first?.start
                 || lines.last?.start != self.lines.last?.start || kind != self.kind
+            // A filter brings its own routes into view: a walk is invisible from a continent away,
+            // so on foot and by bike the map goes to the place with the most of them.
+            let refilter = framed && kind != self.kind && !lines.isEmpty
             self.lines = lines
             self.kind = kind
             if changed { countryCache = [:]; drawnKey = nil }
             if !framed, !lines.isEmpty {
                 framed = true
                 map.setVisibleMapRect(Self.framing(lines), edgePadding: UIEdgeInsets(top: 60, left: 30, bottom: 160, right: 30), animated: false)
+            } else if refilter {
+                let rect = kind == .onFoot || kind == .cycling ? Self.busiestPlace(lines) : Self.framing(lines)
+                map.setVisibleMapRect(rect, edgePadding: UIEdgeInsets(top: 60, left: 30, bottom: 160, right: 30), animated: true)
             }
             redraw(map)
         }
@@ -331,6 +337,23 @@ struct RouteAtlasMap: UIViewRepresentable {
         }
 
         /// Opens on where the person has been lately, not on all of it at once.
+        /// The routes in the roughly city-sized cell that holds the most of them.
+        private static func busiestPlace(_ lines: [AtlasLine]) -> MKMapRect {
+            let cells = Dictionary(grouping: lines) { line in
+                [Int(((line.box.minLat + line.box.maxLat) / 2).rounded()), Int(((line.box.minLon + line.box.maxLon) / 2).rounded())]
+            }
+            var rect = MKMapRect.null
+            for line in cells.values.max(by: { $0.count < $1.count }) ?? [] {
+                for corner in [CLLocationCoordinate2D(latitude: Double(line.box.minLat), longitude: Double(line.box.minLon)),
+                               CLLocationCoordinate2D(latitude: Double(line.box.maxLat), longitude: Double(line.box.maxLon))] {
+                    rect = rect.union(MKMapRect(origin: MKMapPoint(corner), size: MKMapSize(width: 0, height: 0)))
+                }
+            }
+            let minimum = 2_000 * MKMapPointsPerMeterAtLatitude(rect.origin.coordinate.latitude)
+            guard rect.width < minimum, rect.height < minimum else { return rect }
+            return MKMapRect(x: rect.midX - minimum / 2, y: rect.midY - minimum / 2, width: minimum, height: minimum)
+        }
+
         private static func framing(_ lines: [AtlasLine]) -> MKMapRect {
             let year = Date().addingTimeInterval(-365 * 86_400)
             let recent = lines.filter { $0.start >= year && $0.mode != .flying }
