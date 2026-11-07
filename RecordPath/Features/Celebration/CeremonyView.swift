@@ -23,6 +23,8 @@ struct CeremonyView: View {
                         PostcardCeremony(item: item, isLast: index == items.count - 1, next: advance)
                     } else if item.kind == .reunion {
                         ReunionCeremony(item: item, isLast: index == items.count - 1, next: advance)
+                    } else if item.kind == .blindBox {
+                        BlindBoxCeremony(item: item, isLast: index == items.count - 1, next: advance)
                     } else if let stamp = item.stamp {
                         StampCeremony(item: item, stamp: stamp, isLast: index == items.count - 1, next: advance)
                     } else {
@@ -109,7 +111,7 @@ private struct HoldToLight: ViewModifier {
     }
 }
 
-private extension View {
+extension View {
     func holdToLight(isLit: Bool, progress: Binding<CGFloat>, duration: Double = 1.4, lit: @escaping () -> Void) -> some View {
         modifier(HoldToLight(isLit: isLit, progress: progress, duration: duration, lit: lit))
     }
@@ -978,6 +980,71 @@ private struct InkSplash: View {
 
 /// Back somewhere after more than a year: how long it's been, counted up in front of you, and
 /// the visits before, as a line through time.
+/// The box's promise kept: the person got there. The ticket comes back out, and the postmark
+/// goes across it.
+private struct BlindBoxCeremony: View {
+    let item: Celebrations.Item
+    let isLast: Bool
+    let next: () -> Void
+
+    @State private var cover: UIImage?
+    @State private var shown = false
+    @State private var stamped = false
+
+    private var ticket: BlindBox.Ticket? { BlindBoxStore.shared.ticket(id: item.code) }
+    private var days: Int { BlindBoxDays.between(item.firstVisit ?? item.date, item.date) }
+
+    var body: some View {
+        ZStack {
+            GeometryReader { geo in
+                Group {
+                    if let cover {
+                        Image(uiImage: cover).resizable().scaledToFill().blur(radius: 14).brightness(-0.35)
+                    } else {
+                        Color.black
+                    }
+                }
+                .frame(width: geo.size.width, height: geo.size.height)
+                .clipped()
+            }
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+
+            VStack(spacing: 18) {
+                Spacer(minLength: 0)
+                Text("盲盒兑现").font(.footnote.weight(.bold)).tracking(6)
+                    .foregroundStyle(Color(red: 1, green: 0.82, blue: 0.5))
+                Text(days == 0 ? "刚拆开的盲盒，当天就走到了。" : "\(days) 天前，盲盒把这里交给了你。\n你真的来了。")
+                    .font(.system(.title3, design: .serif, weight: .semibold))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let ticket {
+                    BoardingPass(draw: ticket.draw, arrived: stamped ? item.date : nil)
+                        .scaleEffect(0.86)
+                        .padding(.vertical, -26)
+                } else {
+                    Text(verbatim: item.title).font(.system(size: 32, weight: .heavy)).multilineTextAlignment(.center)
+                }
+                Spacer(minLength: 0)
+                CeremonyActions(isLit: stamped, isLast: isLast, share: nil, next: next)
+                    .frame(height: 60)
+                    .padding(.bottom, 24)
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 24)
+            .opacity(shown ? 1 : 0)
+        }
+        .task {
+            if let id = ticket?.draw.place.mustSeeID { cover = await MustSeePhotos.cover(id) }
+            withAnimation(.easeOut(duration: 0.9)) { shown = true }
+            try? await Task.sleep(for: .seconds(1.3))
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.55)) { stamped = true }
+            UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        }
+    }
+}
+
 private struct ReunionCeremony: View {
     let item: Celebrations.Item
     let isLast: Bool

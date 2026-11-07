@@ -42,7 +42,9 @@ struct AssetThumbnail: View {
                 }
             }
             .clipShape(.rect(cornerRadius: side * 0.18, style: .continuous))
-            .task(id: asset.localIdentifier) {
+            // Asks again if the size settles later, so a tile laid out small doesn't stay blurry.
+            .task(id: "\(asset.localIdentifier)|\(side)") {
+                guard side > 0 else { return }
                 for await next in AssetLoader.images(for: asset, size: CGSize(width: side * scale, height: side * scale)) {
                     image = next
                 }

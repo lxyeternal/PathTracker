@@ -2877,6 +2877,1246 @@
         }
       }
     },
+    "周边一天": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A day nearby"
+          }
+        }
+      }
+    },
+    "一个周末": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A weekend"
+          }
+        }
+      }
+    },
+    "小长假": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A long weekend"
+          }
+        }
+      }
+    },
+    "长假": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A long break"
+          }
+        }
+      }
+    },
+    "当天来回": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There and back in a day"
+          }
+        }
+      }
+    },
+    "两天，不用走太远": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Two days, not too far"
+          }
+        }
+      }
+    },
+    "三到五天": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Three to five days"
+          }
+        }
+      }
+    },
+    "一周左右，走远一点": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About a week, further out"
+          }
+        }
+      }
+    },
+    "都行": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anything"
+          }
+        }
+      }
+    },
+    "放空": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Switch off"
+          }
+        }
+      }
+    },
+    "出点汗": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Work up a sweat"
+          }
+        }
+      }
+    },
+    "看老东西": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Old things"
+          }
+        }
+      }
+    },
+    "人间烟火": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Street life"
+          }
+        }
+      }
+    },
+    "这是你亲手收进想去清单的地方。它等你很久了。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You put this on your wish list yourself. It's been waiting."
+          }
+        }
+      }
+    },
+    "你的卡包里有一张%@签证，到%@都有效。别让它白白等着。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You have a %1$@ visa in your wallet, valid until %2$@. Don't let it sit there."
+          }
+        }
+      }
+    },
+    "你说想放空。这里有足够大的风景，装得下你的心事。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You wanted to switch off. There's enough scenery here to hold whatever's on your mind."
+          }
+        }
+      }
+    },
+    "你说想出点汗。走到这里，脑子就安静了。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You wanted to work up a sweat. By the time you get here, your head will be quiet."
+          }
+        }
+      }
+    },
+    "你想看老东西。这里的时间，比所有烦恼都长。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You wanted old things. Time here runs longer than any worry."
+          }
+        }
+      }
+    },
+    "你想要点人间烟火。那就去热闹里走走。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You wanted some street life. Go and walk through it."
+          }
+        }
+      }
+    },
+    "你说都行。那这次，就听盲盒的。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You said anything. So this time, the box decides."
+          }
+        }
+      }
+    },
+    "离你只有 %@，可你还从没来过。最近的远方，常常就在这里。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only %@ away, and you've never been. Far away is often this close."
+          }
+        }
+      }
+    },
+    "只有 %@，一个周末刚刚好。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only %@ away. Just right for a weekend."
+          }
+        }
+      }
+    },
+    "这里比你到过最远的地方，还要再远 %@。该刷新一下纪录了。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ further than you've ever been. Time for a new record."
+          }
+        }
+      }
+    },
+    "你点亮了 %lld 处地方，里面还没有一座山。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've lit %lld places, and not one is a mountain."
+          }
+        }
+      }
+    },
+    "你点亮了 %lld 处地方，里面还没有一片水。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've lit %lld places, and not one is by the water."
+          }
+        }
+      }
+    },
+    "你点亮了 %lld 处地方，里面还没有一处古迹。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've lit %lld places, and not one is a historic site."
+          }
+        }
+      }
+    },
+    "你点亮了 %lld 处地方，里面还没有一座城。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've lit %lld places, and not one is a city."
+          }
+        }
+      }
+    },
+    "你点亮了 %lld 处地方，里面还没有一片荒野。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've lit %lld places, and not one is wild."
+          }
+        }
+      }
+    },
+    "你点亮最多的是山。这一座，大概也会喜欢你。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've lit more mountains than anything. This one should suit you too."
+          }
+        }
+      }
+    },
+    "你点亮最多的是水。这里的水，你应该也会喜欢。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've lit more waters than anything. You should like these too."
+          }
+        }
+      }
+    },
+    "你点亮最多的是古迹。这一处，你应该也会喜欢。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've lit more historic sites than anything. You should like this one too."
+          }
+        }
+      }
+    },
+    "你点亮最多的是城市。这一座，你应该也会喜欢。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've lit more cities than anything. You should like this one too."
+          }
+        }
+      }
+    },
+    "你点亮最多的是荒野。这一片，你应该也会喜欢。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've lit more wild places than anything. You should like this one too."
+          }
+        }
+      }
+    },
+    "%@的必去之地，你一处都还没点亮。就从这里开始吧。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You haven't lit a single must-see in %@. Start here."
+          }
+        }
+      }
+    },
+    "没有理由。这就是盲盒。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No reason. That's what a blind box is."
+          }
+        }
+      }
+    },
+    "元旦": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Year's Day"
+          }
+        }
+      }
+    },
+    "春节": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spring Festival"
+          }
+        }
+      }
+    },
+    "清明": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qingming"
+          }
+        }
+      }
+    },
+    "五一": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "May Day"
+          }
+        }
+      }
+    },
+    "端午": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dragon Boat Festival"
+          }
+        }
+      }
+    },
+    "中秋": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mid-Autumn Festival"
+          }
+        }
+      }
+    },
+    "国庆": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "National Day"
+          }
+        }
+      }
+    },
+    "今天就是%@。出门走走吧，别辜负了。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's %@ today. Get outside and make the most of it."
+          }
+        }
+      }
+    },
+    "离%@还有 %lld 天。去哪儿，现在想正好。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%2$lld days to %1$@. Now's the time to think about where."
+          }
+        }
+      }
+    },
+    "今天有空。不如现在就出门。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're free today. Why not go now?"
+          }
+        }
+      }
+    },
+    "今天有点晚了，明天还来得及。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's a bit late today. Tomorrow's still open."
+          }
+        }
+      }
+    },
+    "这个周末快过完了。下一个，交给盲盒吧。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This weekend's nearly over. Leave the next one to the box."
+          }
+        }
+      }
+    },
+    "快到周末了。这次，别又在家躺过去。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The weekend's nearly here. Don't sleep through this one."
+          }
+        }
+      }
+    },
+    "还有 %lld 天到周末。先给自己留个念想。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld days to the weekend. Give yourself something to look forward to."
+          }
+        }
+      }
+    },
+    "从%@出发": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From %@"
+          }
+        }
+      }
+    },
+    "最好的时候": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Best time"
+          }
+        }
+      }
+    },
+    "已到达": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrived"
+          }
+        }
+      }
+    },
+    "现在出发就正好": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now's a good time to leave"
+          }
+        }
+      }
+    },
+    "今天还长，天黑前能回来": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There's plenty of day left. You'll be back before dark."
+          }
+        }
+      }
+    },
+    "%@ %@ 出发": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave %1$@ at %2$@"
+          }
+        }
+      }
+    },
+    "开车约 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About %@ by car"
+          }
+        }
+      }
+    },
+    "当天能回来": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can be back the same day"
+          }
+        }
+      }
+    },
+    "有点远，住一晚也不错": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A bit far. A night there would be nice too."
+          }
+        }
+      }
+    },
+    "你习惯早起，这个时间刚好": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're an early riser, so this should suit you"
+          }
+        }
+      }
+    },
+    "你是夜里才精神的人，不用起太早": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You come alive at night, so no need to rise early"
+          }
+        }
+      }
+    },
+    "不赶，吃完早饭再走": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No rush. Have breakfast first."
+          }
+        }
+      }
+    },
+    "可以这样走": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One way to do it"
+          }
+        }
+      }
+    },
+    "只是个建议。到了那里，想多待就多待。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Just a suggestion. Stay as long as you like."
+          }
+        }
+      }
+    },
+    "第 %lld–%lld 天": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Days %1$lld–%2$lld"
+          }
+        }
+      }
+    },
+    "可能有雨雪，带好伞。不想淋雨，再抽一次也行": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rain or snow is possible, so take cover. Or open another."
+          }
+        }
+      }
+    },
+    "是个适合出门的日子": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A good day to be out"
+          }
+        }
+      }
+    },
+    "旅行盲盒": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Travel Blind Box"
+          }
+        }
+      }
+    },
+    "你有多少时间": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How much time do you have?"
+          }
+        }
+      }
+    },
+    "想要什么感觉": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How do you want to feel?"
+          }
+        }
+      }
+    },
+    "盲盒": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blind box"
+          }
+        }
+      }
+    },
+    "长按拆开": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Press and hold to open"
+          }
+        }
+      }
+    },
+    "正在替你想…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thinking of somewhere…"
+          }
+        }
+      }
+    },
+    "长按拆开 · 今天还能拆 %lld 次": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Press and hold to open · %lld left today"
+          }
+        }
+      }
+    },
+    "今天的盒子拆完了，明天再来": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That's all for today. Come back tomorrow."
+          }
+        }
+      }
+    },
+    "这附近一天能到的地方，暂时没找到。换个长一点的时间试试。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't find anywhere a day away right now. Try a longer trip."
+          }
+        }
+      }
+    },
+    "两百处地方，你都走到了。接下来的路，你自己定。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've reached all two hundred. The rest of the road is yours to choose."
+          }
+        }
+      }
+    },
+    "收下这张登机牌": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep This Boarding Pass"
+          }
+        }
+      }
+    },
+    "看看这里": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See This Place"
+          }
+        }
+      }
+    },
+    "在地图里看看": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open in Maps"
+          }
+        }
+      }
+    },
+    "再抽一次（还有 %lld 次）": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Another (%lld left)"
+          }
+        }
+      }
+    },
+    "放回去": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Put It Back"
+          }
+        }
+      }
+    },
+    "出发前，请查看当地的入境要求、天气和安全提示。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Before you go, check local entry rules, weather and safety advice."
+          }
+        }
+      }
+    },
+    "收好了": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's yours"
+          }
+        }
+      }
+    },
+    "它不会过期，也不会催你。\n等你真的走到那里，漫迹会认出来。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It won't expire, and it won't nag you.\nWhen you really get there, Waytrace will know."
+          }
+        }
+      }
+    },
+    "你的登机牌": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Boarding Passes"
+          }
+        }
+      }
+    },
+    "当天就到了": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You got there the same day"
+          }
+        }
+      }
+    },
+    "%lld 天后，你到了这里": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You got here %lld days later"
+          }
+        }
+      }
+    },
+    "今天收下的": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kept today"
+          }
+        }
+      }
+    },
+    "还在等你 · 收下 %lld 天了": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Still waiting · kept %lld days ago"
+          }
+        }
+      }
+    },
+    "撕掉这张": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tear It Up"
+          }
+        }
+      }
+    },
+    "撕掉这张登机牌？": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tear up this boarding pass?"
+          }
+        }
+      }
+    },
+    "撕掉": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tear Up"
+          }
+        }
+      }
+    },
+    "没关系，想去的心情可以变。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That's fine. Where you want to go can change."
+          }
+        }
+      }
+    },
+    "不知道去哪儿？这次让它替你选。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Don't know where to go? Let it choose this time."
+          }
+        }
+      }
+    },
+    "有 %lld 张登机牌在等你": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld boarding passes waiting for you"
+          }
+        }
+      }
+    },
+    "盲盒兑现": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blind Box Fulfilled"
+          }
+        }
+      }
+    },
+    "刚拆开的盲盒，当天就走到了。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opened and reached in the same day."
+          }
+        }
+      }
+    },
+    "%lld 天前，盲盒把这里交给了你。\n你真的来了。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld days ago, the box gave you this place.\nAnd you really came."
+          }
+        }
+      }
+    },
+    "你收下的那张登机牌，今天用上了：%@。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The boarding pass you kept got used today: %@."
+          }
+        }
+      }
+    },
+    "绕着水边慢慢走一圈，不用赶。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Walk slowly around the water. No hurry."
+          }
+        }
+      }
+    },
+    "带块野餐垫，找片草地坐一下午。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bring a picnic blanket and give it the afternoon."
+          }
+        }
+      }
+    },
+    "日落前一小时到，水面最好看。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrive an hour before sunset, when the water looks its best."
+          }
+        }
+      }
+    },
+    "早点上山，人少，空气也好。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start early, while it's quiet and the air is fresh."
+          }
+        }
+      }
+    },
+    "不用登顶，走到舒服的地方就够了。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You don't need the summit. Stop wherever feels right."
+          }
+        }
+      }
+    },
+    "带点吃的，在山上吃什么都香。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bring food. Everything tastes better up there."
+          }
+        }
+      }
+    },
+    "手机调成静音，听一会儿风。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Silence your phone and listen to the wind for a while."
+          }
+        }
+      }
+    },
+    "穿双好走的鞋，往人少的地方多走几步。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wear good shoes and walk a little further than most people do."
+          }
+        }
+      }
+    },
+    "留到天黑，抬头看看星星。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stay until dark and look up at the stars."
+          }
+        }
+      }
+    },
+    "找个角落坐下，想想几百年前这里的人在做什么。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sit in a corner and imagine who was here centuries ago."
+          }
+        }
+      }
+    },
+    "别跳过讲解牌，一个小故事就够记很久。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read the signs. One small story can stay with you."
+          }
+        }
+      }
+    },
+    "早点到，或者晚点走，就能躲开人潮。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Come early or leave late to miss the crowds."
+          }
+        }
+      }
+    },
+    "先不看攻略，拐进第一条让你好奇的小巷。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forget the guide and turn down the first lane that makes you curious."
+          }
+        }
+      }
+    },
+    "问问路边的店家，他们自己常去哪家吃。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask a shopkeeper where they eat themselves."
+          }
+        }
+      }
+    },
+    "找家老店坐坐，看街上的人来人往。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sit in an old shop and watch the street go by."
+          }
+        }
+      }
+    },
+    "拍一张只有你知道在哪儿的照片。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take a photo only you could place."
+          }
+        }
+      }
+    },
+    "带一样这里才有的小东西回家。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bring home one small thing you can only get here."
+          }
+        }
+      }
+    },
+    "给很久没联系的人寄一张明信片。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send a postcard to someone you haven't spoken to in a while."
+          }
+        }
+      }
+    },
+    "记下今天听到的最有意思的一句话。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write down the best thing you hear today."
+          }
+        }
+      }
+    },
+    "吃一样你从没吃过的东西。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eat something you've never eaten."
+          }
+        }
+      }
+    },
+    "到了可以这样玩": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Once you're there"
+          }
+        }
+      }
+    },
+    "今天的小任务": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A small mission"
+          }
+        }
+      }
+    },
+    "出发前，看一眼当地的天气和开放时间。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Before you go, check the weather and opening hours."
+          }
+        }
+      }
+    },
+    "展开全部 %lld 张": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show all %lld"
+          }
+        }
+      }
+    },
+    "收起照片": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show less"
+          }
+        }
+      }
+    },
     "在这里拍的照片 %lld": {
       "localizations": {
         "en": {
@@ -8837,22 +10077,22 @@
         }
       }
     },
-    "你已经走到了哪里": {
+    "你的里程能走多远": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "How far you've come"
+            "value": "How far your distance would take you"
           }
         }
       }
     },
-    "你走完了%@": {
+    "相当于走完了%@": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You finished %@"
+            "value": "Enough to finish %@"
           }
         }
       }
@@ -9257,12 +10497,12 @@
         }
       }
     },
-    "你走到了%@": {
+    "相当于走到了%@": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You've reached %@"
+            "value": "Enough to reach %@"
           }
         }
       }
@@ -9277,12 +10517,12 @@
         }
       }
     },
-    "到达的站": {
+    "相当于第几站": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stops reached"
+            "value": "As far as stop"
           }
         }
       }
@@ -9297,22 +10537,42 @@
         }
       }
     },
-    "全程 %@ · %lld 站": {
+    "直线约 %@ · %lld 站": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ · %2$lld stops"
+            "value": "About %1$@ in straight lines · %2$lld stops"
           }
         }
       }
     },
-    "你在这里": {
+    "相当于走到这里": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You're here"
+            "value": "As far as here"
+          }
+        }
+      }
+    },
+    "按地面里程换算，不是你实际到过的地方": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Worked out from your ground distance, not places you've actually been"
+          }
+        }
+      }
+    },
+    "约 %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "~%@"
           }
         }
       }
@@ -9327,12 +10587,12 @@
         }
       }
     },
-    "你在地面上走过的路（不含飞行），按城市之间的直线距离铺在这条路上。": {
+    "这是一段虚拟旅程：你在地面上走过的路（不含飞行），按城市之间的直线距离铺在这条路上，不代表你真的到过这些地方。": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your ground travel (flights not included), laid along the road by the straight-line distance between towns."
+            "value": "This is a virtual journey: your ground travel (flights not included), laid along the road by the straight-line distance between towns. It doesn't mean you've been to these places."
           }
         }
       }
@@ -10217,12 +11477,12 @@
         }
       }
     },
-    "已到 %lld 站": {
+    "相当于到第 %lld 站": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld reached"
+            "value": "As far as stop %lld"
           }
         }
       }

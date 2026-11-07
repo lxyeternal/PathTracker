@@ -48,6 +48,11 @@ final class Notifier {
     /// (imports, iCloud sync, catching up after being offline) never notify or celebrate.
     func placeTagged(_ stay: Stay) {
         guard Date().timeIntervalSince(stay.arrival) < 6 * 3600, !stay.isFromPhotos else { return }
+        let visit = MustSee.Visit(latitude: stay.latitude, longitude: stay.longitude, arrival: stay.arrival, countryCode: stay.countryCode)
+        for ticket in BlindBoxStore.shared.settle(visits: stay.category == .airport ? [] : [visit]) where Setting.arrivals.isOn {
+            post(id: "blindBox.\(ticket.id)", title: String(localized: "盲盒兑现", bundle: .appLanguage),
+                 body: String(localized: "你收下的那张登机牌，今天用上了：\(ticket.draw.place.localizedName)。", bundle: .appLanguage))
+        }
         let id = stay.id
         let others = ((try? context.fetch(FetchDescriptor<Stay>(predicate: #Predicate { $0.id != id }))) ?? [])
             .filter { $0.tagState == .tagged }

@@ -272,16 +272,8 @@ struct StayDetailView: View {
     /// Photos from the library taken during the stay, before anything is posted.
     private var takenHere: some View {
         Section {
-            ScrollView(.horizontal) {
-                HStack(spacing: 6) {
-                    ForEach(photos.prefix(30), id: \.localIdentifier) { asset in
-                        Button { viewingAsset = AssetPagerStart(id: asset.localIdentifier) } label: { AssetThumbnail(asset: asset, side: 84) }
-                            .buttonStyle(PressableStyle())
-                    }
-                }
-            }
-            .scrollIndicators(.hidden)
-            .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
+            StayPhotoGrid(assets: photos) { viewingAsset = AssetPagerStart(id: $0.localIdentifier) }
+                .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
         } header: {
             Text("在这里拍的照片 \(photos.count)")
         }
@@ -363,5 +355,63 @@ enum UserMarkedSights {
 
     static func remove(_ stay: Stay) {
         all.removeAll { CLLocation(latitude: $0[0], longitude: $0[1]).distance(from: stay.location) <= KnownPlaces.radius }
+    }
+}
+
+/// The photos taken at a place: two rows to begin with, opening downward when there are more.
+private struct StayPhotoGrid: View {
+    let assets: [PHAsset]
+    let open: (PHAsset) -> Void
+    @State private var expanded = false
+
+    private static let columns = 4
+    private static let collapsedCount = columns * 2
+
+    private var shown: [PHAsset] { expanded ? assets : Array(assets.prefix(Self.collapsedCount)) }
+
+    var body: some View {
+        VStack(spacing: 10) {
+            // Plain rows, not a lazy grid: inside a Form row a lazy grid misjudges its height when it grows.
+            VStack(spacing: 6) {
+                ForEach(Array(stride(from: 0, to: shown.count, by: Self.columns)), id: \.self) { start in
+                    HStack(spacing: 6) {
+                        ForEach(start..<(start + Self.columns), id: \.self) { index in
+                            if index < shown.count {
+                                tile(shown[index])
+                            } else {
+                                Color.clear.aspectRatio(1, contentMode: .fit)
+                            }
+                        }
+                    }
+                }
+            }
+            if assets.count > Self.collapsedCount {
+                Button {
+                    withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) { expanded.toggle() }
+                } label: {
+                    HStack(spacing: 5) {
+                        Text(expanded ? String(localized: "收起照片", bundle: .appLanguage)
+                                      : String(localized: "展开全部 \(assets.count) 张", bundle: .appLanguage))
+                        Image(systemName: "chevron.down")
+                            .font(.caption.weight(.bold))
+                            .rotationEffect(.degrees(expanded ? 180 : 0))
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity, minHeight: 36)
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.borderless)
+                .sensoryFeedback(.selection, trigger: expanded)
+            }
+        }
+    }
+
+    private func tile(_ asset: PHAsset) -> some View {
+        Button { open(asset) } label: {
+            Color.clear
+                .aspectRatio(1, contentMode: .fit)
+                .overlay { GeometryReader { AssetThumbnail(asset: asset, side: $0.size.width) } }
+        }
+        .buttonStyle(PressableStyle())
     }
 }

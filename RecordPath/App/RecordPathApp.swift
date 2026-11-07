@@ -98,6 +98,9 @@ final class AppServices {
         }
         // Launched with -sampleVisas: a passport and a few visas, for the wallet's screenshots.
         if ProcessInfo.processInfo.arguments.contains("-sampleVisas") { TravelDocuments.shared.loadSamples() }
+        // Launched with -blindBoxSample: a kept ticket reached, to try the arrival.
+        if ProcessInfo.processInfo.arguments.contains("-blindBoxSample") { BlindBoxStore.shared.addSample() }
+        if ProcessInfo.processInfo.arguments.contains("-blindBoxReset") { BlindBoxStore.shared.resetToday() }
         // Followed by a kind ("province", "city", ...) for just that one.
         let arguments = ProcessInfo.processInfo.arguments
         if let flag = arguments.firstIndex(of: "-ceremonySamples") {

@@ -34,6 +34,8 @@ struct WorldView: View {
                         passportCard
                         NavigationLink(value: MustSeeRoute()) { MustSeeCard() }
                             .buttonStyle(PressableStyle())
+                        NavigationLink(value: BlindBoxRoute()) { BlindBoxCard() }
+                            .buttonStyle(PressableStyle())
                         mapCard
                         GalleryPreview()
                         if !insights.countries.isEmpty { countries }
@@ -70,6 +72,7 @@ struct WorldView: View {
             .navigationDestination(for: VisaWalletRoute.self) { _ in VisaWalletView() }
             .navigationDestination(for: GalleryRoute.self) { _ in GalleryView() }
             .navigationDestination(for: MustSeeRoute.self) { MustSeeView(list: $0.list) }
+            .navigationDestination(for: BlindBoxRoute.self) { _ in BlindBoxView() }
             .navigationDestination(for: Province.self) { ProvinceDetailView(province: $0) }
             .navigationDestination(for: CityStint.self) { CityStintView(stint: $0) }
             .navigationDestination(for: DayRoute.self) { DayPage(day: $0.day) }

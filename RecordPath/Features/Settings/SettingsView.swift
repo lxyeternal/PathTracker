@@ -454,6 +454,7 @@ struct SettingsView: View {
         engine.reloadAfterDataChange(discardPending: true)
         // What was worked out from the old data goes with it.
         Celebrations.shared.removeAll()
+        BlindBoxStore.shared.removeAll()
         notifier.forgetHistory()
         photoImportRun = 0
         DeletedPhotoVisits.clear()

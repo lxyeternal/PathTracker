@@ -3,8 +3,9 @@ import MapKit
 
 struct JourneyRoute: Hashable {}
 
-/// A famous road laid out stop by stop. The distance the person has travelled on the ground
-/// carries them along it, and every town they've "passed" lights up.
+/// A famous road laid out stop by stop. The journey along it is virtual: the distance the
+/// person has travelled on the ground, wherever that was, carries them along it, and every
+/// town it would have reached lights up.
 struct ClassicRoute: Identifiable, Hashable {
     struct Stop: Hashable {
         let name: String
@@ -334,7 +335,7 @@ struct JourneyRouteArt: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(route.localizedName).font(.system(size: 26, weight: .bold, design: .serif))
-                    Text("全程 \(Format.distance(route.length)) · \(route.stops.count) 站")
+                    Text("直线约 \(Format.distance(route.length)) · \(route.stops.count) 站")
                         .font(.caption.weight(.medium)).tracking(1).opacity(0.8)
                 }
                 Spacer()
@@ -356,7 +357,7 @@ struct JourneyRouteArt: View {
     }
 }
 
-/// "你已经走到了哪里", for the Stats tab.
+/// "你的里程能走多远", for the Stats tab.
 struct JourneyCard: View {
     let distance: Double
     let home: HomeBase?
@@ -369,9 +370,9 @@ struct JourneyCard: View {
             VStack(alignment: .leading, spacing: 14) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 5) {
-                        Text("你已经走到了哪里").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                        Text(progress.isComplete ? String(localized: "你走完了\(progress.route.localizedName)", bundle: .appLanguage)
-                                                 : String(localized: "你走到了\(progress.lastStop.localizedName)", bundle: .appLanguage))
+                        Text("你的里程能走多远").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                        Text(progress.isComplete ? String(localized: "相当于走完了\(progress.route.localizedName)", bundle: .appLanguage)
+                                                 : String(localized: "相当于走到了\(progress.lastStop.localizedName)", bundle: .appLanguage))
                             .font(.system(.title2, design: .serif, weight: .bold))
                             .foregroundStyle(.primary)
                         Text("沿着\(progress.route.localizedName)")
@@ -395,6 +396,8 @@ struct JourneyCard: View {
                     }
                 }
                 .font(.footnote).foregroundStyle(.secondary)
+                Text("按地面里程换算，不是你实际到过的地方")
+                    .font(.caption).foregroundStyle(.tertiary)
             }
             .padding(18)
             .background {
@@ -427,11 +430,11 @@ struct JourneyView: View {
                     .id(route.id)
                     .frame(height: 380)
                     .clipShape(.rect(cornerRadius: 28, style: .continuous))
+                Text("这是一段虚拟旅程：你在地面上走过的路（不含飞行），按城市之间的直线距离铺在这条路上，不代表你真的到过这些地方。")
+                    .font(.footnote).foregroundStyle(.secondary)
                 numbers(progress)
                 routePicker
                 JourneyStops(progress: progress)
-                Text("你在地面上走过的路（不含飞行），按城市之间的直线距离铺在这条路上。")
-                    .font(.footnote).foregroundStyle(.secondary)
             }
             .padding(.horizontal)
             .padding(.bottom, 32)
@@ -457,7 +460,7 @@ struct JourneyView: View {
             Divider().frame(height: 34)
             figure(progress.fraction.formatted(.percent.precision(.fractionLength(0)).locale(appLocale)), "完成")
             Divider().frame(height: 34)
-            figure("\(progress.lastStopIndex + 1) / \(route.stops.count)", "到达的站")
+            figure("\(progress.lastStopIndex + 1) / \(route.stops.count)", "相当于第几站")
         }
         .padding(.vertical, 14)
         .background(.background.secondary, in: .rect(cornerRadius: 20, style: .continuous))
