@@ -66,7 +66,9 @@
 关于耗电：后台持续使用定位会增加耗电，漫迹会在你静止时自动降低定位频率，你也可以在设置里随时暂停记录或选择省电模式。
 
 ### 此版本的新增内容 What's New（4000）
-漫迹的第一个版本。欢迎一起把走过的路记下来。
+新增“旅行盲盒”：不知道去哪儿，就拆一个。按你现在的位置、有多少时间和想要的感觉，给你一个还没去过的地方和一句理由。周边一天游会告诉你何时出发、天气如何；长一点的假期有行程建议；到了怎么玩，也替你想好了。
+
+另外，一个地方的照片多了可以折叠和展开，全部都能看到；“里程能走多远”的说法更清楚了；中英文显示更一致，还修了一些小问题。
 
 ---
 
@@ -122,7 +124,9 @@ Waytrace has no server of its own. Your tracks, places, trips and photos stay on
 About battery: continued use of location in the background can decrease battery life. Waytrace lowers the location rate when you're still, and you can pause recording or choose a power-saving mode at any time.
 
 ### What's New (4000)
-The first version of Waytrace. Here's to every road you take.
+New: the Travel Blind Box. Don't know where to go? Open one. Going by where you are, how much time you have and how you want to feel, it gives you a place you haven't been and a reason why. Days out come with when to leave and the weather; longer breaks get a suggested route; and there are ideas for what to do when you get there.
+
+Also: a place's photos now fold and unfold, and all of them can be seen; "how far your distance would take you" is clearer; English and Chinese are more consistent; and a few small fixes.
 
 ---
 

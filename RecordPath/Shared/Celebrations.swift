@@ -11,7 +11,7 @@ final class Celebrations {
     static let shared = Celebrations()
 
     struct Item: Codable, Identifiable, Equatable {
-        enum Kind: String, Codable { case country, province, city, sight, milestone, reunion, special, set, postcard }
+        enum Kind: String, Codable { case country, province, city, sight, milestone, reunion, special, set, postcard, blindBox }
 
         let id: String
         let kind: Kind
@@ -105,7 +105,7 @@ final class Celebrations {
 
     /// Bigger news first: countries, provinces, milestones, then cities; sights last.
     var ceremonies: [Item] {
-        let order: [Item.Kind] = [.postcard, .country, .set, .special, .province, .milestone, .city, .reunion]
+        let order: [Item.Kind] = [.blindBox, .postcard, .country, .set, .special, .province, .milestone, .city, .reunion]
         return pending.filter(\.isCeremony).sorted {
             (order.firstIndex(of: $0.kind) ?? 9, $0.date) < (order.firstIndex(of: $1.kind) ?? 9, $1.date)
         }

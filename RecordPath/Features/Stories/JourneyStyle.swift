@@ -138,7 +138,7 @@ struct RoutePosterCard: View {
                     .font(.system(.subheadline, design: .serif, weight: .bold))
                     .lineLimit(1).minimumScaleFactor(0.75)
                 HStack(spacing: 5) {
-                    Text(Format.distance(route.length))
+                    Text("约 \(Format.distance(route.length))")
                     Text(verbatim: "·")
                     if fraction >= 1 {
                         Image(systemName: "checkmark.seal.fill")
@@ -179,7 +179,7 @@ struct JourneyStops: View {
             HStack(alignment: .firstTextBaseline) {
                 Text("沿途 \(route.stops.count) 站").font(.system(.title3, design: .serif, weight: .bold))
                 Spacer()
-                Text("已到 \(progress.lastStopIndex + 1) 站").font(.subheadline).foregroundStyle(route.tint)
+                Text("相当于到第 \(progress.lastStopIndex + 1) 站").font(.subheadline).foregroundStyle(route.tint)
             }
             VStack(spacing: 0) {
                 ForEach(Array(route.stops.enumerated()), id: \.offset) { index, stop in
@@ -284,7 +284,7 @@ struct JourneyStops: View {
         let span = progress.nextStop == nil ? 1 : route.marks[index + 1] - route.marks[index]
         let along = progress.nextStop == nil ? 1 : (progress.shown - route.marks[index]) / max(span, 1)
         return VStack(alignment: .leading, spacing: 10) {
-            Text("你在这里").font(.caption.weight(.bold)).foregroundStyle(route.tint).tracking(1)
+            Text("相当于走到这里").font(.caption.weight(.bold)).foregroundStyle(route.tint).tracking(1)
             Text(stop.localizedName).font(.system(.title2, design: .serif, weight: .bold))
             Text(stop.localizedNote).font(.subheadline).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

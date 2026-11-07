@@ -41,6 +41,12 @@ struct RootView: View {
             }
         }
         .onChange(of: scenePhase, initial: true) { presentCeremonyIfDue() }
+        // Tickets kept from the blind box: photos and other devices can reach them too.
+        .task(id: PlaceSummaries.shared.revision) {
+            guard !BlindBoxStore.shared.waiting.isEmpty else { return }
+            BlindBoxStore.shared.settle(visits: PlaceSummaries.shared.stays.filter { $0.category != .airport }
+                .map { MustSee.Visit(latitude: $0.latitude, longitude: $0.longitude, arrival: $0.arrival, countryCode: $0.countryCode) })
+        }
         .onChange(of: celebrations.ceremonies.count) { presentCeremonyIfDue() }
         .onChange(of: showingSettings) { presentCeremonyIfDue() }
         // Someone's invitation to 平行足迹 was just accepted: offer to share back.
