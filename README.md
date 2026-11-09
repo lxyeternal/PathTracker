@@ -20,7 +20,11 @@
 </p>
 
 <p align="center">
-  🚀 <b>即将上线 App Store</b>：我们会尽快上架，供大家下载使用。
+  <a href="https://apps.apple.com/cn/app/id6827694426"><img src="https://img.shields.io/badge/App%20Store-%E5%85%8D%E8%B4%B9%E4%B8%8B%E8%BD%BD-0D96F6?style=for-the-badge&logo=appstore&logoColor=white" height="40" alt="在 App Store 下载"></a>
+</p>
+
+<p align="center">
+  已在 App Store 上架：iPhone 打开链接，或在 App Store 搜索 <b>「漫迹」</b>。免费，需要 iOS 26 或更新版本；Apple Watch 版随 iPhone 一起安装。
 </p>
 
 <p align="center">
@@ -28,10 +32,12 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/day.jpg" width="190" alt="一天的轨迹">
-  <img src="docs/images/timeline.jpg" width="190" alt="时间线">
-  <img src="docs/images/trip.jpg" width="190" alt="旅程">
-  <img src="docs/images/passport.jpg" width="190" alt="护照">
+  <a href="https://apps.apple.com/cn/app/id6827694426"><img src="AppStore/screenshots/zh-Hans/1.jpg" width="130" alt=""></a>
+  <a href="https://apps.apple.com/cn/app/id6827694426"><img src="AppStore/screenshots/zh-Hans/2.jpg" width="130" alt=""></a>
+  <a href="https://apps.apple.com/cn/app/id6827694426"><img src="AppStore/screenshots/zh-Hans/3.jpg" width="130" alt=""></a>
+  <a href="https://apps.apple.com/cn/app/id6827694426"><img src="AppStore/screenshots/zh-Hans/4.jpg" width="130" alt=""></a>
+  <a href="https://apps.apple.com/cn/app/id6827694426"><img src="AppStore/screenshots/zh-Hans/5.jpg" width="130" alt=""></a>
+  <a href="https://apps.apple.com/cn/app/id6827694426"><img src="AppStore/screenshots/zh-Hans/6.jpg" width="130" alt=""></a>
 </p>
 
 <p align="center">
