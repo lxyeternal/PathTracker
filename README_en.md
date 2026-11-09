@@ -48,6 +48,7 @@
   <a href="#-visa-wallet">Visa wallet</a> ·
   <a href="#-parallel-footprints">Parallel footprints</a> ·
   <a href="#-places-for-a-lifetime">Places for a lifetime</a> ·
+  <a href="#-travel-blind-box">Travel blind box</a> ·
   <a href="#-moments-that-make-you-pause">Moments</a> ·
   <a href="#-apple-watch">Apple Watch</a> ·
   <a href="#privacy">Privacy</a> ·
@@ -184,6 +185,31 @@ The photos are freely licensed works from Wikimedia Commons, shipped inside the 
 
 ---
 
+## 🎁 Travel blind box
+
+<p align="center">
+  <img src="docs/images/blind-box-en.jpg" width="190" alt="Choose your time and mood">
+  <img src="docs/images/blind-box-ticket-en.jpg" width="190" alt="The boarding pass inside">
+  <img src="docs/images/blind-box-plan-en.jpg" width="190" alt="A route and things to do">
+</p>
+
+Don't know where to go? Open one. Waytrace knows where you've been, where you haven't and where you'd like to go, so the box only ever gives you somewhere **you haven't been yet**. It's on the Places tab, under Places for a Lifetime.
+
+- **It knows what kind of day it is**: on a Saturday morning it's "You're free today. Why not go now?"; midweek it's "5 days to the weekend. Give yourself something to look forward to." When a Chinese public holiday is near (New Year, Spring Festival, Qingming, May Day, Dragon Boat, Mid-Autumn, National Day) it counts down to it and picks a fitting length for you.
+- **How much time you have**: a day nearby, a weekend, a long weekend (three to five days) or a long break (about a week, further out).
+- **How you want to feel**: anything, switch off, work up a sweat, old things, or city life.
+- **Press and hold to open**: the box shakes harder and harder, the phone shakes with it, the lid flies off and a boarding pass flips over. Three a day.
+- **A reason that's true**: it only says what your own footprints show, such as "You haven't lit a single must-see in Shanxi. Start here." or "You've lit 5 places, and not one is wild." Places on your wish list, and countries you hold a valid visa for, come up more often. Now and then it simply says: "No reason. That's what a blind box is."
+- **A day nearby**: Apple Maps finds hills, water, old towns and streets near you that you haven't been to, with a time to set off (earlier if you're an early riser), the drive, and that day's weather, with a word if it'll rain.
+- **Longer breaks**: a route that makes sense, such as "Days 1–2 Hukou Waterfall, Day 3 Mount Hua, Day 4 Terracotta Army", each stop with its best season. Just a suggestion; stay as long as you like.
+- **Once you're there**: two ideas and **a small mission**, like "Arrive an hour before sunset, when the water looks its best" or "Bring home one small thing you can only get here."
+- **Keep the boarding pass**: the place goes on your wish list. Passes never expire, and nothing nags you.
+- **When you really get there**: Waytrace knows, and stamps an arrival postmark: "73 days ago, the box gave you this place. And you really came."
+
+No payments, nothing social. Nearby places and weather are looked up with your rough location through Apple Maps and Apple Weather, and never leave Apple.
+
+---
+
 ## ✨ Moments that make you pause
 
 - **Back again**: return somewhere after more than a year and you're told gently, "you were last here on 12 April 2023", the days counting up, with your first visit, last visit and today in a line.
@@ -198,7 +224,6 @@ The photos are freely licensed works from Wikimedia Commons, shipped inside the 
 At the bottom of Stats, a set of cards about you:
 
 - **Traveller portrait**: from the past year, are you a night walker, a city collector or a curious explorer? With your own numbers, ready to share.
-- **Travel blind box**: don't know where to go? Open one. Going by where you are, how much time you have (a day nearby, a weekend, a long weekend or a long break), how you want to feel and what your footprints show, it gives you one place you haven't been and a true reason why. A day out comes with the weather and when to leave; longer trips get a suggested route; every one gets ideas for what to do there and a small mission. Kept boarding passes never expire, and when you really get there, Waytrace knows.
 - **How far you've come**: the distance you've travelled on the ground laid along the Grand Canal, China's Highway 318, the Silk Road or Route 66, lighting up each town you pass, each with a line about it.
 - **Firsts**: first time abroad, first night away, first time out at 3 a.m., first time in each city and at each place for a lifetime, year by year; and the ends of your map: furthest north, south, east, west and from home.
 - **Your year**: page by page like a story, with glowing city maps, a turning dotted globe, your longest day's route, a wall of photos and a page of **this year's passport**, ending in a poster to share.

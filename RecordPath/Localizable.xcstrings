@@ -3820,9 +3820,21 @@
     "有 %lld 张登机牌在等你": {
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld boarding passes waiting for you"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld boarding pass waiting for you"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld boarding passes waiting for you"
+                }
+              }
+            }
           }
         }
       }
