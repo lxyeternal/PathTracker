@@ -20,7 +20,11 @@
 </p>
 
 <p align="center">
-  🚀 <b>Coming soon to the App Store</b>: we'll have it there for everyone to download as soon as we can.
+  <a href="https://apps.apple.com/app/id6827694426"><img src="https://img.shields.io/badge/App%20Store-Download%20free-0D96F6?style=for-the-badge&logo=appstore&logoColor=white" height="40" alt="Download on the App Store"></a>
+</p>
+
+<p align="center">
+  Now on the App Store: open the link on your iPhone, or search for <b>“漫迹”</b> (the listing’s name) in the App Store. Free in China mainland, the US and Singapore; requires iOS 26 or later; the Apple Watch app installs along with it.
 </p>
 
 <p align="center">
@@ -28,10 +32,12 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/day.jpg" width="190" alt="A day's route">
-  <img src="docs/images/timeline.jpg" width="190" alt="Timeline">
-  <img src="docs/images/trip.jpg" width="190" alt="Trip">
-  <img src="docs/images/passport.jpg" width="190" alt="Passport">
+  <a href="https://apps.apple.com/app/id6827694426"><img src="AppStore/screenshots/en/1.jpg" width="130" alt=""></a>
+  <a href="https://apps.apple.com/app/id6827694426"><img src="AppStore/screenshots/en/2.jpg" width="130" alt=""></a>
+  <a href="https://apps.apple.com/app/id6827694426"><img src="AppStore/screenshots/en/3.jpg" width="130" alt=""></a>
+  <a href="https://apps.apple.com/app/id6827694426"><img src="AppStore/screenshots/en/4.jpg" width="130" alt=""></a>
+  <a href="https://apps.apple.com/app/id6827694426"><img src="AppStore/screenshots/en/5.jpg" width="130" alt=""></a>
+  <a href="https://apps.apple.com/app/id6827694426"><img src="AppStore/screenshots/en/6.jpg" width="130" alt=""></a>
 </p>
 
 <p align="center">
