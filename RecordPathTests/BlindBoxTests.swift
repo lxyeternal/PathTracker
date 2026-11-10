@@ -99,6 +99,15 @@ struct BlindBoxTests {
         for place in MustSee.world { #expect(!BlindBox.countries(of: place).isEmpty, Comment(rawValue: place.regionEn)) }
     }
 
+    @Test func aTicketKnowsWhichSideOfTheBorderItIs() throws {
+        #expect(BlindBox.countries(of: .init(try #require(BlindBox.mustSee(id: "forbidden-city")))) == ["CN"])
+        #expect(BlindBox.countries(of: .init(try #require(BlindBox.mustSee(id: "victoria-harbour")))) == ["HK"])
+        #expect(BlindBox.countries(of: .init(try #require(BlindBox.mustSee(id: "taipei-101")))) == ["TW"])
+        #expect(BlindBox.countries(of: .init(try #require(BlindBox.mustSee(id: "kyoto")))) == ["JP"])
+        let lake = BlindBox.Place(id: "nearby-lake", name: "Lake", region: "", latitude: 40.2, longitude: 116.4, kind: .water)
+        #expect(BlindBox.countries(of: lake).isEmpty)
+    }
+
     @Test func aLongerTripGetsStopsNearby() throws {
         let place = try #require(BlindBox.mustSee(id: "forbidden-city"))
         let stops = BlindBox.stops(around: .init(place), span: .holiday, context: .init())

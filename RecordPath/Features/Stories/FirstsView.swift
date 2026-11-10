@@ -1,4 +1,6 @@
 import SwiftUI
+import MapKit
+import Photos
 
 struct FirstsRoute: Hashable {}
 
@@ -9,10 +11,6 @@ extension LifeFirst.Kind {
         case .abroad, .country: Color(red: 0.88, green: 0.3, blue: 0.32)
         case .city: .indigo
         case .mustSee: .orange
-        case .flight: .purple
-        case .longWalk: .green
-        case .lateNight: Color(red: 0.25, green: 0.3, blue: 0.7)
-        case .nightAway: .teal
         }
     }
 
@@ -23,10 +21,6 @@ extension LifeFirst.Kind {
         case .country: String(localized: "新的国家", bundle: .appLanguage)
         case .city: String(localized: "新的城市", bundle: .appLanguage)
         case .mustSee: String(localized: "此生必去", bundle: .appLanguage)
-        case .flight: String(localized: "飞行", bundle: .appLanguage)
-        case .longWalk: String(localized: "走路", bundle: .appLanguage)
-        case .lateNight: String(localized: "深夜", bundle: .appLanguage)
-        case .nightAway: String(localized: "在外过夜", bundle: .appLanguage)
         }
     }
 }
@@ -155,7 +149,8 @@ struct FirstsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 26) {
+            // Lazy, so pictures are only looked for when their year comes into view.
+            LazyVStack(alignment: .leading, spacing: 26) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("第一次").font(.system(size: 40, weight: .bold, design: .serif))
                     Text("这些第一次，是你自己一步一步走出来的。").font(.subheadline).foregroundStyle(.secondary)
@@ -213,30 +208,81 @@ struct FirstsView: View {
                     Text(place).font(.footnote).foregroundStyle(.secondary).lineLimit(1)
                 }
             }
-            .padding(.trailing, first.mustSeeID == nil ? 0 : 64)
+            .padding(.trailing, 64)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14)
-            .overlay(alignment: .trailing) {
-                if let id = first.mustSeeID { FirstPhoto(id: id).padding(.trailing, 12) }
-            }
+            .overlay(alignment: .trailing) { FirstPicture(first: first).padding(.trailing, 12) }
             .background(.background.secondary, in: .rect(cornerRadius: 18, style: .continuous))
             .padding(.bottom, 10)
         }
     }
 }
 
-/// The small photograph of a place worth a lifetime, beside its first.
-private struct FirstPhoto: View {
-    let id: String
+/// The picture beside a first, so every one has one: the place's own photograph when it's
+/// worth a lifetime, otherwise a photo the person took there, otherwise the country's flag or
+/// a small map of the town.
+private struct FirstPicture: View {
+    let first: LifeFirst
     @State private var image: UIImage?
+    @State private var asset: PHAsset?
+    @Environment(\.colorScheme) private var colorScheme
+
+    private static let side: CGFloat = 56
+    private static let maps = NSCache<NSString, UIImage>()
+
+    private var isCountry: Bool { first.kind == .country || first.kind == .abroad }
 
     var body: some View {
         Group {
-            if let image { Image(uiImage: image).resizable().scaledToFill() } else { Color.secondary.opacity(0.1) }
+            if let asset {
+                AssetThumbnail(asset: asset, side: Self.side)
+            } else if let image {
+                Image(uiImage: image).resizable().scaledToFill()
+            } else if isCountry, let code = first.countryCode {
+                Text(verbatim: String.flag(for: code)).font(.system(size: 30))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(first.kind.tint.opacity(0.12))
+            } else {
+                Image(systemName: first.kind.symbol).font(.title3).foregroundStyle(first.kind.tint)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(first.kind.tint.opacity(0.12))
+            }
         }
-        .frame(width: 56, height: 56)
+        .frame(width: Self.side, height: Self.side)
         .clipShape(.rect(cornerRadius: 12, style: .continuous))
-        .task { image = await MustSeePhotos.thumb(id) }
+        .task(id: "\(first.id)|\(colorScheme == .dark)") {
+            if let id = first.mustSeeID {
+                image = await MustSeePhotos.thumb(id)
+                return
+            }
+            guard let latitude = first.latitude, let longitude = first.longitude else { return }
+            let location = CLLocation(latitude: latitude, longitude: longitude)
+            // A country is the days after landing, anywhere in it; a town is that day, in town.
+            let days: Double = isCountry ? 3 : 1
+            let interval = DateInterval(start: first.date.addingTimeInterval(-600),
+                                        end: max(first.until ?? first.date, first.date.addingTimeInterval(days * 86_400)))
+            if let found = PlacePhotos.cover(for: "first|\(first.id)", interval: interval, near: location, within: isCountry ? 400_000 : 40_000) {
+                asset = found
+            } else if !isCountry {
+                image = await Self.map(of: location.coordinate, dark: colorScheme == .dark)
+            }
+        }
+    }
+
+    /// The town from above, small.
+    private static func map(of coordinate: CLLocationCoordinate2D, dark: Bool) async -> UIImage? {
+        let key = String(format: "%.3f,%.3f,%d", coordinate.latitude, coordinate.longitude, dark ? 1 : 0) as NSString
+        if let cached = maps.object(forKey: key) { return cached }
+        let options = MKMapSnapshotter.Options()
+        options.region = MKCoordinateRegion(center: coordinate.onMap, latitudinalMeters: 6_000, longitudinalMeters: 6_000)
+        options.size = CGSize(width: side * 2, height: side * 2)
+        options.traitCollection = UITraitCollection(userInterfaceStyle: dark ? .dark : .light)
+        let configuration = MKStandardMapConfiguration(elevationStyle: .flat, emphasisStyle: .muted)
+        configuration.pointOfInterestFilter = .excludingAll
+        options.preferredConfiguration = configuration
+        guard let image = try? await MKMapSnapshotter(options: options).start().image else { return nil }
+        maps.setObject(image, forKey: key)
+        return image
     }
 }
 

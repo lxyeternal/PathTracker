@@ -174,6 +174,18 @@ struct AtlasLine: Sendable {
         self.init(mode: chunk.mode, start: chunk.startDate, distance: chunk.distance, levels: levels)
     }
 
+    /// A stretch not saved as a chunk yet: what's being recorded right now.
+    init?(points: [TrackPoint], mode: MovementMode) {
+        guard points.count > 1, let first = points.first else { return nil }
+        let levels = Self.tolerances.map { tolerance in
+            points.simplified(tolerance: tolerance).map { point -> SIMD2<Float> in
+                let c = point.coordinate.onMap
+                return SIMD2(Float(c.latitude), Float(c.longitude))
+            }
+        }
+        self.init(mode: mode, start: first.timestamp, distance: TrackPoint.distance(of: points), levels: levels)
+    }
+
     func coordinates(_ detail: Detail) -> [CLLocationCoordinate2D] {
         levels[detail.rawValue].map { CLLocationCoordinate2D(latitude: CLLocationDegrees($0.x), longitude: CLLocationDegrees($0.y)) }
     }

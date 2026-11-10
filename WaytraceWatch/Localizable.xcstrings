@@ -124,6 +124,16 @@
         }
       }
     },
+    "已暂停，点“继续记录”恢复": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paused. Tap Resume to carry on."
+          }
+        }
+      }
+    },
     "开始记录": {
       "localizations": {
         "en": {

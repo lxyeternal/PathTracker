@@ -4,8 +4,128 @@ import WeatherKit
 
 struct BlindBoxRoute: Hashable {}
 
-private let night = Color(red: 0.05, green: 0.06, blue: 0.13)
+private let night = Color(red: 0.05, green: 0.05, blue: 0.14)
 private let gold = LinearGradient(colors: [Color(red: 1, green: 0.88, blue: 0.55), Color(red: 1, green: 0.62, blue: 0.22)], startPoint: .top, endPoint: .bottom)
+/// The gold as one colour, for outlines and tints.
+private let amber = Color(red: 1, green: 0.76, blue: 0.40)
+
+// MARK: - The sky
+
+/// A night going warm towards the horizon, stars that twinkle, a violet glow high up and an
+/// amber one low down that brightens while the box is opening.
+private struct BlindBoxSky: View {
+    var glow: Double
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private struct Star { let x, y, size, phase: Double }
+
+    private static let stars: [Star] = {
+        var seed: UInt64 = 2026
+        func next() -> Double {
+            seed = seed &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
+            return Double(seed >> 11) / Double(1 << 53)
+        }
+        return (0..<90).map { _ in Star(x: next(), y: next() * 0.8, size: 0.6 + next() * 1.7, phase: next() * 2 * .pi) }
+    }()
+
+    var body: some View {
+        ZStack {
+            LinearGradient(colors: [Color(red: 0.03, green: 0.03, blue: 0.11), night, Color(red: 0.10, green: 0.06, blue: 0.20), Color(red: 0.20, green: 0.09, blue: 0.21)],
+                           startPoint: .top, endPoint: .bottom)
+            TimelineView(.animation(minimumInterval: 1 / 15, paused: reduceMotion)) { timeline in
+                let time = timeline.date.timeIntervalSinceReferenceDate
+                Canvas { context, size in
+                    for star in Self.stars {
+                        let twinkle = reduceMotion ? 0.6 : 0.35 + 0.65 * (0.5 + 0.5 * sin(time * 1.2 + star.phase))
+                        let rect = CGRect(x: star.x * size.width, y: star.y * size.height, width: star.size, height: star.size)
+                        context.fill(Path(ellipseIn: rect), with: .color(.white.opacity(0.75 * twinkle)))
+                    }
+                }
+            }
+            GeometryReader { geo in
+                Ellipse()
+                    .fill(Color(red: 0.46, green: 0.32, blue: 0.98).opacity(0.24))
+                    .frame(width: geo.size.width * 1.1, height: 300)
+                    .blur(radius: 90)
+                    .position(x: geo.size.width * 0.2, y: geo.size.height * 0.08)
+                Ellipse()
+                    .fill(Color(red: 1, green: 0.55, blue: 0.28).opacity(0.12 + glow * 0.28))
+                    .frame(width: geo.size.width * 1.3, height: 340)
+                    .blur(radius: 110)
+                    .position(x: geo.size.width * 0.7, y: geo.size.height * 0.95)
+            }
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .animation(.easeInOut(duration: 0.8), value: glow)
+    }
+}
+
+/// Chips that wrap onto the next line instead of running off the side.
+private struct WrappingLayout: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? .infinity
+        var x: CGFloat = 0, y: CGFloat = 0, row: CGFloat = 0, widest: CGFloat = 0
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x > 0, x + size.width > width {
+                y += row + spacing
+                x = 0
+                row = 0
+            }
+            x += size.width + spacing
+            row = max(row, size.height)
+            widest = max(widest, x - spacing)
+        }
+        return CGSize(width: proposal.width ?? widest, height: y + row)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX, y = bounds.minY, row: CGFloat = 0
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x > bounds.minX, x + size.width > bounds.maxX {
+                y += row + spacing
+                x = bounds.minX
+                row = 0
+            }
+            subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
+            x += size.width + spacing
+            row = max(row, size.height)
+        }
+    }
+}
+
+/// Gold sparks thrown out of the ticket as it turns over.
+private struct RevealBurst: View {
+    let start: Date
+    private static let length = 1.6
+
+    var body: some View {
+        TimelineView(.animation(paused: Date().timeIntervalSince(start) > Self.length)) { timeline in
+            let time = timeline.date.timeIntervalSince(start)
+            Canvas { context, size in
+                guard time < Self.length else { return }
+                let center = CGPoint(x: size.width / 2, y: size.height * 0.32)
+                let fade = max(0, 1 - time / Self.length)
+                for index in 0..<34 {
+                    let angle = Double(index) / 34 * 2 * .pi + Double(index % 3) * 0.17
+                    let speed = 150 + Double((index * 37) % 120)
+                    let distance = speed * time * (1 - time / 3.4)
+                    let point = CGPoint(x: center.x + cos(angle) * distance, y: center.y + sin(angle) * distance + 60 * time * time)
+                    let size = 2 + Double(index % 4) * 1.2
+                    let rect = CGRect(x: point.x - size / 2, y: point.y - size / 2, width: size, height: size)
+                    let colour = index % 5 == 0 ? Color.white : Color(red: 1, green: 0.82 - Double(index % 3) * 0.08, blue: 0.45)
+                    context.fill(index % 2 == 0 ? Path(ellipseIn: rect) : Path(roundedRect: rect, cornerRadius: 1), with: .color(colour.opacity(fade)))
+                }
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
 
 // MARK: - What's around the person
 
@@ -364,16 +484,18 @@ private struct BlindBoxPlanView: View {
     private var portrait: TravellerPortrait { PlaceSummaries.shared.portrait }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            if draw.span == .day { dayOut } else { daysAway }
-            if let forecast = plan.forecast { weather(forecast) }
-            Divider().overlay(.white.opacity(0.15))
-            playIdeas
+        VStack(spacing: 12) {
+            card {
+                if draw.span == .day { dayOut } else { daysAway }
+                if let forecast = plan.forecast {
+                    Divider().overlay(.white.opacity(0.12))
+                    weather(forecast)
+                }
+            }
+            card { playIdeas }
+            mission
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, alignment: .leading)
         .foregroundStyle(.white)
-        .background(.white.opacity(0.08), in: .rect(cornerRadius: 22, style: .continuous))
         .task(id: draw.id) {
             if draw.span == .day, let here { plan.drive = await BlindBoxPlanner.drive(from: here, to: draw.place) }
             if let day = BlindBoxPlanner.tripDay(for: draw.span) {
@@ -383,25 +505,58 @@ private struct BlindBoxPlanView: View {
         }
     }
 
-    /// What to do once there: a little useful, and one small mission for the fun of it.
+    private func card(@ViewBuilder _ content: () -> some View) -> some View {
+        VStack(alignment: .leading, spacing: 14, content: content)
+            .padding(18)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(.white.opacity(0.07), in: .rect(cornerRadius: 22, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(.white.opacity(0.08), lineWidth: 1))
+    }
+
+    private func heading(_ title: LocalizedStringKey, _ symbol: String) -> some View {
+        Label { Text(title) } icon: { Image(systemName: symbol).foregroundStyle(gold) }
+            .font(.subheadline.weight(.bold))
+    }
+
+    /// What to do once there: a little useful.
     private var playIdeas: some View {
         let ideas = BlindBoxIdeas.ideas(for: draw.place)
-        return VStack(alignment: .leading, spacing: 10) {
-            Text("到了可以这样玩").font(.subheadline.weight(.bold))
+        return VStack(alignment: .leading, spacing: 12) {
+            heading("到了可以这样玩", "sparkles")
             ForEach(ideas.tips, id: \.self) { tip in
-                HStack(alignment: .firstTextBaseline, spacing: 10) {
-                    Image(systemName: "leaf.fill").font(.caption2).foregroundStyle(gold).frame(width: 22)
-                    Text(verbatim: tip).font(.subheadline).foregroundStyle(.white.opacity(0.85)).fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Image(systemName: "flag.fill").font(.caption2).foregroundStyle(gold).frame(width: 22)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("今天的小任务").font(.caption.weight(.bold)).foregroundStyle(gold)
-                    Text(verbatim: ideas.mission).font(.subheadline.weight(.medium)).fixedSize(horizontal: false, vertical: true)
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: draw.place.placeKind.symbol)
+                        .font(.caption.weight(.semibold)).foregroundStyle(amber)
+                        .frame(width: 28, height: 28)
+                        .background(amber.opacity(0.14), in: .circle)
+                    Text(verbatim: tip).font(.subheadline).foregroundStyle(.white.opacity(0.88))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 4)
                 }
             }
         }
+    }
+
+    /// One small thing to do there, for the fun of it, set apart like a note tucked in the ticket.
+    private var mission: some View {
+        let ideas = BlindBoxIdeas.ideas(for: draw.place)
+        let title: LocalizedStringKey = draw.span == .day ? "今天的小任务" : "这一趟的小任务"
+        return HStack(alignment: .top, spacing: 14) {
+            Image(systemName: "flag.fill")
+                .font(.subheadline.weight(.bold)).foregroundStyle(night)
+                .frame(width: 36, height: 36)
+                .background(gold, in: .circle)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.caption.weight(.bold)).foregroundStyle(amber)
+                Text(verbatim: ideas.mission)
+                    .font(.system(.body, design: .serif, weight: .semibold))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(18)
+        .background(amber.opacity(0.08), in: .rect(cornerRadius: 22, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(amber.opacity(0.55), style: StrokeStyle(lineWidth: 1.2, dash: [6, 5])))
     }
 
     private var dayOut: some View {
@@ -412,7 +567,8 @@ private struct BlindBoxPlanView: View {
         let calendar = Calendar.current
         let now = calendar.component(.hour, from: .now) * 60 + calendar.component(.minute, from: .now)
         let underway = calendar.isDateInToday(day) && now >= minutes
-        return VStack(alignment: .leading, spacing: 10) {
+        return VStack(alignment: .leading, spacing: 14) {
+            heading("怎么去", "map.fill")
             if underway {
                 row("clock.fill", String(localized: "现在出发就正好", bundle: .appLanguage), detail: String(localized: "今天还长，天黑前能回来", bundle: .appLanguage))
             } else {
@@ -435,18 +591,36 @@ private struct BlindBoxPlanView: View {
     private var daysAway: some View {
         let places = [draw.place] + draw.stops.compactMap(BlindBox.mustSee(id:)).map(BlindBox.Place.init)
         let ranges = BlindBox.itinerary(days: draw.span.days, places: places.count)
-        return VStack(alignment: .leading, spacing: 12) {
-            Text("可以这样走").font(.subheadline.weight(.bold))
-            ForEach(Array(zip(places, ranges)), id: \.0.id) { place, range in
-                HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    Text(verbatim: label(range))
-                        .font(.caption.weight(.bold)).foregroundStyle(gold)
-                        .frame(width: 66, alignment: .leading)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(verbatim: place.localizedName).font(.subheadline.weight(.semibold))
-                        if let season = place.mustSeeID.flatMap(MustSee.story)?.localizedSeason {
-                            Text(verbatim: season).font(.caption).foregroundStyle(.white.opacity(0.6))
+        let stops = Array(zip(places, ranges))
+        return VStack(alignment: .leading, spacing: 14) {
+            heading("可以这样走", "point.bottomleft.forward.to.point.topright.scurvepath.fill")
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(stops.enumerated()), id: \.element.0.id) { index, stop in
+                    let (place, range) = stop
+                    let last = index == stops.count - 1
+                    HStack(alignment: .top, spacing: 14) {
+                        // A dot for each stop, joined by the road between them.
+                        VStack(spacing: 0) {
+                            Circle()
+                                .fill(index == 0 ? AnyShapeStyle(gold) : AnyShapeStyle(night))
+                                .overlay(Circle().strokeBorder(amber, lineWidth: 2))
+                                .frame(width: 14, height: 14)
+                                .padding(.top, 3)
+                            if !last {
+                                Rectangle().fill(amber.opacity(0.35)).frame(width: 2).frame(maxHeight: .infinity)
+                            }
                         }
+                        .frame(width: 14)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(verbatim: label(range))
+                                .font(.caption2.weight(.heavy)).foregroundStyle(amber)
+                            Text(verbatim: place.localizedName).font(.body.weight(.semibold))
+                            if let season = place.mustSeeID.flatMap(MustSee.story)?.localizedSeason {
+                                Text(verbatim: season).font(.caption).foregroundStyle(.white.opacity(0.6))
+                            }
+                        }
+                        .padding(.bottom, last ? 0 : 18)
+                        Spacer(minLength: 0)
                     }
                 }
             }
@@ -461,20 +635,26 @@ private struct BlindBoxPlanView: View {
     }
 
     private func row(_ symbol: String, _ title: String, detail: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Image(systemName: symbol).font(.subheadline).foregroundStyle(gold).frame(width: 22)
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: symbol)
+                .font(.caption.weight(.semibold)).foregroundStyle(amber)
+                .frame(width: 28, height: 28)
+                .background(amber.opacity(0.14), in: .circle)
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: title).font(.subheadline.weight(.semibold))
                 Text(verbatim: detail).font(.caption).foregroundStyle(.white.opacity(0.6))
             }
+            .padding(.top, 2)
         }
     }
 
     private func weather(_ forecast: BlindBoxPlanner.Forecast) -> some View {
         let date = forecast.date.formatted(.dateTime.month().day().weekday().locale(appLocale))
         return VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline, spacing: 12) {
-                Image(systemName: forecast.symbol).symbolRenderingMode(.multicolor).frame(width: 22)
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: forecast.symbol).symbolRenderingMode(.multicolor)
+                    .frame(width: 28, height: 28)
+                    .background(.white.opacity(0.1), in: .circle)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(verbatim: "\(date) · \(temperature(forecast.low)) – \(temperature(forecast.high))").font(.subheadline.weight(.semibold))
                     Text(forecast.isWet ? "可能有雨雪，带好伞。不想淋雨，再抽一次也行" : "是个适合出门的日子")
@@ -519,6 +699,8 @@ struct BlindBoxView: View {
     @State private var nothing: LocalizedStringKey?
     @State private var viewing: BlindBox.Ticket?
     @State private var here: CLLocation?
+    @State private var burst: Date?
+    @State private var floating = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private static let holdDuration = 1.2
@@ -539,7 +721,7 @@ struct BlindBoxView: View {
             .padding(.bottom, 40)
         }
         .scrollIndicators(.hidden)
-        .background(night.ignoresSafeArea())
+        .background { BlindBoxSky(glow: phase == .opening ? 1 : holdProgress) }
         .navigationTitle("旅行盲盒")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.dark, for: .navigationBar)
@@ -565,45 +747,60 @@ struct BlindBoxView: View {
 
     private var chooser: some View {
         VStack(spacing: 20) {
-            Text(verbatim: moment.line)
-                .font(.system(.title2, design: .serif, weight: .bold))
-                .foregroundStyle(.white)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 8)
-                .frame(maxWidth: .infinity)
+            VStack(spacing: 8) {
+                Text(verbatim: Date.now.formatted(.dateTime.month().day().weekday(.wide).locale(appLocale)))
+                    .font(.caption.weight(.bold)).tracking(1.5)
+                    .foregroundStyle(amber)
+                Text(verbatim: moment.line)
+                    .font(.system(.title2, design: .serif, weight: .bold))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.top, 4)
+            .frame(maxWidth: .infinity)
             spanPicker
             moodPicker
             box
         }
     }
 
+    private func section(_ title: LocalizedStringKey) -> some View {
+        Text(title).font(.footnote.weight(.semibold)).foregroundStyle(.white.opacity(0.6))
+    }
+
+    /// Chosen: a gold outline and a warm tint. The solid gold is kept for the one thing to press.
+    private func choice(_ selected: Bool, in shape: some InsettableShape) -> some View {
+        shape.fill(selected ? amber.opacity(0.16) : .white.opacity(0.06))
+            .overlay(shape.strokeBorder(selected ? amber : .white.opacity(0.08), lineWidth: selected ? 1.5 : 1))
+    }
+
     private var spanPicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("你有多少时间").font(.subheadline.weight(.semibold)).foregroundStyle(.white.opacity(0.7))
+            section("你有多少时间")
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                 ForEach(BlindBox.Span.allCases) { option in
+                    let selected = option == span
                     Button {
                         withAnimation(.snappy) { span = option; nothing = nil }
                     } label: {
                         HStack(spacing: 10) {
-                            Image(systemName: option.symbol).font(.body).frame(width: 22)
-                                .foregroundStyle(option == span ? AnyShapeStyle(.black) : AnyShapeStyle(gold))
+                            Image(systemName: option.symbol).font(.body)
+                                .foregroundStyle(selected ? AnyShapeStyle(gold) : AnyShapeStyle(.white.opacity(0.55)))
+                                .frame(width: 24)
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(verbatim: option.title).font(.subheadline.weight(.semibold))
-                                Text(verbatim: option.detail).font(.caption2).opacity(0.7).lineLimit(1).minimumScaleFactor(0.8)
+                                Text(verbatim: option.title).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
+                                    .lineLimit(1).minimumScaleFactor(0.75)
+                                Text(verbatim: option.detail).font(.caption2).foregroundStyle(.white.opacity(selected ? 0.75 : 0.5))
+                                    .lineLimit(1).minimumScaleFactor(0.8)
                             }
                             Spacer(minLength: 0)
                         }
-                        .foregroundStyle(option == span ? .black : .white)
-                        .padding(.horizontal, 12).padding(.vertical, 10)
-                        .background {
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(option == span ? AnyShapeStyle(gold) : AnyShapeStyle(.white.opacity(0.08)))
-                        }
+                        .padding(.horizontal, 12).padding(.vertical, 11)
+                        .background { choice(selected, in: RoundedRectangle(cornerRadius: 16, style: .continuous)) }
                     }
                     .buttonStyle(PressableStyle())
-                    .accessibilityAddTraits(option == span ? .isSelected : [])
+                    .accessibilityAddTraits(selected ? .isSelected : [])
                 }
             }
         }
@@ -612,38 +809,60 @@ struct BlindBoxView: View {
 
     private var moodPicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("想要什么感觉").font(.subheadline.weight(.semibold)).foregroundStyle(.white.opacity(0.7))
-            ScrollView(.horizontal) {
-                HStack(spacing: 8) {
-                    ForEach(BlindBox.Mood.allCases) { option in
-                        Button {
-                            withAnimation(.snappy) { moodRaw = option.rawValue; nothing = nil }
-                        } label: {
-                            Label(option.title, systemImage: option.symbol)
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(option == mood ? .black : .white)
-                                .padding(.horizontal, 13).padding(.vertical, 8)
-                                .background(option == mood ? AnyShapeStyle(gold) : AnyShapeStyle(.white.opacity(0.08)), in: .capsule)
+            section("想要什么感觉")
+            WrappingLayout(spacing: 8) {
+                ForEach(BlindBox.Mood.allCases) { option in
+                    let selected = option == mood
+                    Button {
+                        withAnimation(.snappy) { moodRaw = option.rawValue; nothing = nil }
+                    } label: {
+                        Label {
+                            Text(verbatim: option.title).foregroundStyle(.white)
+                        } icon: {
+                            Image(systemName: option.symbol)
+                                .foregroundStyle(selected ? AnyShapeStyle(gold) : AnyShapeStyle(.white.opacity(0.55)))
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityAddTraits(option == mood ? .isSelected : [])
+                        .font(.subheadline.weight(.medium))
+                        .padding(.horizontal, 13).padding(.vertical, 8)
+                        .background { choice(selected, in: Capsule()) }
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(selected ? .isSelected : [])
                 }
             }
-            .scrollIndicators(.hidden)
-            .scrollClipDisabled()
         }
         .sensoryFeedback(.selection, trigger: moodRaw)
     }
 
     private var box: some View {
         let canOpen = store.remainingToday > 0
-        return VStack(spacing: 6) {
-            TimelineView(.animation(paused: holdStart == nil && phase != .opening)) { timeline in
-                let amount = shake(at: timeline.date)
-                MysteryBox(open: lidOpen, glow: phase == .opening ? 1 : amount)
-                    .rotationEffect(.degrees(reduceMotion ? 0 : sin(timeline.date.timeIntervalSinceReferenceDate * 48) * amount * 5))
-                    .scaleEffect(1 + amount * 0.06)
+        return VStack(spacing: 14) {
+            ZStack {
+                // How far the hold has got, drawn round the box.
+                Circle().strokeBorder(.white.opacity(0.06), lineWidth: 1).frame(width: 214, height: 214)
+                Circle()
+                    .trim(from: 0, to: holdProgress)
+                    .stroke(gold, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .frame(width: 211, height: 211)
+                    .opacity(phase == .choosing ? 1 : 0)
+                Ellipse()
+                    .fill(.black.opacity(0.45))
+                    .frame(width: floating ? 120 : 140, height: 16)
+                    .blur(radius: 7)
+                    .offset(y: 92)
+                TimelineView(.animation(paused: holdStart == nil && phase != .opening)) { timeline in
+                    let amount = shake(at: timeline.date)
+                    MysteryBox(open: lidOpen, glow: phase == .opening ? 1 : max(amount, 0.25))
+                        .rotationEffect(.degrees(reduceMotion ? 0 : sin(timeline.date.timeIntervalSinceReferenceDate * 48) * amount * 5))
+                        .scaleEffect(1 + amount * 0.06)
+                }
+                .offset(y: floating && holdStart == nil && phase == .choosing ? -8 : 0)
+            }
+            .frame(height: 224)
+            .onAppear {
+                guard !reduceMotion else { return }
+                withAnimation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) { floating = true }
             }
             .contentShape(.rect)
             .holdToLight(isLit: !canOpen || phase != .choosing, progress: $holdProgress, duration: Self.holdDuration) { open() }
@@ -655,13 +874,34 @@ struct BlindBoxView: View {
             .accessibilityAction { if canOpen, phase == .choosing { open() } }
 
             if let nothing {
-                Text(nothing).font(.subheadline).foregroundStyle(.white.opacity(0.8)).multilineTextAlignment(.center)
+                Text(nothing).font(.subheadline).foregroundStyle(.white.opacity(0.85)).multilineTextAlignment(.center)
+                    .padding(.horizontal, 18).padding(.vertical, 12)
+                    .background(.white.opacity(0.07), in: .rect(cornerRadius: 16, style: .continuous))
             } else if phase == .opening {
                 Text("正在替你想…").font(.subheadline).foregroundStyle(.white.opacity(0.7))
             } else if canOpen {
-                Text("长按拆开 · 今天还能拆 \(store.remainingToday) 次").font(.subheadline).foregroundStyle(.white.opacity(0.7)).monospacedDigit()
+                VStack(spacing: 10) {
+                    Label("长按拆开", systemImage: "hand.tap.fill")
+                        .font(.subheadline.weight(.semibold)).foregroundStyle(.white)
+                        .padding(.horizontal, 16).padding(.vertical, 9)
+                        .background(.white.opacity(0.1), in: .capsule)
+                        .overlay(Capsule().strokeBorder(.white.opacity(0.1), lineWidth: 1))
+                    HStack(spacing: 6) {
+                        ForEach(0..<BlindBoxStore.dailyLimit, id: \.self) { index in
+                            Capsule()
+                                .fill(index < store.remainingToday ? AnyShapeStyle(gold) : AnyShapeStyle(.white.opacity(0.15)))
+                                .frame(width: 16, height: 4)
+                        }
+                        Text("今天还能拆 \(store.remainingToday) 次")
+                            .font(.caption).foregroundStyle(.white.opacity(0.55)).monospacedDigit()
+                            .padding(.leading, 4)
+                    }
+                }
             } else {
-                Text("今天的盒子拆完了，明天再来").font(.subheadline).foregroundStyle(.white.opacity(0.7))
+                VStack(spacing: 4) {
+                    Image(systemName: "moon.stars.fill").font(.title3).foregroundStyle(gold)
+                    Text("今天的盒子拆完了，明天再来").font(.subheadline).foregroundStyle(.white.opacity(0.75))
+                }
             }
         }
     }
@@ -702,6 +942,7 @@ struct BlindBoxView: View {
             }
             try? await Task.sleep(for: .seconds(0.7))
             UINotificationFeedbackGenerator().notificationOccurred(.success)
+            if !reduceMotion { burst = .now }
             withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.75, dampingFraction: 0.78)) { flipped = true }
         }
     }
@@ -749,18 +990,26 @@ struct BlindBoxView: View {
                 .opacity(flipped ? 0 : 1)
                 .rotation3DEffect(.degrees(flipped ? 180 : 0), axis: (0, 1, 0), perspective: 0.5)
         }
+        .overlay {
+            if let burst { RevealBurst(start: burst).padding(-60) }
+        }
     }
 
+    /// The back of the ticket: same notches, a starry envelope, nothing given away.
     private var sealed: some View {
-        RoundedRectangle(cornerRadius: 22, style: .continuous)
-            .fill(LinearGradient(colors: [Color(red: 0.30, green: 0.22, blue: 0.56), Color(red: 0.12, green: 0.10, blue: 0.30)], startPoint: .topLeading, endPoint: .bottomTrailing))
-            .frame(height: 380)
+        LinearGradient(colors: [Color(red: 0.32, green: 0.23, blue: 0.60), Color(red: 0.12, green: 0.10, blue: 0.30)], startPoint: .topLeading, endPoint: .bottomTrailing)
+            .frame(height: 400)
             .overlay {
-                VStack(spacing: 12) {
+                VStack(spacing: 14) {
                     Image(systemName: "sparkle").font(.system(size: 54, weight: .bold)).foregroundStyle(gold)
-                    Text(verbatim: "WAYTRACE").font(.caption.weight(.heavy)).tracking(4).foregroundStyle(.white.opacity(0.6))
+                    Text(verbatim: "WAYTRACE").font(.caption.weight(.heavy)).tracking(5).foregroundStyle(.white.opacity(0.7))
+                    Text(verbatim: "BOARDING PASS").font(.caption2.weight(.semibold)).tracking(3).foregroundStyle(.white.opacity(0.4))
                 }
             }
+            .overlay(alignment: .bottom) {
+                Rectangle().fill(.white.opacity(0.18)).frame(height: 1).padding(.horizontal, 18).padding(.bottom, 138)
+            }
+            .clipShape(BoardingPassShape(tear: 262), style: FillStyle(eoFill: true))
     }
 
     private func decision(_ draw: BlindBox.Draw) -> some View {
@@ -779,28 +1028,44 @@ struct BlindBoxView: View {
             .buttonStyle(PressableStyle())
             HStack(spacing: 10) {
                 if let must = draw.place.mustSee {
-                    NavigationLink { MustSeePlaceView(place: must) } label: { secondary("看看这里") }
+                    NavigationLink { MustSeePlaceView(place: must) } label: { secondary("看看这里", "info.circle") }
                 } else {
-                    Button { openInMaps(draw.place) } label: { secondary("在地图里看看") }
+                    Button { BlindBoxView.directions(to: draw.place) } label: { secondary("导航过去", "arrow.triangle.turn.up.right.diamond") }
                 }
                 Button {
                     store.putBack()
                     lidOpen = 0
                     holdProgress = 0
+                    burst = nil
                     withAnimation(.smooth) { phase = .choosing }
                 } label: {
-                    secondary(left > 0 ? "再抽一次（还有 \(left) 次）" : "放回去")
+                    if left > 0 {
+                        secondary("再抽一次（还有 \(left) 次）", "arrow.clockwise")
+                    } else {
+                        secondary("放回去", "arrow.uturn.backward")
+                    }
                 }
             }
             .buttonStyle(PressableStyle())
         }
     }
 
-    private func secondary(_ title: LocalizedStringKey) -> some View {
-        Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
-            .lineLimit(1).minimumScaleFactor(0.75)
-            .frame(maxWidth: .infinity).frame(height: 46)
-            .background(.white.opacity(0.1), in: .capsule)
+    private func secondary(_ title: LocalizedStringKey, _ symbol: String) -> some View {
+        Label(title, systemImage: symbol)
+            .font(.subheadline.weight(.semibold)).foregroundStyle(.white)
+            .lineLimit(1).minimumScaleFactor(0.7)
+            .padding(.horizontal, 10)
+            .frame(maxWidth: .infinity).frame(height: 48)
+            .background(.white.opacity(0.08), in: .capsule)
+            .overlay(Capsule().strokeBorder(.white.opacity(0.1), lineWidth: 1))
+    }
+
+    /// Entry rules only when there's a border to cross from where the person is.
+    private func crossesBorder(_ draw: BlindBox.Draw) -> Bool {
+        let there = BlindBox.countries(of: draw.place)
+        guard !there.isEmpty else { return false }
+        guard let home = summaries.stays.first(where: { !$0.isFromPhotos })?.countryCode ?? summaries.home?.countryCode else { return true }
+        return !there.contains(home)
     }
 
     private func footnote(_ draw: BlindBox.Draw) -> some View {
@@ -811,22 +1076,23 @@ struct BlindBoxView: View {
                 }
                 .font(.caption2).foregroundStyle(.white.opacity(0.4))
             }
-            if draw.span == .day {
-                Text("出发前，看一眼当地的天气和开放时间。")
+            if crossesBorder(draw) {
+                Text("出发前，请查看当地的入境要求、天气和安全提示。")
                     .font(.caption2).foregroundStyle(.white.opacity(0.4))
             } else {
-                Text("出发前，请查看当地的入境要求、天气和安全提示。")
+                Text("出发前，看一眼当地的天气和开放时间。")
                     .font(.caption2).foregroundStyle(.white.opacity(0.4))
             }
         }
         .multilineTextAlignment(.center)
     }
 
-    private func openInMaps(_ place: BlindBox.Place) {
+    /// Apple Maps, with the route from here already asked for.
+    static func directions(to place: BlindBox.Place) {
         let coordinate = place.mapCoordinate
         let item = MKMapItem(location: CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude), address: nil)
         item.name = place.localizedName
-        item.openInMaps()
+        item.openInMaps(launchOptions: [MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDefault])
     }
 
     // MARK: Kept
@@ -837,19 +1103,27 @@ struct BlindBoxView: View {
                 .scaleEffect(0.86)
                 .padding(.vertical, -24)
             VStack(spacing: 8) {
-                Text("收好了").font(.system(.title2, design: .serif, weight: .bold)).foregroundStyle(gold)
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: 34)).foregroundStyle(gold)
+                    .symbolEffect(.bounce, options: .nonRepeating, value: draw.id)
+                Text("收好了").font(.system(.title2, design: .serif, weight: .bold)).foregroundStyle(.white)
                 Text("它不会过期，也不会催你。\n等你真的走到那里，漫迹会认出来。")
                     .font(.subheadline).foregroundStyle(.white.opacity(0.75))
                     .multilineTextAlignment(.center)
+                if draw.place.mustSee != nil {
+                    Label("也放进了此生必去的“想去”", systemImage: "heart.fill")
+                        .font(.caption.weight(.medium)).foregroundStyle(amber)
+                        .padding(.top, 4)
+                }
             }
-            Button {
-                lidOpen = 0
-                holdProgress = 0
-                withAnimation(.smooth) { phase = .choosing }
-            } label: {
-                Text("好").font(.headline).foregroundStyle(.white)
-                    .frame(maxWidth: .infinity).frame(height: 50)
-                    .background(.white.opacity(0.12), in: .capsule)
+            HStack(spacing: 10) {
+                Button { BlindBoxView.directions(to: draw.place) } label: { secondary("导航过去", "arrow.triangle.turn.up.right.diamond") }
+                Button {
+                    lidOpen = 0
+                    holdProgress = 0
+                    burst = nil
+                    withAnimation(.smooth) { phase = .choosing }
+                } label: { secondary("好", "checkmark") }
             }
             .buttonStyle(PressableStyle())
         }
@@ -859,19 +1133,33 @@ struct BlindBoxView: View {
     // MARK: Kept tickets
 
     private var ticketList: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 14) {
             Text("你的登机牌").font(.system(.title3, design: .serif, weight: .bold)).foregroundStyle(.white)
-            VStack(spacing: 0) {
-                let all = store.waiting + store.arrived
-                ForEach(all) { ticket in
-                    Button { viewing = ticket } label: { ticketRow(ticket) }
-                        .buttonStyle(.plain)
-                    if ticket.id != all.last?.id { Divider().padding(.leading, 80) }
-                }
-            }
-            .background(.white.opacity(0.08), in: .rect(cornerRadius: 22, style: .continuous))
+            if !store.waiting.isEmpty { tickets(store.waiting, title: "在等你") }
+            if !store.arrived.isEmpty { tickets(store.arrived, title: "已经到了") }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 10)
+    }
+
+    private func tickets(_ list: [BlindBox.Ticket], title: LocalizedStringKey) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                section(title)
+                Text(verbatim: "\(list.count)").font(.caption2.weight(.bold)).foregroundStyle(.white.opacity(0.5))
+                    .padding(.horizontal, 6).padding(.vertical, 1)
+                    .background(.white.opacity(0.1), in: .capsule)
+            }
+            VStack(spacing: 0) {
+                ForEach(list) { ticket in
+                    Button { viewing = ticket } label: { ticketRow(ticket) }
+                        .buttonStyle(.plain)
+                    if ticket.id != list.last?.id { Divider().overlay(.white.opacity(0.06)).padding(.leading, 82) }
+                }
+            }
+            .background(.white.opacity(0.07), in: .rect(cornerRadius: 22, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(.white.opacity(0.08), lineWidth: 1))
+        }
     }
 
     private func ticketRow(_ ticket: BlindBox.Ticket) -> some View {
@@ -885,9 +1173,11 @@ struct BlindBoxView: View {
                     .frame(width: 54, height: 54)
                     .background(.white.opacity(0.1), in: .rect(cornerRadius: 12, style: .continuous))
             }
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(verbatim: place.localizedName).font(.body.weight(.semibold)).foregroundStyle(.white)
-                Text(verbatim: status(ticket)).font(.caption).foregroundStyle(ticket.arrived != nil ? AnyShapeStyle(gold) : AnyShapeStyle(.white.opacity(0.6)))
+                Label(ticket.draw.span.title, systemImage: ticket.draw.span.symbol)
+                    .font(.caption2.weight(.semibold)).foregroundStyle(.white.opacity(0.5))
+                Text(verbatim: status(ticket)).font(.caption).foregroundStyle(ticket.arrived != nil ? AnyShapeStyle(gold) : AnyShapeStyle(.white.opacity(0.65)))
             }
             Spacer(minLength: 0)
             Image(systemName: "chevron.forward").font(.footnote.weight(.semibold)).foregroundStyle(.white.opacity(0.35))
@@ -927,27 +1217,31 @@ private struct TicketSheet: View {
             ScrollView {
                 VStack(spacing: 18) {
                     BoardingPass(draw: ticket.draw, arrived: ticket.arrived)
-                    if ticket.arrived == nil { BlindBoxPlanView(draw: ticket.draw, here: here) }
+                    if ticket.arrived == nil {
+                        Button { BlindBoxView.directions(to: place) } label: {
+                            Label("导航过去", systemImage: "arrow.triangle.turn.up.right.diamond.fill")
+                                .font(.headline).foregroundStyle(night)
+                                .frame(maxWidth: .infinity).frame(height: 54)
+                                .background(gold, in: .capsule)
+                        }
+                        .buttonStyle(PressableStyle())
+                    }
                     HStack(spacing: 10) {
                         if let must = place.mustSee {
-                            NavigationLink { MustSeePlaceView(place: must) } label: { action("看看这里") }
-                        } else {
-                            Button {
-                                let coordinate = place.mapCoordinate
-                                let item = MKMapItem(location: CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude), address: nil)
-                                item.name = place.localizedName
-                                item.openInMaps()
-                            } label: { action("在地图里看看") }
+                            NavigationLink { MustSeePlaceView(place: must) } label: { action("看看这里", "info.circle") }
+                        } else if ticket.arrived != nil {
+                            Button { BlindBoxView.directions(to: place) } label: { action("在地图里看看", "map") }
                         }
                         if ticket.arrived == nil {
-                            Button { confirming = true } label: { action("撕掉这张") }
+                            Button { confirming = true } label: { action("撕掉这张", "scissors") }
                         }
                     }
                     .buttonStyle(PressableStyle())
+                    if ticket.arrived == nil { BlindBoxPlanView(draw: ticket.draw, here: here) }
                 }
                 .padding()
             }
-            .background(night.ignoresSafeArea())
+            .background { BlindBoxSky(glow: 0.2) }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("关闭", systemImage: "xmark") { dismiss() }
@@ -965,10 +1259,12 @@ private struct TicketSheet: View {
         .environment(\.colorScheme, .dark)
     }
 
-    private func action(_ title: LocalizedStringKey) -> some View {
-        Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
-            .frame(maxWidth: .infinity).frame(height: 46)
-            .background(.white.opacity(0.1), in: .capsule)
+    private func action(_ title: LocalizedStringKey, _ symbol: String) -> some View {
+        Label(title, systemImage: symbol)
+            .font(.subheadline.weight(.semibold)).foregroundStyle(.white)
+            .frame(maxWidth: .infinity).frame(height: 48)
+            .background(.white.opacity(0.08), in: .capsule)
+            .overlay(Capsule().strokeBorder(.white.opacity(0.1), lineWidth: 1))
     }
 }
 

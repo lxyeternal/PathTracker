@@ -49,14 +49,20 @@ struct TodaySheet: View {
                 Button("继续记录", systemImage: "play.fill") { link.resume() }
                     .tint(.green)
             } else if snapshot.isEnabled {
-                Button("暂停 1 小时", systemImage: "pause.fill") { link.pause(until: Date().addingTimeInterval(3600)) }
+                Button("暂停", systemImage: "pause.fill") { link.pause(until: .distantFuture) }
+                Button("暂停 1 小时", systemImage: "clock") { link.pause(until: Date().addingTimeInterval(3600)) }
                 Button("暂停到明天", systemImage: "moon.fill") { link.pause(until: Self.tomorrowMorning) }
             }
         } header: {
             Text("iPhone 全天记录")
         } footer: {
             if let until = snapshot.pausedUntil {
-                Text("暂停到 \(Format.time(until))")
+                // A pause with no end is sent as a date far in the future.
+                if until.timeIntervalSinceNow > 50 * 365 * 86_400 {
+                    Text("已暂停，点“继续记录”恢复")
+                } else {
+                    Text("暂停到 \(Format.time(until))")
+                }
             } else if !snapshot.isEnabled {
                 Text("已在 iPhone 上关闭")
             }

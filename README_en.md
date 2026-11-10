@@ -68,6 +68,7 @@
 | | |
 |---|---|
 | **Two ways to record** | **All day**, so every outing has its route; or **only when you ask**, using location only after you press Start, with no "Always" permission needed. Switch any time in Settings. |
+| **Pause any time** | One tap pauses until you tap Resume, or let it come back by itself in an hour, three hours or tomorrow morning. While paused, or in manual-only mode when nothing is being recorded, location isn't used at all and the location arrow doesn't stay on screen. |
 | **How you got there** | The iPhone's motion coprocessor and your speed tell walking, running, cycling, driving and flying apart, each drawn in its own colour. A subway ride with no signal is filled in from the phone's own motion history and drawn dashed. |
 | **Where you were** | A few minutes in one place becomes a stay, named as the shop, sight, city and country it is. |
 | **Easy on the battery** | Location sleeps while the phone is still. After ten minutes in one place GPS turns off entirely, replaced by a 150 m geofence that wakes it when you leave. |
@@ -95,7 +96,7 @@
 - **Countries and regions**: filter by continent (All · Asia · Europe…), search, and sort by days, most recent or earliest, so a long list never means endless scrolling.
 - **Country pages**: the country outlined (the app draws no borders for mainland China, Hong Kong, Macao or Taiwan), each city you visited a glow of light, then the country's entry stamps and every city's stamp.
 - **Every visit**: grouped as runs of days in one city. A long history shows a year at a time, with a twelve-month bar chart on top; tap a month to jump to it.
-- **Every road**: switch All Places to Routes and every road you've travelled lies on one night map. Streets you take every day glow brighter with each pass; a one-off detour is a faint stroke. Filter by year or by walking, cycling, driving and flying, with the distance and days totted up below. Years of tracks are drawn at three levels of detail, so the map still pans smoothly.
+- **Every road**: tap Every Road on the Stats tab, or switch All Places to Routes, and every road you've travelled lies on one night map. Streets you take every day glow brighter with each pass; a one-off detour is a faint stroke. See today, this week, this month, this year, everything or an earlier year, and filter by walking, cycling, driving and flying. The stretch being recorded right now is drawn too, with the distance and days totted up below. Years of tracks are drawn at three levels of detail, so the map still pans smoothly.
 
 <p align="center">
   <img src="docs/images/places.jpg" width="190" alt="Places">
@@ -225,7 +226,7 @@ At the bottom of Stats, a set of cards about you:
 
 - **Traveller portrait**: from the past year, are you a night walker, a city collector or a curious explorer? With your own numbers, ready to share.
 - **How far you've come**: the distance you've travelled on the ground laid along the Grand Canal, China's Highway 318, the Silk Road or Route 66, lighting up each town you pass, each with a line about it.
-- **Firsts**: first time abroad, first night away, first time out at 3 a.m., first time in each city and at each place for a lifetime, year by year; and the ends of your map: furthest north, south, east, west and from home.
+- **Firsts**: first time abroad, first time in each country, each city and at each place for a lifetime, year by year, each with a picture: your own photo from there when you have one, otherwise the flag or a small map. Only firsts about places: a history found in photos can't know your first flight or first night away. And the ends of your map: furthest north, south, east, west and from home.
 - **Your year**: page by page like a story, with glowing city maps, a turning dotted globe, your longest day's route, a wall of photos and a page of **this year's passport**, ending in a poster to share.
 
 <p align="center">

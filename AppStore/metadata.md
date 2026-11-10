@@ -66,9 +66,15 @@
 关于耗电：后台持续使用定位会增加耗电，漫迹会在你静止时自动降低定位频率，你也可以在设置里随时暂停记录或选择省电模式。
 
 ### 此版本的新增内容 What's New（4000）
-新增“旅行盲盒”：不知道去哪儿，就拆一个。按你现在的位置、有多少时间和想要的感觉，给你一个还没去过的地方和一句理由。周边一天游会告诉你何时出发、天气如何；长一点的假期有行程建议；到了怎么玩，也替你想好了。
+走过的路，现在能按时间看了：在“统计”页打开“走过的路”，今天、本周、本月、今年或全部，所有轨迹叠在一张地图上，常走的路越叠越亮。
 
-另外，一个地方的照片多了可以折叠和展开，全部都能看到；“里程能走多远”的说法更清楚了；中英文显示更一致，还修了一些小问题。
+暂停更简单：点一下就暂停，直到你点“继续”；也可以让它 1 小时后、3 小时后或明天早上自己恢复。暂停和“仅手动”时不再使用定位，定位图标也不会留在屏幕上。
+
+“第一次”只留下和地方有关的：第一次到一个国家、一座城市、一处此生必去。每一条都配了图，优先用你自己在那里拍的照片。
+
+旅行盲盒换了新的样子：一片会闪的夜空，行程画成一条路线，周边的地方可以直接导航过去。
+
+后台记录更省电，英文显示也修了一些小问题。
 
 ---
 
@@ -124,9 +130,15 @@ Waytrace has no server of its own. Your tracks, places, trips and photos stay on
 About battery: continued use of location in the background can decrease battery life. Waytrace lowers the location rate when you're still, and you can pause recording or choose a power-saving mode at any time.
 
 ### What's New (4000)
-New: the Travel Blind Box. Don't know where to go? Open one. Going by where you are, how much time you have and how you want to feel, it gives you a place you haven't been and a reason why. Days out come with when to leave and the weather; longer breaks get a suggested route; and there are ideas for what to do when you get there.
+Every road, by time: open Every Road on the Stats tab to see today's, this week's, this month's, this year's or all of your routes on one map. The roads you take most glow brightest.
 
-Also: a place's photos now fold and unfold, and all of them can be seen; "how far your distance would take you" is clearer; English and Chinese are more consistent; and a few small fixes.
+Pausing is simpler: one tap pauses until you tap Resume, or let it come back by itself in an hour, three hours or tomorrow morning. While paused, or in manual-only mode, location isn't used and the location arrow no longer stays on screen.
+
+Firsts are now only about places: your first time in a country, a city or a place for a lifetime. Each has a picture, your own photo from there when you have one.
+
+The Travel Blind Box has a new look: a night sky that twinkles, trips drawn as a route, and directions to places nearby.
+
+Recording in the background uses less battery, and a few small fixes in English.
 
 ---
 

@@ -47,9 +47,12 @@ final class LocationEngine {
     }
 
     /// All-day recording is paused until this moment, e.g. for an hour at a private place.
+    /// `.distantFuture` is a pause with no end: it lasts until the person resumes.
     private(set) var pausedUntil: Date?
 
     var isPaused: Bool { pausedUntil.map { $0 > Date() } ?? false }
+    /// Paused with no time set to come back.
+    var isPausedIndefinitely: Bool { pausedUntil == .distantFuture }
 
     /// Whether location is being recorded right now, automatically or manually.
     var isRecording: Bool { (isEnabled && !isPaused) || activeTripID != nil }
@@ -145,7 +148,9 @@ final class LocationEngine {
         pendingPoints = PendingTrackStore.load()
         restoreOpenStay()
         validateActiveTrip()
-        if isRecording { start() }
+        // Not recording: nothing may be left watching from an earlier run, or the location
+        // arrow stays in the status bar with the app doing nothing.
+        if isRecording { start() } else { releaseLocation() }
     }
 
     // MARK: Permissions
@@ -245,14 +250,22 @@ final class LocationEngine {
             backgroundSession?.invalidate()
             backgroundSession = nil
         }
-        manager.stopMonitoringVisits()
-        // While paused, keep the cheap significant-change wake-ups so recording can resume on time.
-        if !isPaused { manager.stopMonitoringSignificantLocationChanges() }
+        releaseLocation()
         flushChunk(carryOver: false)
         if let openStay { close(openStay, at: Date()) }
         anchor = nil
         dwellTask?.cancel()
         activity = .off
+    }
+
+    /// Lets go of everything that watches where the phone is: visits, significant changes and
+    /// the stay geofence, including ones registered by an earlier run of the app. iOS shows its
+    /// location arrow for as long as any of them is on, so a pause or "manual only" that kept
+    /// one looked like recording that never stopped.
+    private func releaseLocation() {
+        manager.stopMonitoringVisits()
+        manager.stopMonitoringSignificantLocationChanges()
+        updateFence(around: nil)
     }
 
     private func restart() {
@@ -294,12 +307,15 @@ final class LocationEngine {
 
     // MARK: Pause
 
-    func pause(until date: Date) {
-        Diagnostics.record("pause until=\(date.formatted(.iso8601))")
+    /// Pauses all-day recording until `date`, or with no date until the person resumes.
+    func pause(until date: Date? = nil) {
+        // Far enough off to mean "until I say so", however it was sent (the Watch sends a date).
+        let date = date.flatMap { $0.timeIntervalSinceNow < 50 * 365 * 86_400 ? $0 : nil } ?? .distantFuture
+        Diagnostics.record(date == .distantFuture ? "pause until resumed" : "pause until=\(date.formatted(.iso8601))")
         pausedUntil = date
         UserDefaults.standard.set(date, forKey: Keys.pausedUntil)
-        // The background session goes too: while it lives, iOS keeps the location indicator
-        // in the Dynamic Island, which reads as "still recording" during a pause.
+        // Everything goes, the background session and the wake-ups alike: while any of them
+        // lives iOS keeps its location indicator up, which reads as "still recording".
         if activeTripID == nil { stop() }
         schedulePauseEnd()
         Self.remindWhenPauseEnds(at: date)
@@ -310,7 +326,8 @@ final class LocationEngine {
     private static func remindWhenPauseEnds(at date: Date) {
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: ["pause.end"])
-        guard date.timeIntervalSinceNow > 60 else { return }
+        // A pause with no end has nothing to remind about.
+        guard date != .distantFuture, date.timeIntervalSinceNow > 60 else { return }
         let content = UNMutableNotificationContent()
         content.title = String(localized: "暂停结束了", bundle: .appLanguage)
         content.body = String(localized: "打开漫迹，继续记录你的足迹。", bundle: .appLanguage)
@@ -330,11 +347,11 @@ final class LocationEngine {
         if isRecording, updatesTask == nil || !usesLiveUpdates { start() }
     }
 
-    /// Resumes when the pause ends while the app is running; otherwise the next wake-up
-    /// (a significant location change or opening the app) notices and resumes.
+    /// Resumes when the pause ends while the app is running; otherwise opening the app (the
+    /// reminder asks for that) notices and resumes. Nothing watches the location meanwhile.
     private func schedulePauseEnd() {
         resumeTask?.cancel()
-        guard let pausedUntil else { return }
+        guard let pausedUntil, pausedUntil != .distantFuture else { return }
         resumeTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(max(0, pausedUntil.timeIntervalSinceNow)))
             guard !Task.isCancelled else { return }
@@ -589,7 +606,8 @@ final class LocationEngine {
 
     // MARK: Battery saver
 
-    /// Significant-change locations: wake-ups while paused, and a rough path in battery mode.
+    /// Significant-change locations: a rough path in battery mode, and a second way to notice
+    /// leaving a settled stay.
     private func handleCoarse(_ locations: [CLLocation]) {
         if let last = locations.last { Diagnostics.record("significantChange \(Diagnostics.describe(last))") }
         if pausedUntil != nil, !isPaused { resume() }

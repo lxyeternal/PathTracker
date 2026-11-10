@@ -1,24 +1,94 @@
 import SwiftUI
 import MapKit
 
+/// Which stretch of time the atlas shows: today's roads, this week's, this month's, a year's
+/// or all of them.
+enum RouteSpan: Hashable {
+    case today, week, month, year, all
+    case past(Int)
+
+    static let quick: [RouteSpan] = [.today, .week, .month, .year, .all]
+
+    var title: String {
+        switch self {
+        case .today: String(localized: "今天", bundle: .appLanguage)
+        case .week: String(localized: "本周", bundle: .appLanguage)
+        case .month: String(localized: "本月", bundle: .appLanguage)
+        case .year: String(localized: "今年", bundle: .appLanguage)
+        // Its own key: "全部" elsewhere is a button that reads "See All".
+        case .all: String(localized: "route.span.all", defaultValue: "全部", bundle: .appLanguage)
+        case let .past(year): "\(year)"
+        }
+    }
+
+    /// The days it covers; nil for all of them.
+    func interval(now: Date = .now, calendar: Calendar = .current) -> DateInterval? {
+        switch self {
+        case .today: calendar.dateInterval(of: .day, for: now)
+        case .week: calendar.dateInterval(of: .weekOfYear, for: now)
+        case .month: calendar.dateInterval(of: .month, for: now)
+        case .year: calendar.dateInterval(of: .year, for: now)
+        case .all: nil
+        case let .past(year):
+            calendar.date(from: DateComponents(year: year)).flatMap { calendar.dateInterval(of: .year, for: $0) }
+        }
+    }
+
+    /// A few days' roads fit on the screen whole; years of them open on where life mostly is.
+    var fitsWhole: Bool {
+        switch self {
+        case .today, .week, .month: true
+        case .year, .all, .past: false
+        }
+    }
+}
+
+/// The atlas as a screen of its own, for opening from anywhere.
+struct RouteAtlasScreen: View {
+    var span: RouteSpan = .all
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            RouteAtlasView(span: span)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbarBackground(.hidden, for: .navigationBar)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("关闭", systemImage: "xmark") { dismiss() }
+                    }
+                    ToolbarItem(placement: .principal) {
+                        Text("走过的路").font(.headline).foregroundStyle(.white)
+                    }
+                }
+                .toolbarColorScheme(.dark, for: .navigationBar)
+        }
+    }
+}
+
 /// Every road ever travelled on one night map. The lines are faint on their own and brighten
 /// where they overlap, so the streets walked every day glow and a one-off detour is a whisper.
 struct RouteAtlasView: View {
     private var atlas = RouteAtlas.shared
-    @State private var year: Int?
+    @Environment(LocationEngine.self) private var engine
+    @State private var span: RouteSpan
     @State private var kind: RouteKind = .all
     @State private var shown: [AtlasLine] = []
     @State private var appeared = false
+
+    init(span: RouteSpan = .all) {
+        _span = State(initialValue: span)
+    }
 
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
             if atlas.isLoaded {
-                RouteAtlasMap(lines: shown, kind: kind)
+                RouteAtlasMap(lines: shown, kind: kind, focus: "\(span)", fitsWhole: span.fitsWhole, everywhere: atlas.lines)
                     .ignoresSafeArea()
                     .opacity(appeared ? 1 : 0)
                     .onAppear { withAnimation(.smooth(duration: 0.9)) { appeared = true } }
-                if shown.isEmpty { empty }
+                if shown.isEmpty { empty.transition(.opacity.combined(with: .scale(scale: 0.96))) }
             } else {
                 VStack(spacing: 12) {
                     ProgressView().tint(.white)
@@ -29,30 +99,45 @@ struct RouteAtlasView: View {
                 .transition(.opacity)
             }
         }
+        .animation(.smooth(duration: 0.35), value: shown.isEmpty)
         .environment(\.colorScheme, .dark)
         .safeAreaInset(edge: .bottom) {
-            if atlas.isLoaded, !atlas.lines.isEmpty { controls }
+            if atlas.isLoaded { controls }
         }
         .task { await atlas.load() }
         .onChange(of: atlas.lines.count, initial: true) { update() }
-        .onChange(of: year) { update() }
+        .onChange(of: span) { update() }
         .onChange(of: kind) { update() }
+        .onChange(of: engine.pendingPoints.count / 20) { update() }
     }
 
+    /// The stretch being recorded now isn't a saved chunk yet; it's drawn all the same.
+    private var live: AtlasLine? {
+        let points = engine.pendingPoints
+        guard engine.isRecording, points.count > 1 else { return nil }
+        return AtlasLine(points: points, mode: MotionClassifier.mode(forSpeeds: points.map(\.speed)))
+    }
+
+    private var everything: [AtlasLine] { atlas.lines + (live.map { [$0] } ?? []) }
+
     private func update() {
-        let calendar = Calendar.current
-        shown = atlas.lines.filter { line in
-            kind.includes(line.mode) && (year.map { calendar.component(.year, from: line.start) == $0 } ?? true)
+        let interval = span.interval()
+        shown = everything.filter { line in
+            kind.includes(line.mode) && (interval.map { line.start >= $0.start && line.start < $0.end } ?? true)
         }
     }
 
-    private var years: [Int] {
+    /// Years before this one that have roads in them.
+    private var pastYears: [Int] {
         let calendar = Calendar.current
-        return Set(atlas.lines.map { calendar.component(.year, from: $0.start) }).sorted(by: >)
+        let current = calendar.component(.year, from: .now)
+        return Set(atlas.lines.map { calendar.component(.year, from: $0.start) }).filter { $0 != current }.sorted(by: >)
     }
 
     private var kinds: [RouteKind] {
-        RouteKind.allCases.filter { kind in kind == .all || atlas.lines.contains { kind.includes($0.mode) } }
+        let interval = span.interval()
+        let inSpan = everything.filter { line in interval.map { line.start >= $0.start && line.start < $0.end } ?? true }
+        return RouteKind.allCases.filter { kind in kind == .all || inSpan.contains { kind.includes($0.mode) } }
     }
 
     private var days: Int {
@@ -60,8 +145,25 @@ struct RouteAtlasView: View {
         return Set(shown.map { calendar.startOfDay(for: $0.start) }).count
     }
 
+    /// "11月9日 – 15日" under the numbers, so it's plain which days are on the map.
+    private var rangeText: String? {
+        guard let interval = span.interval() else {
+            guard let first = atlas.lines.first?.start else { return nil }
+            return String(localized: "从 \(first.formatted(.dateTime.year().month().locale(appLocale))) 至今", bundle: .appLanguage)
+        }
+        let end = interval.end.addingTimeInterval(-1)
+        switch span {
+        case .today: return interval.start.formatted(.dateTime.month().day().weekday().locale(appLocale))
+        case .week: return (interval.start..<end).formatted(.interval.month().day().locale(appLocale))
+        case .month: return interval.start.formatted(.dateTime.year().month().locale(appLocale))
+        case .year, .past: return interval.start.formatted(.dateTime.year().locale(appLocale))
+        case .all: return nil
+        }
+    }
+
     private var controls: some View {
         VStack(spacing: 10) {
+            spanPicker
             if kinds.count > 2 {
                 ScrollView(.horizontal) {
                     HStack(spacing: 8) {
@@ -92,32 +194,72 @@ struct RouteAtlasView: View {
                 stat(Format.distance(shown.reduce(0) { $0 + $1.distance }), caption: "走过")
                 stat("\(days)", caption: "天")
                 Spacer(minLength: 0)
-                Menu {
-                    Picker("年份", selection: $year.animation(.snappy)) {
-                        Text("全部年份").tag(Int?.none)
-                        ForEach(years, id: \.self) { Text(verbatim: "\($0)").tag(Int?.some($0)) }
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text(year.map { "\($0)" } ?? String(localized: "全部年份", bundle: .appLanguage))
-                            .monospacedDigit()
-                        Image(systemName: "chevron.up.chevron.down").font(.caption2.weight(.bold))
-                    }
-                    .font(.subheadline.weight(.semibold))
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 9)
-                    .glassEffect(.regular.interactive(), in: .capsule)
+                if let rangeText {
+                    Text(verbatim: rangeText)
+                        .font(.footnote.weight(.medium)).foregroundStyle(.white.opacity(0.65))
+                        .contentTransition(.opacity)
+                        .animation(.snappy, value: rangeText)
+                        .lineLimit(1).minimumScaleFactor(0.8)
                 }
-                .sensoryFeedback(.selection, trigger: year)
             }
-            .padding(.leading, 22)
-            .padding(.trailing, 10)
+            .padding(.horizontal, 22)
             .padding(.vertical, 10)
             .glassEffect(.regular, in: .rect(cornerRadius: 26, style: .continuous))
             .padding(.horizontal)
         }
         .padding(.bottom, 8)
         .foregroundStyle(.white)
+    }
+
+    /// Today, this week, this month, this year, everything; earlier years behind the last one.
+    private var spanPicker: some View {
+        HStack(spacing: 2) {
+            ForEach(RouteSpan.quick, id: \.self) { option in
+                Button {
+                    withAnimation(.snappy) { span = option }
+                } label: {
+                    Text(verbatim: option.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(span == option ? Color.black : .white)
+                        .lineLimit(1).minimumScaleFactor(0.8)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 9)
+                        .background {
+                            if span == option { Capsule().fill(RouteKind.all.tint) }
+                        }
+                        .contentShape(.capsule)
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(span == option ? .isSelected : [])
+            }
+            if !pastYears.isEmpty {
+                Menu {
+                    Picker("年份", selection: $span.animation(.snappy)) {
+                        ForEach(pastYears, id: \.self) { Text(verbatim: "\($0)").tag(RouteSpan.past($0)) }
+                    }
+                } label: {
+                    let picked: Int? = if case let .past(year) = span { year } else { nil }
+                    HStack(spacing: 3) {
+                        if let picked { Text(verbatim: "\(picked)").monospacedDigit() }
+                        Image(systemName: picked == nil ? "calendar" : "chevron.up.chevron.down")
+                            .font(picked == nil ? .subheadline.weight(.semibold) : .caption2.weight(.bold))
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(picked == nil ? Color.white : .black)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 9)
+                    .background {
+                        if picked != nil { Capsule().fill(RouteKind.all.tint) }
+                    }
+                    .contentShape(.capsule)
+                }
+                .accessibilityLabel("往年")
+            }
+        }
+        .padding(4)
+        .glassEffect(.regular, in: .capsule)
+        .padding(.horizontal)
+        .sensoryFeedback(.selection, trigger: span)
     }
 
     private func stat(_ value: String, caption: LocalizedStringKey) -> some View {
@@ -136,7 +278,8 @@ struct RouteAtlasView: View {
             Image(systemName: "point.topright.arrow.triangle.backward.to.point.bottomleft.scurvepath")
                 .font(.largeTitle)
                 .foregroundStyle(.white.opacity(0.5))
-            Text("这里还没有路线").font(.headline).foregroundStyle(.white)
+            let title: LocalizedStringKey = span == .all ? "这里还没有路线" : "这段时间还没有路线"
+            Text(title).font(.headline).foregroundStyle(.white)
             Text("出门走走，路线会在这里亮起来。").font(.subheadline).foregroundStyle(.white.opacity(0.6))
         }
         .multilineTextAlignment(.center)
@@ -201,6 +344,11 @@ enum RouteKind: String, CaseIterable, Identifiable {
 struct RouteAtlasMap: UIViewRepresentable {
     let lines: [AtlasLine]
     let kind: RouteKind
+    /// Changes when the stretch of time does, so the map goes to where those roads are.
+    var focus = ""
+    var fitsWhole = false
+    /// Every road there is, for somewhere familiar to show when the chosen days have none.
+    var everywhere: [AtlasLine] = []
 
     func makeUIView(context: Context) -> MKMapView {
         let map = MKMapView()
@@ -215,14 +363,14 @@ struct RouteAtlasMap: UIViewRepresentable {
         map.showsCompass = true
         map.showsScale = true
         // Above the controls, so the legal notice and compass stay clear of them.
-        map.layoutMargins = UIEdgeInsets(top: 60, left: 8, bottom: 150, right: 8)
+        map.layoutMargins = UIEdgeInsets(top: 60, left: 8, bottom: 200, right: 8)
         // Night falls over the land and sea alone; the roads are drawn above it.
         map.addOverlay(Dusk.world(), level: .aboveRoads)
         return map
     }
 
     func updateUIView(_ map: MKMapView, context: Context) {
-        context.coordinator.update(map, lines: lines, kind: kind)
+        context.coordinator.update(map, lines: lines, kind: kind, focus: focus, fitsWhole: fitsWhole, everywhere: everywhere)
     }
 
     func makeCoordinator() -> Coordinator { Coordinator() }
@@ -231,7 +379,9 @@ struct RouteAtlasMap: UIViewRepresentable {
     final class Coordinator: NSObject, MKMapViewDelegate {
         private var lines: [AtlasLine] = []
         private var kind: RouteKind = .all
+        private var focus = ""
         private var framed = false
+        private var atHome = false
         private var drawnKey: String?
         /// The whole-world overlays, kept: they're the slowest to make and the most revisited.
         private var countryCache: [String: [MKOverlay]] = [:]
@@ -240,23 +390,48 @@ struct RouteAtlasMap: UIViewRepresentable {
         /// one travelled a hundred times is in all of them, and so glows.
         private static let layers = 4
 
-        func update(_ map: MKMapView, lines: [AtlasLine], kind: RouteKind) {
+        func update(_ map: MKMapView, lines: [AtlasLine], kind: RouteKind, focus: String, fitsWhole: Bool, everywhere: [AtlasLine]) {
             let changed = lines.count != self.lines.count || lines.first?.start != self.lines.first?.start
                 || lines.last?.start != self.lines.last?.start || kind != self.kind
+                || lines.last?.distance != self.lines.last?.distance
             // A filter brings its own routes into view: a walk is invisible from a continent away,
-            // so on foot and by bike the map goes to the place with the most of them.
-            let refilter = framed && kind != self.kind && !lines.isEmpty
+            // so on foot and by bike the map goes to the place with the most of them. A different
+            // stretch of time does the same: this week's roads may be a country away from this year's.
+            let refilter = framed && (kind != self.kind || focus != self.focus) && !lines.isEmpty
             self.lines = lines
             self.kind = kind
+            self.focus = focus
             if changed { countryCache = [:]; drawnKey = nil }
+            let padding = UIEdgeInsets(top: 70, left: 30, bottom: 210, right: 30)
             if !framed, !lines.isEmpty {
                 framed = true
-                map.setVisibleMapRect(Self.framing(lines), edgePadding: UIEdgeInsets(top: 60, left: 30, bottom: 160, right: 30), animated: false)
+                map.setVisibleMapRect(fitsWhole ? Self.whole(lines) : Self.framing(lines), edgePadding: padding, animated: atHome)
+            } else if !framed, !atHome, !everywhere.isEmpty {
+                // Nothing in these days yet: wait where life mostly is, not over some default sea.
+                atHome = true
+                map.setVisibleMapRect(Self.framing(everywhere), edgePadding: padding, animated: false)
             } else if refilter {
-                let rect = kind == .onFoot || kind == .cycling ? Self.busiestPlace(lines) : Self.framing(lines)
-                map.setVisibleMapRect(rect, edgePadding: UIEdgeInsets(top: 60, left: 30, bottom: 160, right: 30), animated: true)
+                let rect = fitsWhole ? Self.whole(lines)
+                    : kind == .onFoot || kind == .cycling ? Self.busiestPlace(lines) : Self.framing(lines)
+                map.setVisibleMapRect(rect, edgePadding: padding, animated: true)
             }
             redraw(map)
+        }
+
+        /// All of a few days' roads at once. A flight among them would shrink the walks to a
+        /// dot, so it's left out of the frame when there's anything else.
+        private static func whole(_ lines: [AtlasLine]) -> MKMapRect {
+            let ground = lines.filter { $0.mode != .flying }
+            var rect = MKMapRect.null
+            for line in ground.isEmpty ? lines : ground {
+                for corner in [CLLocationCoordinate2D(latitude: Double(line.box.minLat), longitude: Double(line.box.minLon)),
+                               CLLocationCoordinate2D(latitude: Double(line.box.maxLat), longitude: Double(line.box.maxLon))] {
+                    rect = rect.union(MKMapRect(origin: MKMapPoint(corner), size: MKMapSize(width: 0, height: 0)))
+                }
+            }
+            let minimum = 1_500 * MKMapPointsPerMeterAtLatitude(rect.origin.coordinate.latitude)
+            guard rect.width < minimum, rect.height < minimum else { return rect }
+            return MKMapRect(x: rect.midX - minimum / 2, y: rect.midY - minimum / 2, width: minimum, height: minimum)
         }
 
         func mapView(_ map: MKMapView, regionDidChangeAnimated animated: Bool) {

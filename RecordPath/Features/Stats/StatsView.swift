@@ -36,6 +36,7 @@ struct StatsView: View {
     @State private var isLoading = true
     private var lifetime: WorldInsights { summaries.world }
     @State private var showingYearReport = false
+    @State private var showingRoutes = false
     private var milestones: MilestoneProgress { summaries.milestones }
     @Environment(Notifier.self) private var notifier
     @Environment(\.modelContext) private var context
@@ -91,6 +92,7 @@ struct StatsView: View {
                     }
                     .pickerStyle(.segmented)
 
+                    routesCard
                     yearReportCard
                     stepsCard
                     distanceCard
@@ -114,6 +116,7 @@ struct StatsView: View {
                 await load()
             }
             .fullScreenCover(isPresented: $showingYearReport) { YearReportView() }
+            .fullScreenCover(isPresented: $showingRoutes) { RouteAtlasScreen(span: routeSpan) }
             .navigationDestination(for: MilestonesRoute.self) { _ in MilestonesView(progress: milestones) }
             .navigationDestination(for: FirstsRoute.self) { _ in FirstsView(firsts: summaries.firsts, extremes: summaries.extremes) }
             .navigationDestination(for: JourneyRoute.self) { _ in JourneyView(distance: groundLifetime, home: summaries.home) }
@@ -397,6 +400,45 @@ struct StatsView: View {
         return "\(current.formatted(.number.locale(appLocale))) / \(item.milestone.threshold.formatted(.number.locale(appLocale)))"
     }
 
+    /// The atlas opens on the stretch of time this page is showing.
+    private var routeSpan: RouteSpan {
+        switch period {
+        case .week: .week
+        case .month: .month
+        case .year: .year
+        }
+    }
+
+    /// The way in to every road on one map: a strip of night with a few of them glowing.
+    private var routesCard: some View {
+        Button { showingRoutes = true } label: {
+            HStack(spacing: 14) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("走过的路").font(.system(.title3, design: .serif, weight: .bold)).foregroundStyle(.white)
+                    Text("今天、本周、本月、今年，所有轨迹叠在一张地图上")
+                        .font(.subheadline).foregroundStyle(.white.opacity(0.7))
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                // The roads glow to the right of the words, not under them.
+                Spacer(minLength: 96)
+                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.white.opacity(0.5))
+            }
+            .padding(.horizontal, 18).padding(.vertical, 18)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background {
+                ZStack {
+                    LinearGradient(colors: [Color(red: 0.04, green: 0.05, blue: 0.13), Color(red: 0.10, green: 0.09, blue: 0.22)],
+                                   startPoint: .topLeading, endPoint: .bottomTrailing)
+                    RouteGlow()
+                }
+            }
+            .clipShape(.rect(cornerRadius: 24, style: .continuous))
+        }
+        .buttonStyle(PressableStyle())
+        .accessibilityHint("打开全部轨迹的地图")
+    }
+
     private var yearReportCard: some View {
         Button { showingYearReport = true } label: {
             HStack(spacing: 14) {
@@ -515,5 +557,37 @@ struct StatsView: View {
     private func selectedValue(_ keyPath: KeyPath<DailyActivity, Double>) -> Double? {
         guard let selectedDay else { return nil }
         return bucketed(keyPath).first { Calendar.current.isDate($0.date, equalTo: selectedDay, toGranularity: bucketUnit) }?.value
+    }
+}
+
+/// A few roads drawn in light across the card: faint alone, brighter where they cross.
+private struct RouteGlow: View {
+    var body: some View {
+        Canvas { context, size in
+            let warm = Color(red: 1, green: 0.80, blue: 0.42)
+            let roads: [[CGPoint]] = [
+                [CGPoint(x: 0.42, y: 1.1), CGPoint(x: 0.55, y: 0.62), CGPoint(x: 0.74, y: 0.5), CGPoint(x: 1.05, y: 0.2)],
+                [CGPoint(x: 0.5, y: -0.1), CGPoint(x: 0.62, y: 0.4), CGPoint(x: 0.74, y: 0.5), CGPoint(x: 0.86, y: 1.1)],
+                [CGPoint(x: 0.6, y: 1.1), CGPoint(x: 0.7, y: 0.78), CGPoint(x: 0.9, y: 0.7), CGPoint(x: 1.05, y: 0.82)],
+                [CGPoint(x: 0.66, y: -0.1), CGPoint(x: 0.74, y: 0.5), CGPoint(x: 0.7, y: 0.78)],
+            ]
+            for road in roads {
+                var path = Path()
+                let points = road.map { CGPoint(x: $0.x * size.width, y: $0.y * size.height) }
+                path.move(to: points[0])
+                for index in 1..<points.count {
+                    let previous = points[index - 1], next = points[index]
+                    path.addQuadCurve(to: next, control: CGPoint(x: (previous.x + next.x) / 2 + 8, y: (previous.y + next.y) / 2 - 8))
+                }
+                context.stroke(path, with: .color(warm.opacity(0.10)), style: StrokeStyle(lineWidth: 7, lineCap: .round, lineJoin: .round))
+                context.stroke(path, with: .color(warm.opacity(0.45)), style: StrokeStyle(lineWidth: 1.4, lineCap: .round, lineJoin: .round))
+            }
+            let crossing = CGPoint(x: 0.74 * size.width, y: 0.5 * size.height)
+            context.fill(Path(ellipseIn: CGRect(x: crossing.x - 14, y: crossing.y - 14, width: 28, height: 28)), with: .color(warm.opacity(0.16)))
+            context.fill(Path(ellipseIn: CGRect(x: crossing.x - 3, y: crossing.y - 3, width: 6, height: 6)), with: .color(warm))
+        }
+        // Fades out under the words.
+        .mask(LinearGradient(colors: [.clear, .black.opacity(0.9), .black], startPoint: .init(x: 0.52, y: 0.5), endPoint: .init(x: 0.82, y: 0.5)))
+        .accessibilityHidden(true)
     }
 }
