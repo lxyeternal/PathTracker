@@ -71,7 +71,7 @@
 | **Pause any time** | One tap pauses until you tap Resume, or let it come back by itself in an hour, three hours or tomorrow morning. While paused, or in manual-only mode when nothing is being recorded, location isn't used at all and the location arrow doesn't stay on screen. |
 | **How you got there** | The iPhone's motion coprocessor and your speed tell walking, running, cycling, driving and flying apart, each drawn in its own colour. A subway ride with no signal is filled in from the phone's own motion history and drawn dashed. |
 | **Where you were** | A few minutes in one place becomes a stay, named as the shop, sight, city and country it is. |
-| **Easy on the battery** | Location sleeps while the phone is still. After ten minutes in one place GPS turns off entirely, replaced by a 150 m geofence that wakes it when you leave. |
+| **Easy on the battery** | Location sleeps while the phone is still. After ten minutes in one place GPS turns off entirely, replaced by a 150 m geofence that wakes it when you leave. In the background the stats are worked out at most every five minutes, not after every stretch saved. |
 | **Timeline** | Each day runs down a fine line: the times in the margin, each place a node on it with the photos you took there, and each journey a single line saying how you went, how far and how long, with the route traced beside it. Turn on Past Routes to see the roads you've taken around there on other days, beneath today's. |
 
 **Bring back the past from Photos**: the places your photos and videos were taken fill in where you went before the app existed. New users can do it in the last step of onboarding or from the Trips tab, and the passport opens as the years of stamps land. Run it again any time from Settings; only new places are added. Everything is read on the phone; photos are never uploaded.
@@ -201,10 +201,10 @@ Don't know where to go? Open one. Waytrace knows where you've been, where you ha
 - **How you want to feel**: anything, switch off, work up a sweat, old things, or city life.
 - **Press and hold to open**: the box shakes harder and harder, the phone shakes with it, the lid flies off and a boarding pass flips over. Three a day.
 - **A reason that's true**: it only says what your own footprints show, such as "You haven't lit a single must-see in Shanxi. Start here." or "You've lit 5 places, and not one is wild." Places on your wish list, and countries you hold a valid visa for, come up more often. Now and then it simply says: "No reason. That's what a blind box is."
-- **A day nearby**: Apple Maps finds hills, water, old towns and streets near you that you haven't been to, with a time to set off (earlier if you're an early riser), the drive, and that day's weather, with a word if it'll rain.
+- **A day nearby**: Apple Maps finds hills, water, old towns and streets near you that you haven't been to, with a time to set off (earlier if you're an early riser), the drive, and that day's weather, with a word if it'll rain. Tap Directions and Apple Maps has the route ready.
 - **Longer breaks**: a route that makes sense, such as "Days 1–2 Hukou Waterfall, Day 3 Mount Hua, Day 4 Terracotta Army", each stop with its best season. Just a suggestion; stay as long as you like.
 - **Once you're there**: two ideas and **a small mission**, like "Arrive an hour before sunset, when the water looks its best" or "Bring home one small thing you can only get here."
-- **Keep the boarding pass**: the place goes on your wish list. Passes never expire, and nothing nags you.
+- **Keep the boarding pass**: the place goes on your wish list. Passes never expire, and nothing nags you. They're kept in two groups, waiting for you and reached, and each can take you straight to directions.
 - **When you really get there**: Waytrace knows, and stamps an arrival postmark: "73 days ago, the box gave you this place. And you really came."
 
 No payments, nothing social. Nearby places and weather are looked up with your rough location through Apple Maps and Apple Weather, and never leave Apple.
