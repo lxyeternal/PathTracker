@@ -281,6 +281,19 @@ enum BlindBox {
         return Set(place.regionEn.components(separatedBy: " / ").compactMap { regionCodes[$0] })
     }
 
+    /// The countries a ticket crosses into, for whether entry rules are worth a mention. Empty for
+    /// somewhere nearby from Apple Maps, which is never more than a day away.
+    static func countries(of place: Place) -> Set<String> {
+        guard let must = place.mustSee else { return [] }
+        guard MustSee.china.contains(where: { $0.id == must.id }) else { return countries(of: must) }
+        return switch must.regionEn {
+        case "Hong Kong": ["HK"]
+        case "Macao": ["MO"]
+        case "Taiwan": ["TW"]
+        default: ["CN"]
+        }
+    }
+
     private static let regionCodes: [String: String] = {
         let english = Locale(identifier: "en")
         var codes: [String: String] = ["UAE": "AE", "Czechia": "CZ", "Türkiye": "TR", "Vatican City": "VA", "South Korea": "KR",

@@ -169,7 +169,11 @@ struct SettingsView: View {
                 }
             }
             if engine.isPaused, let until = engine.pausedUntil {
-                Button("恢复记录（原定 \(Format.time(until))）", systemImage: "play.circle") { engine.resume() }
+                if engine.isPausedIndefinitely {
+                    Button("继续记录", systemImage: "play.circle") { engine.resume() }
+                } else {
+                    Button("恢复记录（原定 \(Format.time(until))）", systemImage: "play.circle") { engine.resume() }
+                }
             }
             if engine.activeTripID != nil {
                 Label("手动记录进行中，使用高精度定位", systemImage: "record.circle").foregroundStyle(.orange)

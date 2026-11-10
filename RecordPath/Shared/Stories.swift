@@ -36,11 +36,13 @@ struct HomeBase: Sendable {
 
 // MARK: Firsts
 
-/// A first in the person's life as the app has seen it: the first time abroad, the first night
-/// away, the first time in a city or at a place worth a lifetime.
+/// A first in the person's life as the app has seen it: the first time abroad, in a country,
+/// in a city or at a place worth a lifetime. Only places: a history brought in from photos
+/// knows where someone was, not their first flight or first night away, and calling the first
+/// one it happens to hold "the first" would be wrong.
 struct LifeFirst: Identifiable, Sendable {
     enum Kind: String, Sendable {
-        case beginning, abroad, country, city, mustSee, flight, longWalk, lateNight, nightAway
+        case beginning, abroad, country, city, mustSee
 
         var symbol: String {
             switch self {
@@ -49,10 +51,6 @@ struct LifeFirst: Identifiable, Sendable {
             case .country: "flag.fill"
             case .city: "building.2.fill"
             case .mustSee: "star.fill"
-            case .flight: "airplane"
-            case .longWalk: "figure.walk"
-            case .lateNight: "moon.stars.fill"
-            case .nightAway: "bed.double.fill"
             }
         }
     }
@@ -63,6 +61,11 @@ struct LifeFirst: Identifiable, Sendable {
     let place: String?
     /// For a place worth a lifetime, which one, for its photograph.
     var mustSeeID: String? = nil
+    /// Where and until when it was, to find a photo the person took there.
+    var latitude: Double? = nil
+    var longitude: Double? = nil
+    var until: Date? = nil
+    var countryCode: String? = nil
     var id: String { "\(kind.rawValue)|\(title)|\(date.timeIntervalSince1970)" }
 }
 
@@ -88,16 +91,19 @@ struct LifeExtremes: Sendable {
 
 enum LifeFirsts {
     /// `country` is the person's own: going anywhere else is going abroad.
-    static func find(stays: [Stay], chunks: [TrackChunk], home: HomeBase?, country: String?) -> (firsts: [LifeFirst], extremes: LifeExtremes) {
+    static func find(stays: [Stay], home: HomeBase?, country: String?) -> (firsts: [LifeFirst], extremes: LifeExtremes) {
         let ordered = stays.sorted { $0.arrival < $1.arrival }
         var firsts: [LifeFirst] = []
         var extremes = LifeExtremes()
         guard let first = ordered.first else { return ([], extremes) }
-        let calendar = Calendar.current
         func name(_ stay: Stay) -> String { [stay.displayName, stay.city].compactMap { $0 }.removingDuplicates().joined(separator: " · ") }
+        /// A first that happened at a stay, with where and how long, for its picture.
+        func make(_ kind: LifeFirst.Kind, _ stay: Stay, title: String, place: String?) -> LifeFirst {
+            LifeFirst(kind: kind, date: stay.arrival, title: title, place: place, latitude: stay.latitude,
+                      longitude: stay.longitude, until: stay.departure, countryCode: stay.countryCode)
+        }
 
-        firsts.append(LifeFirst(kind: .beginning, date: first.arrival,
-                                title: String(localized: "故事从这里开始", bundle: .appLanguage), place: name(first)))
+        firsts.append(make(.beginning, first, title: String(localized: "故事从这里开始", bundle: .appLanguage), place: name(first)))
 
         // Countries and cities, in the order they first happened.
         let homeCountry = country ?? home?.countryCode
@@ -113,13 +119,12 @@ enum LifeFirsts {
                 let title = wentAbroad
                     ? String(localized: "第一次到\(country)", bundle: .appLanguage)
                     : String(localized: "第一次出国，去了\(country)", bundle: .appLanguage)
-                firsts.append(LifeFirst(kind: wentAbroad ? .country : .abroad, date: stay.arrival, title: title, place: stay.city))
+                firsts.append(make(wentAbroad ? .country : .abroad, stay, title: title, place: stay.city))
                 wentAbroad = true
             }
             if counted, let key = CityNames.key(stay), let city = cityNames[key], city != homeCity,
                cities.insert("\(stay.countryCode ?? "")|\(city)").inserted, stay.countryCode == homeCountry || homeCountry == nil {
-                firsts.append(LifeFirst(kind: .city, date: stay.arrival,
-                                        title: String(localized: "第一次到\(city)", bundle: .appLanguage), place: nil))
+                firsts.append(make(.city, stay, title: String(localized: "第一次到\(city)", bundle: .appLanguage), place: nil))
             }
         }
 
@@ -131,42 +136,6 @@ enum LifeFirsts {
             firsts.append(LifeFirst(kind: .mustSee, date: date,
                                     title: String(localized: "第一次到\(place.localizedName)", bundle: .appLanguage),
                                     place: place.localizedRegion, mustSeeID: place.id))
-        }
-
-        // Moving: the first flight, the first long walk, the first time out in the small hours.
-        let byDate = chunks.sorted { $0.startDate < $1.startDate }
-        if let flight = byDate.first(where: { $0.mode == .flying }) {
-            let km = Int(flight.distance / 1000).formatted(.number.locale(appLocale))
-            firsts.append(LifeFirst(kind: .flight, date: flight.startDate,
-                                    title: String(localized: "记下的第一段飞行", bundle: .appLanguage),
-                                    place: String(localized: "飞了 \(km) 公里", bundle: .appLanguage)))
-        }
-        var onFoot: [Date: Double] = [:]
-        for chunk in byDate where chunk.mode == .walking || chunk.mode == .running {
-            onFoot[calendar.startOfDay(for: chunk.startDate), default: 0] += chunk.distance
-        }
-        for threshold in [10, 20] {
-            if let day = onFoot.filter({ $0.value >= Double(threshold) * 1000 }).keys.min() {
-                firsts.append(LifeFirst(kind: .longWalk, date: day,
-                                        title: String(localized: "第一次一天走了 \(threshold) 公里", bundle: .appLanguage), place: nil))
-            }
-        }
-        if let late = byDate.first(where: { $0.mode != .flying && (1..<4).contains(calendar.component(.hour, from: $0.startDate)) }) {
-            let hour = calendar.component(.hour, from: late.startDate)
-            firsts.append(LifeFirst(kind: .lateNight, date: late.startDate,
-                                    title: String(localized: "第一次凌晨 \(hour) 点还在路上", bundle: .appLanguage), place: nil))
-        }
-        if let home {
-            let away = ordered.first { stay in
-                guard !stay.isFromPhotos, let departure = stay.departure, stay.location.distance(from: home.location) > 30_000 else { return false }
-                guard let three = calendar.date(bySettingHour: 3, minute: 0, second: 0, of: stay.arrival) else { return false }
-                let night = three > stay.arrival ? three : three.addingTimeInterval(86_400)
-                return departure > night
-            }
-            if let away {
-                firsts.append(LifeFirst(kind: .nightAway, date: away.arrival,
-                                        title: String(localized: "第一次在外过夜", bundle: .appLanguage), place: name(away)))
-            }
         }
 
         // The ends of the map.

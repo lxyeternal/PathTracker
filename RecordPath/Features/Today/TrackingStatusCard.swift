@@ -25,10 +25,7 @@ struct TrackingStatusCard: View {
     private var status: some View {
         Group {
             if let until = engine.pausedUntil, engine.isPaused, engine.activeTripID == nil {
-                problem(symbol: "pause.circle.fill", tint: .orange,
-                        title: "已暂停记录",
-                        detail: "\(pauseText(until))自动恢复。暂停期间不会记录位置。",
-                        action: "恢复") { withAnimation { engine.resume() } }
+                paused(until: until)
             } else if !engine.isRecording {
                 startPrompt
             } else if activeTrip != nil {
@@ -98,6 +95,53 @@ struct TrackingStatusCard: View {
             }
     }
 
+    /// Paused: says plainly that nothing is being recorded or located, with one button to carry
+    /// on and, beside it, a way to have it come back by itself.
+    private func paused(until: Date) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: "pause.circle.fill")
+                .font(.title2)
+                .foregroundStyle(.orange)
+                .symbolEffect(.bounce, options: .nonRepeating, value: until)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("已暂停记录").font(.subheadline.weight(.semibold))
+                Group {
+                    if engine.isPausedIndefinitely {
+                        Text("不记录，也不使用定位。想继续时点“继续”。")
+                    } else {
+                        Text("\(pauseText(until))自动恢复。暂停期间不会记录位置。")
+                    }
+                }
+                .font(.footnote).foregroundStyle(.secondary)
+                .contentTransition(.opacity)
+            }
+            Spacer(minLength: 8)
+            Menu {
+                Section("自动恢复") {
+                    Button("1 小时后", systemImage: "clock") { pause(hours: 1) }
+                    Button("3 小时后", systemImage: "clock") { pause(hours: 3) }
+                    Button("明天早上", systemImage: "sunrise") { pauseUntilMorning() }
+                }
+                if !engine.isPausedIndefinitely {
+                    Button("一直暂停，直到我继续", systemImage: "pause") { withAnimation { engine.pause() } }
+                }
+            } label: {
+                Image(systemName: "timer")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 32, height: 32)
+                    .contentShape(.rect)
+            }
+            .accessibilityLabel("自动恢复")
+            Button("继续") { withAnimation { engine.resume() } }
+                .buttonStyle(.glassProminent)
+                .controlSize(.small)
+        }
+        .padding(14)
+        .background(.background.secondary, in: .rect(cornerRadius: 20, style: .continuous))
+        .sensoryFeedback(.impact(weight: .light), trigger: until)
+    }
+
     private var recording: some View {
         HStack(spacing: 10) {
             PulsingDot(color: engine.activeTripID == nil ? .green : .orange)
@@ -112,8 +156,11 @@ struct TrackingStatusCard: View {
                     .lineLimit(1)
             }
             if engine.activeTripID == nil {
+                // A tap pauses until the person carries on; holding it offers a pause that ends
+                // by itself.
                 Menu {
                     Section("暂停记录") {
+                        Button("暂停，直到我继续", systemImage: "pause") { withAnimation { engine.pause() } }
                         Button("暂停 1 小时", systemImage: "clock") { pause(hours: 1) }
                         Button("暂停 3 小时", systemImage: "clock") { pause(hours: 3) }
                         Button("暂停到明天早上", systemImage: "moon") { pauseUntilMorning() }
@@ -124,8 +171,11 @@ struct TrackingStatusCard: View {
                         .foregroundStyle(.secondary)
                         .frame(width: 32, height: 32)
                         .contentShape(.rect)
+                } primaryAction: {
+                    withAnimation { engine.pause() }
                 }
                 .accessibilityLabel("暂停记录")
+                .accessibilityHint("轻点暂停，按住可以选暂停多久")
             }
         }
         .padding(.leading, 16)

@@ -2,6 +2,7 @@ import Foundation
 import SwiftData
 import CoreLocation
 import Observation
+import UIKit
 
 /// Everything the Places and Stats tabs say about all places — countries, cities, sights,
 /// frequent places, the light-up map, milestones and map dots — worked out once per change
@@ -38,6 +39,12 @@ final class PlaceSummaries {
     @ObservationIgnored private var context: ModelContext?
     @ObservationIgnored private var pending: Task<Void, Never>?
     @ObservationIgnored private var observer: NSObjectProtocol?
+    @ObservationIgnored private var activeObserver: NSObjectProtocol?
+    @ObservationIgnored private var lastRefresh = Date.distantPast
+    /// With nobody looking, the summaries only feed notifications (a new city, a milestone),
+    /// which can wait a few minutes. Recording saves every few minutes all day, and working
+    /// out every place and every track each time was most of what the app did in the background.
+    private static let backgroundInterval: TimeInterval = 5 * 60
 
     private init() {}
 
@@ -46,17 +53,34 @@ final class PlaceSummaries {
         observer = NotificationCenter.default.addObserver(forName: ModelContext.didSave, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.setNeedsRefresh() }
         }
+        // Back in front: whatever was put off is worked out now.
+        activeObserver = NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, self.pending != nil else { return }
+                self.pending?.cancel()
+                self.pending = nil
+                self.refresh()
+            }
+        }
         refresh()
     }
 
     /// Asks for a refresh soon; asking again before it runs changes nothing.
     func setNeedsRefresh() {
         guard pending == nil else { return }
+        let wait = Self.delay(active: UIApplication.shared.applicationState == .active, sinceLast: Date().timeIntervalSince(lastRefresh))
         pending = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(1.5))
+            try? await Task.sleep(for: .seconds(wait))
+            guard !Task.isCancelled else { return }
             self?.pending = nil
             self?.refresh()
         }
+    }
+
+    /// How long a refresh waits: a moment while the app is in front, and in the background
+    /// long enough that there's at most one every few minutes.
+    nonisolated static func delay(active: Bool, sinceLast: TimeInterval) -> TimeInterval {
+        active ? 1.5 : max(1.5, backgroundInterval - sinceLast)
     }
 
     @ObservationIgnored private var isRefreshing = false
@@ -69,6 +93,7 @@ final class PlaceSummaries {
         guard let context else { return }
         guard !isRefreshing else { needsAnother = true; return }
         isRefreshing = true
+        lastRefresh = Date()
         let container = context.container
         Task {
             let started = Date()
@@ -144,7 +169,7 @@ final class PlaceSummaries {
                                  countryCode: $0.countryCode)
             })
             home = HomeBase.find(in: all)
-            (firsts, extremes) = LifeFirsts.find(stays: all, chunks: chunks, home: home, country: stamps.home)
+            (firsts, extremes) = LifeFirsts.find(stays: all, home: home, country: stamps.home)
             portrait = TravellerPortrait(stays: all, chunks: chunks, home: home)
             echoes = Echoes.find(stays: all, home: home)
         }

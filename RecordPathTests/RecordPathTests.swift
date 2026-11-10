@@ -758,9 +758,46 @@ struct YearReportTests {
                      stay(nil, city: "Shanghai", code: "CN", lat: 31.20, lon: 121.44, 2026, 3, 3),
                      stay(nil, city: "苏州", code: "CN", lat: 31.30, lon: 120.58, 2026, 3, 4)]
         let home = HomeBase(latitude: 31.20, longitude: 121.44, countryCode: "CN", city: "Shanghai")
-        let firsts = LifeFirsts.find(stays: stays, chunks: [], home: home, country: "CN").firsts.filter { $0.kind == .city }
+        let firsts = LifeFirsts.find(stays: stays, home: home, country: "CN").firsts.filter { $0.kind == .city }
         #expect(firsts.count == 1)
         #expect(firsts.first?.title.contains("苏州") == true)
+    }
+
+    @Test func firstsAreOnlyAboutPlacesAndKnowWhereTheyWere() {
+        let stays = [stay(nil, city: "上海", code: "CN", lat: 31.23, lon: 121.47, 2026, 3, 1, hours: 20),
+                     stay(nil, city: "上海", code: "CN", lat: 31.23, lon: 121.47, 2026, 3, 2, hours: 20),
+                     stay(nil, city: "吉隆坡", code: "MY", lat: 3.139, lon: 101.687, 2026, 3, 5, hours: 30)]
+        let home = HomeBase(latitude: 31.23, longitude: 121.47, countryCode: "CN", city: "上海")
+        let firsts = LifeFirsts.find(stays: stays, home: home, country: "CN").firsts
+        // Nothing about a first night away or a first flight: a history brought in from photos can't know.
+        #expect(firsts.allSatisfy { [.beginning, .abroad, .country, .city, .mustSee].contains($0.kind) })
+        let abroad = firsts.first { $0.kind == .abroad }
+        #expect(abroad?.countryCode == "MY")
+        // Enough to find a photo taken there.
+        #expect(abroad?.latitude == 3.139)
+        #expect(abroad?.until != nil)
+    }
+
+    @Test func aRouteSpanCoversItsOwnDays() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(identifier: "Asia/Shanghai"))
+        calendar.firstWeekday = 2
+        let now = try #require(calendar.date(from: DateComponents(year: 2026, month: 11, day: 10, hour: 15)))
+        func day(_ m: Int, _ d: Int, year: Int = 2026) -> Date { calendar.date(from: DateComponents(year: year, month: m, day: d))! }
+        #expect(RouteSpan.today.interval(now: now, calendar: calendar) == DateInterval(start: day(11, 10), end: day(11, 11)))
+        #expect(RouteSpan.week.interval(now: now, calendar: calendar) == DateInterval(start: day(11, 9), end: day(11, 16)))
+        #expect(RouteSpan.month.interval(now: now, calendar: calendar) == DateInterval(start: day(11, 1), end: day(12, 1)))
+        #expect(RouteSpan.year.interval(now: now, calendar: calendar) == DateInterval(start: day(1, 1), end: day(1, 1, year: 2027)))
+        #expect(RouteSpan.past(2024).interval(now: now, calendar: calendar) == DateInterval(start: day(1, 1, year: 2024), end: day(1, 1, year: 2025)))
+        #expect(RouteSpan.all.interval(now: now, calendar: calendar) == nil)
+    }
+
+    @Test func summariesWaitWhenNobodyIsLooking() {
+        // In front: at once. In the background: at most one every five minutes.
+        #expect(PlaceSummaries.delay(active: true, sinceLast: 0) == 1.5)
+        #expect(PlaceSummaries.delay(active: false, sinceLast: 0) == 300)
+        #expect(PlaceSummaries.delay(active: false, sinceLast: 200) == 100)
+        #expect(PlaceSummaries.delay(active: false, sinceLast: 4000) == 1.5)
     }
 
     @Test func aShortHistoryDoesNotMakeEverythingNew() {

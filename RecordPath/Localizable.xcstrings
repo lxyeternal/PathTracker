@@ -389,7 +389,49 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$lld days · %2$lld cities · last %3$@"
+            "value": "%#@days@ · %#@cities@ · last %3$@"
+          },
+          "substitutions": {
+            "days": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg day"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg days"
+                    }
+                  }
+                }
+              }
+            },
+            "cities": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg city"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg cities"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -605,7 +647,49 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$lld visits · %2$lld days"
+            "value": "%#@visits@ · %#@days@"
+          },
+          "substitutions": {
+            "visits": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg visit"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg visits"
+                    }
+                  }
+                }
+              }
+            },
+            "days": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg day"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg days"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -746,6 +830,26 @@
         }
       }
     },
+    "1 小时后": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In 1 Hour"
+          }
+        }
+      }
+    },
+    "3 小时后": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In 3 Hours"
+          }
+        }
+      }
+    },
     "App 不包含广告、数据分析或第三方追踪 SDK，不会出售或共享你的任何数据。": {
       "localizations": {
         "en": {
@@ -811,6 +915,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "景点"
+          }
+        }
+      }
+    },
+    "route.span.all": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部"
           }
         }
       }
@@ -1191,6 +1312,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Today's story is just beginning"
+          }
+        }
+      }
+    },
+    "今年": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Year"
           }
         }
       }
@@ -2835,6 +2966,16 @@
         }
       }
     },
+    "在等你": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for you"
+          }
+        }
+      }
+    },
     "在足迹里找到 %lld 段旅行": {
       "localizations": {
         "en": {
@@ -2933,6 +3074,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Two days, not too far"
+          }
+        }
+      }
+    },
+    "一直暂停，直到我继续": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stay Paused Until I Resume"
           }
         }
       }
@@ -3237,6 +3388,16 @@
         }
       }
     },
+    "明天早上": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tomorrow Morning"
+          }
+        }
+      }
+    },
     "春节": {
       "localizations": {
         "en": {
@@ -3312,7 +3473,29 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%2$lld days to %1$@. Now's the time to think about where."
+            "value": "%#@days@ to %1$@. Now's the time to think about where."
+          },
+          "substitutions": {
+            "days": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg day"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg days"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -3333,6 +3516,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "It's a bit late today. Tomorrow's still open."
+          }
+        }
+      }
+    },
+    "这一趟的小任务": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A small mission for the trip"
           }
         }
       }
@@ -3360,9 +3553,31 @@
     "还有 %lld 天到周末。先给自己留个念想。": {
       "localizations": {
         "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld day to the weekend. Give yourself something to look forward to."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld days to the weekend. Give yourself something to look forward to."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "从 %@ 至今": {
+      "localizations": {
+        "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld days to the weekend. Give yourself something to look forward to."
+            "value": "Since %@"
           }
         }
       }
@@ -3403,6 +3618,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Now's a good time to leave"
+          }
+        }
+      }
+    },
+    "今天还能拆 %lld 次": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld left today"
           }
         }
       }
@@ -3473,6 +3698,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "You come alive at night, so no need to rise early"
+          }
+        }
+      }
+    },
+    "不记录，也不使用定位。想继续时点“继续”。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing is recorded and location isn't used. Tap Resume to carry on."
           }
         }
       }
@@ -3740,9 +3975,21 @@
     "%lld 天后，你到了这里": {
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You got here %lld days later"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "You got here %lld day later"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "You got here %lld days later"
+                }
+              }
+            }
           }
         }
       }
@@ -3760,9 +4007,21 @@
     "还在等你 · 收下 %lld 天了": {
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Still waiting · kept %lld days ago"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Still waiting · kept %lld day ago"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Still waiting · kept %lld days ago"
+                }
+              }
+            }
           }
         }
       }
@@ -3862,9 +4121,21 @@
     "%lld 天前，盲盒把这里交给了你。\n你真的来了。": {
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld days ago, the box gave you this place.\nAnd you really came."
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld day ago, the box gave you this place.\nAnd you really came."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld days ago, the box gave you this place.\nAnd you really came."
+                }
+              }
+            }
           }
         }
       }
@@ -4713,6 +4984,16 @@
         }
       }
     },
+    "已经到了": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reached"
+          }
+        }
+      }
+    },
     "已经寄给一年后的自己。": {
       "localizations": {
         "en": {
@@ -5129,6 +5410,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Typewriter"
+          }
+        }
+      }
+    },
+    "打开全部轨迹的地图": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the map of every route"
           }
         }
       }
@@ -5843,6 +6134,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pause Recording"
+          }
+        }
+      }
+    },
+    "暂停，直到我继续": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause Until I Resume"
           }
         }
       }
@@ -7307,6 +7608,16 @@
         }
       }
     },
+    "继续记录": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume Recording"
+          }
+        }
+      }
+    },
     "编辑": {
       "localizations": {
         "en": {
@@ -7383,6 +7694,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Syncing Automatically"
+          }
+        }
+      }
+    },
+    "自动恢复": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume Automatically"
           }
         }
       }
@@ -7647,6 +7968,16 @@
         }
       }
     },
+    "走过的路": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every Road"
+          }
+        }
+      }
+    },
     "走过的路，都会被记住": {
       "localizations": {
         "en": {
@@ -7827,6 +8158,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Track Segments"
+          }
+        }
+      }
+    },
+    "轻点暂停，按住可以选暂停多久": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to pause. Touch and hold to choose how long."
           }
         }
       }
@@ -9052,9 +9393,21 @@
     "%lld 天前": {
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld days ago"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld day ago"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld days ago"
+                }
+              }
+            }
           }
         }
       }
@@ -9979,6 +10332,16 @@
         }
       }
     },
+    "也放进了此生必去的“想去”": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Also added to your Places for a Lifetime wish list"
+          }
+        }
+      }
+    },
     "也是": {
       "localizations": {
         "en": {
@@ -10215,6 +10578,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your paths drawn as light; the ones you take most shine brightest."
+          }
+        }
+      }
+    },
+    "这段时间还没有路线": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No routes in this period yet"
           }
         }
       }
@@ -10765,6 +11138,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "of your travel"
+          }
+        }
+      }
+    },
+    "怎么去": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Getting there"
           }
         }
       }
@@ -11584,7 +11967,29 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ expires in %lld days"
+            "value": "%1$@ expires in %#@days@"
+          },
+          "substitutions": {
+            "days": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg day"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg days"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -11594,7 +11999,29 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your %@ visa expires in %lld days"
+            "value": "Your %1$@ visa expires in %#@days@"
+          },
+          "substitutions": {
+            "days": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg day"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg days"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -11614,7 +12041,49 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld entries · %lld days"
+            "value": "%#@entries@ · %#@days@"
+          },
+          "substitutions": {
+            "entries": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg entry"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg entries"
+                    }
+                  }
+                }
+              }
+            },
+            "days": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg day"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg days"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -11655,6 +12124,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Double entry"
+          }
+        }
+      }
+    },
+    "今天、本周、本月、今年，所有轨迹叠在一张地图上": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today, this week, this month, this year: every route on one map"
           }
         }
       }
@@ -11959,6 +12438,16 @@
         }
       }
     },
+    "往年": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Earlier Years"
+          }
+        }
+      }
+    },
     "很多国家要求入境时护照还剩 6 个月以上。到期前 6 个月，这里会提醒你。": {
       "localizations": {
         "en": {
@@ -12062,9 +12551,21 @@
     "护照还有 %lld 天到期": {
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your passport expires in %lld days"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your passport expires in %lld day"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your passport expires in %lld days"
+                }
+              }
+            }
           }
         }
       }
@@ -12144,7 +12645,49 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "In the last 180 days you've spent %lld days in the Schengen area. You can stay %lld more."
+            "value": "In the last 180 days you've spent %#@spent@ in the Schengen area. You can stay %#@more@."
+          },
+          "substitutions": {
+            "spent": {
+              "argNum": 1,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg day"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg days"
+                    }
+                  }
+                }
+              }
+            },
+            "more": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg more day"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg more days"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -12185,6 +12728,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Valid Visas"
+          }
+        }
+      }
+    },
+    "本周": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Week"
+          }
+        }
+      }
+    },
+    "本月": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Month"
           }
         }
       }
@@ -12232,9 +12795,21 @@
     "每次停留 %lld 天": {
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld days per stay"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld day per stay"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld days per stay"
+                }
+              }
+            }
           }
         }
       }
@@ -12462,9 +13037,21 @@
     "还剩 %lld 天": {
       "localizations": {
         "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld days left"
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld day left"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld days left"
+                }
+              }
+            }
           }
         }
       }
@@ -12589,6 +13176,16 @@
         }
       }
     },
+    "导航过去": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Directions"
+          }
+        }
+      }
+    },
     "封面和内页的纸张、底纹会一起换。": {
       "localizations": {
         "en": {
@@ -12674,7 +13271,29 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ expires in %lld days"
+            "value": "%1$@ expires in %#@days@"
+          },
+          "substitutions": {
+            "days": {
+              "argNum": 2,
+              "formatSpecifier": "lld",
+              "variations": {
+                "plural": {
+                  "one": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg day"
+                    }
+                  },
+                  "other": {
+                    "stringUnit": {
+                      "state": "translated",
+                      "value": "%arg days"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
