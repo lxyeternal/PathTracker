@@ -390,9 +390,13 @@ enum BlindBox {
     /// Other places not yet seen close to this one, each next to the last, for a longer trip.
     static func stops(around place: Place, span: Span, context: Context) -> [String] {
         guard span.stopCount > 0, place.mustSeeID != nil else { return [] }
+        // Close by on the map isn't close by if there's a border between: a stop is in the same
+        // country or region as the place itself.
+        let side = countries(of: place)
         var left = (MustSee.china + MustSee.world).filter {
             $0.id != place.id && $0.countryCode == nil && !context.visited.contains($0.id) && !leftOut.contains($0.id)
                 && place.location.distance(from: CLLocation(latitude: $0.latitude, longitude: $0.longitude)) <= span.stopReach * 1000
+                && !countries(of: Place($0)).isDisjoint(with: side)
         }
         var result: [String] = []
         var from = place.location

@@ -200,10 +200,10 @@ Don't know where to go? Open one. Waytrace knows where you've been, where you ha
 - **How much time you have**: a day nearby, a weekend, a long weekend (three to five days) or a long break (about a week, further out).
 - **How you want to feel**: anything, switch off, work up a sweat, old things, or city life.
 - **Press and hold to open**: the box shakes harder and harder, the phone shakes with it, the lid flies off and a boarding pass flips over. Three a day.
-- **A reason that's true**: it only says what your own footprints show, such as "You haven't lit a single must-see in Shanxi. Start here." or "You've lit 5 places, and not one is wild." Places on your wish list, and countries you hold a valid visa for, come up more often. Now and then it simply says: "No reason. That's what a blind box is."
+- **A reason that's true**: it only says what your own footprints show, such as "You haven't lit a single must-see in Shanxi. Start here." or "You've lit 5 places, and not one is a mountain." Places on your wish list, and countries you hold a valid visa for, come up more often. Now and then it simply says: "No reason. That's what a blind box is."
 - **A day nearby**: Apple Maps finds hills, water, old towns and streets near you that you haven't been to, with a time to set off (earlier if you're an early riser), the drive, and that day's weather, with a word if it'll rain. Tap Directions and Apple Maps has the route ready.
-- **Longer breaks**: a route that makes sense, such as "Days 1–2 Hukou Waterfall, Day 3 Mount Hua, Day 4 Terracotta Army", each stop with its best season. Just a suggestion; stay as long as you like.
-- **Once you're there**: two ideas and **a small mission**, like "Arrive an hour before sunset, when the water looks its best" or "Bring home one small thing you can only get here."
+- **Longer breaks**: a route that makes sense, such as "Days 1–2 Mount Fanjing, Day 3 Fenghuang Old Town, Day 4 Zhangjiajie", each stop with its best season. Stops are only looked for in the same country or region, so nothing that needs separate papers gets slipped in. Just a suggestion; stay as long as you like.
+- **Once you're there**: two ideas and **a small mission**, like "You don't need the summit. Stop wherever feels right." or "Write down the best thing you hear today."
 - **Keep the boarding pass**: the place goes on your wish list. Passes never expire, and nothing nags you. They're kept in two groups, waiting for you and reached, and each can take you straight to directions.
 - **When you really get there**: Waytrace knows, and stamps an arrival postmark: "73 days ago, the box gave you this place. And you really came."
 
