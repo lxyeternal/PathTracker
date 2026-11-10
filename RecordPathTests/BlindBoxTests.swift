@@ -120,6 +120,17 @@ struct BlindBoxTests {
         #expect(BlindBox.stops(around: .init(place), span: .day, context: .init()).isEmpty)
     }
 
+    @Test func stopsStayOnTheSameSideOfTheBorder() throws {
+        // Alishan is near Gulangyu on the map, and a permit away.
+        let gulangyu = try #require(BlindBox.mustSee(id: "gulangyu"))
+        for span in [BlindBox.Span.holiday, .long] {
+            for id in BlindBox.stops(around: .init(gulangyu), span: span, context: .init()) {
+                let stop = try #require(BlindBox.mustSee(id: id))
+                #expect(BlindBox.countries(of: .init(stop)) == ["CN"], Comment(rawValue: id))
+            }
+        }
+    }
+
     @Test func daysAreSharedOutWithMoreForTheMainPlace() {
         #expect(BlindBox.itinerary(days: 4, places: 3) == [1...2, 3...3, 4...4])
         #expect(BlindBox.itinerary(days: 7, places: 4) == [1...4, 5...5, 6...6, 7...7])
