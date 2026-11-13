@@ -792,6 +792,20 @@ struct YearReportTests {
         #expect(RouteSpan.all.interval(now: now, calendar: calendar) == nil)
     }
 
+    @Test func aCrashStackIsReadDownToWhereItHappened() throws {
+        let json = """
+        {"callStackTree":{},"callStacks":[
+          {"threadAttributed":false,"callStackRootFrames":[{"binaryName":"UIKitCore","offsetIntoBinaryTextSegment":1}]},
+          {"threadAttributed":true,"callStackRootFrames":[{"binaryName":"libswiftCore.dylib","offsetIntoBinaryTextSegment":120,
+             "subFrames":[{"binaryName":"RecordPath","offsetIntoBinaryTextSegment":4096,
+               "subFrames":[{"binaryName":"RecordPath","offsetIntoBinaryTextSegment":8192}]}]}]}
+        ]}
+        """
+        let frames = CrashReports.frames(in: Data(json.utf8))
+        #expect(frames == ["libswiftCore.dylib+120", "RecordPath+4096", "RecordPath+8192"])
+        #expect(CrashReports.frames(in: Data("not json".utf8)).isEmpty)
+    }
+
     @Test func summariesWaitWhenNobodyIsLooking() {
         // In front: at once. In the background: at most one every five minutes.
         #expect(PlaceSummaries.delay(active: true, sinceLast: 0) == 1.5)

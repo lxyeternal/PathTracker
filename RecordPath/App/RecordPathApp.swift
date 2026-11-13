@@ -65,6 +65,7 @@ final class AppServices {
         // Before anything builds a string, so even background launches use the chosen language.
         _ = LanguageSettings.shared
         Diagnostics.launched()
+        CrashReports.shared.start()
         let inMemory = ProcessInfo.processInfo.arguments.contains("-uiTesting")
         container = PersistenceController.makeContainer(inMemory: inMemory)
         tagger = PlaceTagger(context: container.mainContext)
