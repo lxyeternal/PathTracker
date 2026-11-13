@@ -246,6 +246,13 @@ At the bottom of Stats, a set of cards about you:
 
 ---
 
+## If something goes wrong
+
+- **It closes as soon as it opens**: 1.0.2 did this on early iOS 27.2 betas; 1.0.3 fixes it. Update to 1.0.3 or later from the App Store.
+- **Any other crash or freeze**: send us the log from Settings › Export Diagnostics Log. From 1.0.3 on, the log notes why the app last closed unexpectedly.
+- **You can't get into the app**: on the iPhone open Settings › Privacy & Security › Analytics & Improvements › Analytics Data, find the most recent file whose name starts with `RecordPath-`, and share it with us.
+- Or open an [issue](../../issues) here.
+
 ## Privacy
 
 Waytrace **has no server of its own**. Your routes, places, trips and photos live only on your devices and in your own iCloud; the developer can't see them. Place names come from Apple's map service, and photos are only read on the phone. See [PRIVACY.md](PRIVACY.md).
