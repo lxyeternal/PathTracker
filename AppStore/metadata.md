@@ -66,15 +66,11 @@
 关于耗电：后台持续使用定位会增加耗电，漫迹会在你静止时自动降低定位频率，你也可以在设置里随时暂停记录或选择省电模式。
 
 ### 此版本的新增内容 What's New（4000）
-走过的路，现在能按时间看了：在“统计”页打开“走过的路”，今天、本周、本月、今年或全部，所有轨迹叠在一张地图上，常走的路越叠越亮。
+修复了在部分 iPhone 上一打开就闪退的问题。
 
-暂停更简单：点一下就暂停，直到你点“继续”；也可以让它 1 小时后、3 小时后或明天早上自己恢复。暂停和“仅手动”时不再使用定位，定位图标也不会留在屏幕上。
+旅行盲盒给长假安排的周边地方，现在都和目的地在同一个国家或地区，不会再把需要另办证件的地方排进同一趟行程。
 
-“第一次”只留下和地方有关的：第一次到一个国家、一座城市、一处此生必去。每一条都配了图，优先用你自己在那里拍的照片。
-
-旅行盲盒换了新的样子：一片会闪的夜空，行程画成一条路线，周边的地方可以直接导航过去。
-
-后台记录更省电，英文显示也修了一些小问题。
+诊断日志会记下上一次意外退出的原因，在“设置 › 导出诊断日志”里可以发给我们。
 
 ---
 
@@ -130,15 +126,11 @@ Waytrace has no server of its own. Your tracks, places, trips and photos stay on
 About battery: continued use of location in the background can decrease battery life. Waytrace lowers the location rate when you're still, and you can pause recording or choose a power-saving mode at any time.
 
 ### What's New (4000)
-Every road, by time: open Every Road on the Stats tab to see today's, this week's, this month's, this year's or all of your routes on one map. The roads you take most glow brightest.
+Fixed a crash on launch on some iPhones.
 
-Pausing is simpler: one tap pauses until you tap Resume, or let it come back by itself in an hour, three hours or tomorrow morning. While paused, or in manual-only mode, location isn't used and the location arrow no longer stays on screen.
+The places the Travel Blind Box adds around a longer trip are now always in the same country or region as the destination, so a trip never needs a second permit.
 
-Firsts are now only about places: your first time in a country, a city or a place for a lifetime. Each has a picture, your own photo from there when you have one.
-
-The Travel Blind Box has a new look: a night sky that twinkles, trips drawn as a route, and directions to places nearby.
-
-Recording in the background uses less battery, and a few small fixes in English.
+The diagnostics log now notes why the app last closed unexpectedly; send it to us from Settings › Export Diagnostics Log.
 
 ---
 
