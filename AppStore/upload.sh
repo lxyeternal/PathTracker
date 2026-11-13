@@ -19,6 +19,14 @@ xcodebuild -project RecordPath.xcodeproj -scheme RecordPath -configuration Relea
 
 [ -d "$ARCHIVE" ] || { echo "The archive failed; open the project in Xcode and try Product › Archive to see why."; exit 1; }
 
+# Date's <= and >= must stay inside the app (Common/DateComparison.swift): early iOS 27.2
+# betas have no copy in Foundation, and calling it there kills the app on launch.
+for BINARY in $(find "$ARCHIVE/Products" -type f -perm +111); do
+  if xcrun dyld_info -imports "$BINARY" 2>/dev/null | grep -q 'Foundation4DateV2[gl]eoi'; then
+    echo "$BINARY calls Foundation's Date <= or >=, which crashes on iOS 27.2 betas. Not uploading."; exit 1
+  fi
+done
+
 echo "Uploading…"
 LOG=build/upload.log
 xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportPath build/export \
