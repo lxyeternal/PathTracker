@@ -62,7 +62,7 @@ private struct BlindBoxSky: View {
 }
 
 /// Chips that wrap onto the next line instead of running off the side.
-private struct WrappingLayout: Layout {
+struct WrappingLayout: Layout {
     var spacing: CGFloat = 8
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
@@ -148,17 +148,14 @@ enum BlindBoxPlanner {
     /// What the box knows when it opens. Uses where the person is now if that's recent,
     /// otherwise home.
     @MainActor
-    static func context(visited: Set<String>) -> BlindBox.Context {
+    static func context(visited: Set<String>, fix: CLLocation? = nil) -> BlindBox.Context {
         let summaries = PlaceSummaries.shared
         var context = BlindBox.Context(visited: visited)
         context.wishes = Set((UserDefaults.standard.string(forKey: "mustSee.wishes") ?? "").split(separator: ",").map(String.init))
         context.recent = BlindBoxStore.shared.recent
-        let latest = summaries.stays.first { !$0.isFromPhotos }
-        if let latest, Date().timeIntervalSince(latest.departure ?? .now) < 3 * 86_400 {
-            context.here = latest.location
-        } else {
-            context.here = summaries.home?.location
-        }
+        context.here = here(now: fix)
+        context.custom = WishPlaces.shared.waiting.map(\.place)
+        context.wishes.formUnion(context.custom.map(\.id))
         if let here = context.here {
             context.farthest = summaries.stays.map { $0.location.distance(from: here) }.max() ?? 0
         }
@@ -169,6 +166,20 @@ enum BlindBoxPlanner {
             }
         }
         return context
+    }
+
+    /// Where the person is, as well as the app knows: a fix from the last few days, the latest
+    /// place recorded or photographed in that time, then home, then wherever they were last.
+    /// Someone new has no home yet and may only have photos, and still isn't in Mexico.
+    @MainActor
+    static func here(now fix: CLLocation?, at date: Date = .now) -> CLLocation? {
+        let summaries = PlaceSummaries.shared
+        let recent = date.addingTimeInterval(-3 * 86_400)
+        let latest = summaries.stays.first { !$0.isFromPhotos }
+        if let latest, (latest.departure ?? date) > recent { return latest.location }
+        if let fix, fix.timestamp > recent { return fix }
+        if let photographed = summaries.stays.first, (photographed.departure ?? photographed.arrival) > recent { return photographed.location }
+        return summaries.home?.location ?? latest?.location ?? summaries.stays.first?.location
     }
 
     /// Places worth a day out, away from the everyday and not yet visited.
@@ -699,6 +710,7 @@ struct BlindBoxView: View {
     @State private var nothing: LocalizedStringKey?
     @State private var viewing: BlindBox.Ticket?
     @State private var here: CLLocation?
+    @Environment(LocationEngine.self) private var engine
     @State private var burst: Date?
     @State private var floating = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -735,7 +747,7 @@ struct BlindBoxView: View {
         let chinese = summaries.home?.countryCode == "CN" || (summaries.home == nil && MustSee.isChinese)
         moment = BlindBoxMoment.at(now, holiday: chinese ? Holiday.next(after: now) : nil)
         if phase == .choosing { span = moment.span }
-        here = BlindBoxPlanner.context(visited: []).here
+        here = BlindBoxPlanner.context(visited: [], fix: engine.currentLocation).here
         if let open = store.open, phase == .choosing {
             flipped = true
             lidOpen = 1
@@ -921,15 +933,17 @@ struct BlindBoxView: View {
         withAnimation(.spring(response: 0.55, dampingFraction: 0.72)) { lidOpen = 1 }
         Task { @MainActor in
             await progress.update(from: summaries.stays)
-            let context = BlindBoxPlanner.context(visited: Set(progress.firstVisits.keys))
+            let context = BlindBoxPlanner.context(visited: Set(progress.firstVisits.keys), fix: engine.currentLocation)
             here = context.here
             guard let draw = await bestDraw(context) else {
                 withAnimation(.smooth) {
                     lidOpen = 0
                     holdProgress = 0
                     phase = .choosing
-                    nothing = span == .day ? "这附近一天能到的地方，暂时没找到。换个长一点的时间试试。"
-                                           : "两百处地方，你都走到了。接下来的路，你自己定。"
+                    nothing = context.here == nil && span != .long && span != .holiday ? "还不知道你在哪儿。带着手机出门走走，盲盒就知道该往哪儿找了。"
+                        : span == .day ? "这附近一天能到的地方，暂时没找到。换个长一点的时间试试。"
+                        : span == .weekend ? "一个周末能到的地方，暂时没找到。换个长一点的时间试试。"
+                        : "两百处地方，你都走到了。接下来的路，你自己定。"
                 }
                 return
             }

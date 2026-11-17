@@ -31,6 +31,8 @@ final class PlaceSummaries {
     private(set) var extremes = LifeExtremes()
     private(set) var portrait = TravellerPortrait()
     private(set) var echoes: [Echo] = []
+    /// Places still waiting for a name: until they have one they're in no country or city.
+    private(set) var unnamed = 0
     /// Goes up every time the summaries are worked out again, for screens that derive from them.
     private(set) var revision = 0
 
@@ -112,6 +114,7 @@ final class PlaceSummaries {
             extremes = result.extremes
             portrait = result.portrait
             echoes = result.echoes
+            unnamed = result.unnamed
             revision += 1
             #if DEBUG
             Diagnostics.record("summaries background=\(Int(mainStarted.timeIntervalSince(started) * 1000))ms main=\(Int(Date().timeIntervalSince(mainStarted) * 1000))ms")
@@ -151,12 +154,15 @@ final class PlaceSummaries {
         var extremes = LifeExtremes()
         var portrait = TravellerPortrait()
         var echoes: [Echo] = []
+        var unnamed = 0
 
         init(container: ModelContainer) {
             let context = ModelContext(container)
             let all = (try? context.fetch(FetchDescriptor<Stay>(sortBy: [SortDescriptor(\.arrival, order: .reverse)]))) ?? []
             let chunks = (try? context.fetch(FetchDescriptor<TrackChunk>())) ?? []
             ids = all.map(\.persistentModelID)
+            let pending = TagState.pending.rawValue
+            unnamed = all.count { $0.tagStateRaw == pending }
             world = WorldInsights(stays: all)
             lightUp = LightUpInsights(stays: all)
             stamps = StampBook(stays: all)

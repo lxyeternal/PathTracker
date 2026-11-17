@@ -281,7 +281,12 @@ enum CityNames {
         for group in Dictionary(grouping: keys, by: root).values {
             let members = group.compactMap { names[$0] }
             let fitting = members.filter { hasHan($0.name) == prefersChinese }
-            let best = (fitting.isEmpty ? members : fitting).max { $0.count < $1.count }?.name ?? members[0].name
+            var best = CityName.tidy((fitting.isEmpty ? members : fitting).max { $0.count < $1.count }?.name ?? members[0].name)
+            // No name in the app's language (lookups from inside China often have none for
+            // places abroad): the well-known city it's part of, if there is one.
+            if fitting.isEmpty, let index = keys.firstIndex(of: group[0]), let city = WorldCities.near(centers[index].location) {
+                best = prefersChinese ? city.chinese : city.english
+            }
             for key in group { result[key] = best }
         }
         return result

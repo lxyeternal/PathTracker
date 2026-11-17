@@ -33,8 +33,8 @@ struct MoveDetailView: View {
         NavigationStack {
             List {
                 Section {
-                    TrackMap(chunks: move.chunks, stays: [from, to].compactMap { $0 }, interactive: true)
-                        .frame(height: 280)
+                    TrackMap(chunks: move.chunks, stays: [from, to].compactMap { $0 }, interactive: true, tight: true)
+                        .frame(height: 340)
                         .listRowInsets(EdgeInsets())
                 }
 

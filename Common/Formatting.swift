@@ -61,9 +61,10 @@ enum Format {
     static func daySubtitle(_ date: Date) -> String {
         let calendar = Calendar.current
         if calendar.isDate(date, equalTo: Date(), toGranularity: .year) {
-            let weekday = date.formatted(.dateTime.weekday(.wide).locale(appLocale))
+            // Beside the toolbar's buttons there's room for "11月17日 周一", not for "星期一".
             return calendar.isDateInToday(date) || calendar.isDateInYesterday(date)
-                ? "\(date.formatted(.dateTime.month().day().locale(appLocale))) \(weekday)" : weekday
+                ? "\(date.formatted(.dateTime.month().day().locale(appLocale))) \(date.formatted(.dateTime.weekday(.abbreviated).locale(appLocale)))"
+                : date.formatted(.dateTime.weekday(.wide).locale(appLocale))
         }
         return date.formatted(.dateTime.year().weekday(.wide).locale(appLocale))
     }

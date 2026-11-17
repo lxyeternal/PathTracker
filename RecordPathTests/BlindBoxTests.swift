@@ -49,8 +49,55 @@ struct BlindBoxTests {
         // In the middle of the Pacific nothing is a day away: say so, don't send them to Tokyo.
         let nowhere = BlindBox.Context(here: CLLocation(latitude: 0, longitude: -160))
         #expect(draws(.day, context: nowhere, count: 5).isEmpty)
-        // But a weekend can still give the closest there is.
-        #expect(!draws(.weekend, context: nowhere, count: 5).isEmpty)
+        // Nor does a weekend: the closest there is, Hawaiʻi, is 2,300 km off.
+        #expect(draws(.weekend, context: nowhere, count: 5).isEmpty)
+        // A few days can still give the closest there is.
+        let holiday = draws(.holiday, context: nowhere, count: 5)
+        #expect(!holiday.isEmpty)
+        #expect(holiday.allSatisfy { ($0.distance ?? .infinity) <= 2_500_000 })
+    }
+
+    @Test func nearNeedsToKnowWhereThePersonIs() {
+        // Someone new, with no place recorded and no home yet, used to get Mexico for a weekend.
+        #expect(draws(.day, context: .init(), count: 5).isEmpty)
+        #expect(draws(.weekend, context: .init(), count: 5).isEmpty)
+        #expect(!draws(.long, context: .init(), count: 5).isEmpty)
+    }
+
+    @Test func aWeekendStaysCloseEvenWhereLittleIsLeft() {
+        // Everything within a weekend of Beijing seen: what's offered is still within 1,200 km.
+        let near = (MustSee.china + MustSee.world).filter {
+            beijing.distance(from: CLLocation(latitude: $0.latitude, longitude: $0.longitude)) <= 700_000
+        }
+        for draw in draws(.weekend, context: .init(visited: Set(near.map(\.id)), here: beijing)) {
+            #expect((draw.distance ?? .infinity) <= 1_200_000, Comment(rawValue: draw.place.id))
+        }
+    }
+
+    @Test func aPlaceOfThePersonsOwnCanBeDrawn() {
+        let own = BlindBox.Place(id: "wish-1", name: "Nikko", region: "Japan", latitude: 36.75, longitude: 139.60, kind: .heritage)
+        let results = draws(.long, context: .init(wishes: [own.id], here: beijing, custom: [own]), count: 400)
+        let drawn = results.filter { $0.place.id == own.id }
+        #expect(!drawn.isEmpty)
+        #expect(drawn.contains { $0.reason == .wished })
+    }
+
+    @Test func cityNamesLoseTheirStateLetters() {
+        #expect(CityName.tidy("里约热内卢 - RJ") == "里约热内卢")
+        #expect(CityName.tidy("Rio de Janeiro - RJ") == "Rio de Janeiro")
+        #expect(CityName.tidy("Mascot NSW") == "Mascot")
+        #expect(CityName.tidy("New York") == "New York")
+        #expect(CityName.tidy("LA") == "LA")
+        #expect(CityName.tidy("上海") == "上海")
+    }
+
+    @Test func suburbsBelongToTheirCity() {
+        #expect(WorldCities.near(CLLocation(latitude: -33.93, longitude: 151.19))?.chinese == "悉尼")
+        #expect(WorldCities.near(CLLocation(latitude: 7.88, longitude: 98.39))?.english == "Phuket")
+        #expect(WorldCities.near(CLLocation(latitude: -22.95, longitude: -43.21))?.chinese == "里约热内卢")
+        // The middle of nowhere is nobody's suburb.
+        #expect(WorldCities.near(CLLocation(latitude: 7.35, longitude: 100.33)) == nil)
+        #expect(WorldCities.near(CLLocation(latitude: 39.9, longitude: 116.4)) == nil)
     }
 
     @Test func aDayOutUsesWhatsNearby() {

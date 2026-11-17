@@ -42,6 +42,8 @@ struct TodayView: View {
                 .navigationDestination(for: DayRoute.self) { DayPage(day: $0.day) }
                 .navigationTitle(Format.dayTitle(day))
                 .navigationSubtitle(Format.daySubtitle(day))
+                // Beside the arrows, not on a line of its own: the day's map starts higher up.
+                .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItemGroup(placement: .topBarLeading) {
                         Button("前一天", systemImage: "chevron.left") { shift(by: -1) }
@@ -126,6 +128,8 @@ private struct DayPickerSheet: View {
 struct DayContentView: View {
     @State private var photoAccess = DayPhotos.status
     @AppStorage("timeline.photosOffered") private var photosOffered = false
+    /// The latest place at the top, where it can be seen without scrolling; or the day from its start.
+    @AppStorage("timeline.newestFirst") private var newestFirst = true
     let day: Date
     @Environment(LocationEngine.self) private var engine
     @Environment(ActivityProvider.self) private var activityProvider
@@ -192,9 +196,9 @@ struct DayContentView: View {
                 if entries.isEmpty {
                     emptyTimeline
                 } else {
-                    SectionHeader(title: "时间线", trailing: "\(stays.count) 个地点")
-                    TimelineList(entries: entries, day: day, onSelect: { selectedStay = $0 },
-                                 onSelectMove: { selectedMove = $0 })
+                    timelineHeader
+                    TimelineList(entries: newestFirst ? entries.reversed() : entries, day: day, newestFirst: newestFirst,
+                                 onSelect: { selectedStay = $0 }, onSelectMove: { selectedMove = $0 })
                         .id(photoAccess)
                     if photoAccess == .notDetermined && !photosOffered { photosCard }
                 }
@@ -270,6 +274,26 @@ struct DayContentView: View {
         .buttonStyle(PressableStyle())
         .matchedTransitionSource(id: "map", in: mapNamespace)
         .accessibilityLabel("打开当天的地图")
+    }
+
+    /// The timeline's title, and which end of the day it starts from.
+    private var timelineHeader: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text("时间线").font(.title3.bold())
+            Spacer()
+            Button {
+                withAnimation(.smooth) { newestFirst.toggle() }
+            } label: {
+                Label(newestFirst ? "最新在前" : "最早在前", systemImage: "arrow.up.arrow.down")
+                    .font(.subheadline)
+                    .contentTransition(.opacity)
+            }
+            .tint(.secondary)
+            .sensoryFeedback(.selection, trigger: newestFirst)
+            .accessibilityHint("切换时间线的顺序")
+        }
+        .padding(.horizontal, 4)
+        .padding(.top, 8)
     }
 
     /// The day in one line: steps, how far, how many places. Distance is the recorded total

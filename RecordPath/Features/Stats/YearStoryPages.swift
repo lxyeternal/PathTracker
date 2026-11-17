@@ -332,14 +332,26 @@ struct StoryPlacesPage: View {
     let pinCodes: [String]
     var elsewhere: [String] = []
     let isActive: Bool
+    /// Where the words begin, down the screen. A pin lower than that would sit half hidden
+    /// behind the numbers, so its flag joins the "and also" line instead.
+    @State private var textTop = CGFloat.infinity
+    @State private var mapFrame = CGRect.zero
+
+    private func isCovered(_ pin: CGPoint) -> Bool { mapFrame.minY + pin.y * mapFrame.height > textTop - 8 }
+
+    private var covered: [String] {
+        guard let backdrop else { return [] }
+        return zip(pinCodes, backdrop.pins).filter { isCovered($0.1) }.map(\.0)
+    }
 
     var body: some View {
+        let others = covered + elsewhere
         ZStack {
             Color.black.ignoresSafeArea()
             if let backdrop {
                 BackdropImage(image: backdrop.image, isActive: isActive)
                 GeometryReader { geo in
-                    ForEach(Array(zip(pinCodes, backdrop.pins).enumerated()), id: \.offset) { index, item in
+                    ForEach(Array(zip(pinCodes, backdrop.pins).enumerated()).filter { !isCovered($0.element.1) }, id: \.offset) { index, item in
                         FlagPin(code: item.0)
                             .position(x: item.1.x * geo.size.width, y: item.1.y * geo.size.height - 24)
                             .scaleEffect(isActive ? 1 : 0.1, anchor: .bottom)
@@ -347,17 +359,19 @@ struct StoryPlacesPage: View {
                             .animation(.spring(response: 0.5, dampingFraction: 0.55).delay(0.4 + Double(index) * 0.12), value: isActive)
                     }
                 }
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { mapFrame = $0 }
                 .ignoresSafeArea()
             }
             PageText {
                 Kicker(text: "这一年去过", tint: Color(red: 1, green: 0.7, blue: 0.45)).comesIn(isActive, after: 0.2)
+                    .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: { textTop = $0 }
                 HStack(spacing: 10) {
                     count(report.countries.count, "国家和地区", delay: 0.3)
                     count(report.cities.count, "座城市", delay: 0.4)
                     if !report.provinces.isEmpty { count(report.provinces.count, "个省份", delay: 0.5) }
                 }
-                if !elsewhere.isEmpty {
-                    Text("还有 \(elsewhere.map { String.flag(for: $0) }.joined(separator: " "))")
+                if !others.isEmpty {
+                    Text("还有 \(others.map { String.flag(for: $0) }.joined(separator: " "))")
                         .font(.title3.weight(.semibold))
                         .comesIn(isActive, after: 0.75)
                 }
@@ -416,19 +430,17 @@ private struct FlowChips: View {
     let items: [String]
 
     var body: some View {
-        // Two rows at most; the page has little room and the rest are in the lists.
-        let rows = [Array(items.prefix(4)), Array(items.dropFirst(4))].filter { !$0.isEmpty }
-        VStack(alignment: .leading, spacing: 8) {
-            ForEach(rows.indices, id: \.self) { row in
-                HStack(spacing: 8) {
-                    ForEach(rows[row], id: \.self) { item in
-                        Text(item)
-                            .font(.subheadline.weight(.semibold))
-                            .padding(.horizontal, 12).padding(.vertical, 6)
-                            .background(Color(red: 1, green: 0.6, blue: 0.3).opacity(0.25), in: .capsule)
-                            .overlay(Capsule().stroke(Color(red: 1, green: 0.7, blue: 0.45).opacity(0.5), lineWidth: 1))
-                    }
-                }
+        // Each name on one line in a chip its own width, wrapping to the next row: four to a
+        // row squeezed long names onto three lines and made every chip a different height.
+        WrappingLayout(spacing: 8) {
+            ForEach(items, id: \.self) { item in
+                Text(item)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .frame(maxWidth: 220)
+                    .background(Color(red: 1, green: 0.6, blue: 0.3).opacity(0.25), in: .capsule)
+                    .overlay(Capsule().stroke(Color(red: 1, green: 0.7, blue: 0.45).opacity(0.5), lineWidth: 1))
             }
         }
     }

@@ -23,6 +23,17 @@ enum BlindBox {
             }
         }
 
+        /// How far the box may go when nothing lies in range, in kilometres: a weekend with
+        /// nothing near is no reason for a ticket to the other side of the world.
+        var farthest: Double {
+            switch self {
+            case .day: 150
+            case .weekend: 1_200
+            case .holiday: 4_000
+            case .long: .infinity
+            }
+        }
+
         var days: Int {
             switch self {
             case .day: 1
@@ -252,6 +263,8 @@ enum BlindBox {
         var visas: [String: (name: String, until: Date)] = [:]
         /// Must-see places opened recently, not to be given again straight away.
         var recent: Set<String> = []
+        /// Places the person added to their own list and hasn't reached. Their ids are wishes too.
+        var custom: [Place] = []
 
         func lit(_ kind: MustSeePlace.Kind) -> Int { litByKind[kind, default: 0] }
         var litTotal: Int { visited.count }
@@ -313,18 +326,21 @@ enum BlindBox {
         let unseen = (MustSee.china + MustSee.world)
             .filter { !context.visited.contains($0.id) && !leftOut.contains($0.id) }
             .map(Place.init)
-        var pool = unseen + nearby
+        // Places of the person's own that they haven't reached, wherever they are.
+        var pool = unseen + nearby + context.custom
         if let here = context.here {
             let reachable = pool.filter { span.range.contains(here.distance(from: $0.location) / 1000) }
             if !reachable.isEmpty {
                 pool = reachable
-            } else if span == .day {
-                // Nothing within a day's reach: better to say so than to send them far away.
-                return nil
             } else {
-                // Somewhere remote: the closest few that are left.
-                pool = Array(pool.sorted { here.distance(from: $0.location) < here.distance(from: $1.location) }.prefix(6))
+                // Somewhere remote: the closest few that are left, as far as the time allows.
+                // Past that, better to say so than to send them far away.
+                pool = Array(pool.filter { here.distance(from: $0.location) / 1000 <= span.farthest }
+                    .sorted { here.distance(from: $0.location) < here.distance(from: $1.location) }.prefix(6))
             }
+        } else if span == .day || span == .weekend {
+            // Near means near somewhere: without knowing where the person is, nothing is.
+            return nil
         }
         let suited = pool.filter { mood.kinds.contains($0.placeKind) }
         if !suited.isEmpty { pool = suited }
@@ -340,7 +356,7 @@ enum BlindBox {
         let favourite = context.favourite
         let weights = pool.map { place -> Double in
             var weight = 1.0
-            if let id = place.mustSeeID, context.wishes.contains(id) { weight *= 6 }
+            if context.wishes.contains(place.id) { weight *= 6 }
             if visa(for: place, context: context) != nil { weight *= 3 }
             if mood == .any {
                 if place.placeKind == favourite { weight *= 2 }
@@ -368,7 +384,7 @@ enum BlindBox {
     private static func reason(for place: Place, span: Span, mood: Mood, distance: Double?, context: Context,
                                using generator: inout some RandomNumberGenerator) -> Reason {
         var options: [Reason] = []
-        if let id = place.mustSeeID, context.wishes.contains(id) { options.append(.wished) }
+        if context.wishes.contains(place.id) { options.append(.wished) }
         if let visa = visa(for: place, context: context) { options.append(.visa(name: visa.name, until: visa.until)) }
         if mood != .any, mood.kinds.contains(place.placeKind) { options.append(.mood(mood)) }
         if let distance {

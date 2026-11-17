@@ -13297,6 +13297,188 @@
           }
         }
       }
+    },
+    "我想去的地方": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My Own List"
+          }
+        }
+      }
+    },
+    "添加想去的地方": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a Place"
+          }
+        }
+      }
+    },
+    "清单之外的地方，也可以收进来": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anywhere that isn't on the lists"
+          }
+        }
+      }
+    },
+    "在地图中打开": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open in Maps"
+          }
+        }
+      }
+    },
+    "移除": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove"
+          }
+        }
+      }
+    },
+    "想去哪儿？": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where to?"
+          }
+        }
+      }
+    },
+    "输入城市、景点或任何地方的名字。到过之后，它会像清单上的地方一样被点亮。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type a city, a sight or any place. Once you've been there, it lights up like the ones on the lists."
+          }
+        }
+      }
+    },
+    "城市、景点、地名": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "City, sight or place"
+          }
+        }
+      }
+    },
+    "没能找到这个地方": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't Find This Place"
+          }
+        }
+      }
+    },
+    "检查一下网络，或者换个名字再试。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check your connection, or try another name."
+          }
+        }
+      }
+    },
+    "想去的地方": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A place to go"
+          }
+        }
+      }
+    },
+    "最新在前": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latest First"
+          }
+        }
+      }
+    },
+    "最早在前": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Earliest First"
+          }
+        }
+      }
+    },
+    "切换时间线的顺序": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changes the order of the timeline"
+          }
+        }
+      }
+    },
+    "还不知道你在哪儿。带着手机出门走走，盲盒就知道该往哪儿找了。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The box doesn't know where you are yet. Take your phone out for a walk and it will know where to look."
+          }
+        }
+      }
+    },
+    "一个周末能到的地方，暂时没找到。换个长一点的时间试试。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing within a weekend's reach just now. Try a longer trip."
+          }
+        }
+      }
+    },
+    "还有 %lld 个地点正在识别，国家和城市的数字还会增加。": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld place is still being named. The countries and cities will go up."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld places are still being named. The countries and cities will go up."
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "version": "1.0"

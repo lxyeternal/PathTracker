@@ -79,8 +79,9 @@ struct MustSeeView: View {
         }
     }
 
-    /// Regions in the list's own order: provinces north to south and Hong Kong, Macao and
-    /// Taiwan together at the end of China; countries continent by continent.
+    /// Regions the person has been to come first, then the rest, each in the list's own order:
+    /// provinces north to south and Hong Kong, Macao and Taiwan together at the end of China;
+    /// countries continent by continent. Somewhere you know is where the next one is likeliest.
     private var regions: [(name: String, places: [MustSeePlace])] {
         var order: [String] = []
         var groups: [String: [MustSeePlace]] = [:]
@@ -88,7 +89,19 @@ struct MustSeeView: View {
             if groups[place.localizedRegion] == nil { order.append(place.localizedRegion) }
             groups[place.localizedRegion, default: []].append(place)
         }
-        return order.map { ($0, groups[$0] ?? []) }
+        let been = beenTo
+        let known = order.filter { name in groups[name]?.contains { been.contains($0.region) } ?? false }
+        return (known + order.filter { !known.contains($0) }).map { ($0, groups[$0] ?? []) }
+    }
+
+    /// The list's regions the person has set foot in: a province or a country they've stayed
+    /// in, or one with a place already lit.
+    private var beenTo: Set<String> {
+        let provinces = Set(Province.all.filter { summaries.lightUp.provinces[$0.id] != nil }.map(\.chineseName))
+        let countries = summaries.lightUp.countries
+        return Set(places.filter { place in
+            visited(place) != nil || (list == .china ? provinces.contains(place.region) : !BlindBox.countries(of: place).isDisjoint(with: countries))
+        }.map(\.region))
     }
 
     var body: some View {
@@ -107,8 +120,10 @@ struct MustSeeView: View {
                         .init(value: Filter.unlit, title: String(localized: "还没去", bundle: .appLanguage), count: places.count - litCount),
                     ], selection: $filter)
 
+                    if filter == .all || filter == .wished { WishPlacesSection(here: summaries.stays.first?.location) }
+
                     if shown.isEmpty {
-                        emptyFilter
+                        if filter != .wished || WishPlaces.shared.all.isEmpty { emptyFilter }
                     } else {
                         LazyVStack(alignment: .leading, spacing: 18) {
                             ForEach(regions, id: \.name) { region in

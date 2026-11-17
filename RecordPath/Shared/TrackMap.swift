@@ -10,6 +10,8 @@ struct TrackMap: View {
     var pastLines: [AtlasLine] = []
     var interactive = true
     var showsUser = false
+    /// Fills the map with the route itself, for one walk or ride looked at on its own.
+    var tight = false
     var mapStyle: MapStyle = .standard(elevation: .realistic, pointsOfInterest: .excludingAll)
     var onSelectStay: ((Stay) -> Void)?
 
@@ -88,8 +90,8 @@ struct TrackMap: View {
         for coordinate in coordinates {
             rect = rect.union(MKMapRect(origin: MKMapPoint(coordinate), size: MKMapSize(width: 0, height: 0)))
         }
-        let minimumSide = 1_600 * MKMapPointsPerMeterAtLatitude(coordinates[0].latitude)
-        let side = max(rect.width, rect.height) * 0.35
+        let minimumSide = (tight ? 250 : 1_600) * MKMapPointsPerMeterAtLatitude(coordinates[0].latitude)
+        let side = max(rect.width, rect.height) * (tight ? 0.14 : 0.35)
         rect = rect.insetBy(dx: -side, dy: -side)
         if rect.width < minimumSide || rect.height < minimumSide {
             let width = max(rect.width, minimumSide), height = max(rect.height, minimumSide)

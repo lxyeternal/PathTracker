@@ -497,6 +497,12 @@ struct StatsView: View {
                 Text("从 \(first.formatted(Date.FormatStyle(date: .long, time: .omitted, locale: appLocale))) 开始记录")
                     .font(.footnote).foregroundStyle(.secondary).padding(.horizontal, 4)
             }
+            // Countries and cities are counted from named places only: say so while a big
+            // photo import is still being named, or the numbers look wrong next to the year's.
+            if summaries.unnamed > 0 {
+                Label("还有 \(summaries.unnamed) 个地点正在识别，国家和城市的数字还会增加。", systemImage: "hourglass")
+                    .font(.footnote).foregroundStyle(.secondary).padding(.horizontal, 4)
+            }
         }
     }
 

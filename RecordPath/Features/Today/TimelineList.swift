@@ -6,6 +6,8 @@ import Photos
 struct TimelineList: View {
     let entries: [TimelineEntry]
     var day: Date = Date()
+    /// The entries come latest first, so what's above a move is where it ended.
+    var newestFirst = false
     var onSelect: (Stay) -> Void
     var onSelectMove: (MoveSelection) -> Void = { _ in }
 
@@ -23,7 +25,8 @@ struct TimelineList: View {
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
                 case .move(let move):
                     Button {
-                        onSelectMove(MoveSelection(move: move, from: neighbourStay(before: index), to: neighbourStay(after: index)))
+                        let above = neighbourStay(before: index), below = neighbourStay(after: index)
+                        onSelectMove(MoveSelection(move: move, from: newestFirst ? below : above, to: newestFirst ? above : below))
                     } label: {
                         MoveRow(move: move, isFirst: index == 0, isLast: index == entries.count - 1)
                     }
@@ -212,6 +215,7 @@ private struct StayRow: View {
                     }
                 }
         }
+        .clipShape(.rect(cornerRadius: 20, style: .continuous))
         .contentShape(.rect(cornerRadius: 20, style: .continuous))
     }
 
@@ -245,7 +249,10 @@ private struct StayRow: View {
         }
         .scrollIndicators(.hidden)
         .keepsDaySwipe()
-        .scrollClipDisabled()
+        // The strip runs to the card's edges and stops there: photos scrolled past them used
+        // to slide out over the times in the margin.
+        .contentMargins(.horizontal, 16, for: .scrollContent)
+        .padding(.horizontal, -16)
         .fullScreenCover(item: $viewingAsset) { AssetPager(assets: libraryPhotos, selection: $0.id) }
         .fullScreenCover(item: $viewingPhoto) { PhotoPager(photos: posted, selection: $0.id) }
     }

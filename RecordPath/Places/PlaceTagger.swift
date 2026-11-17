@@ -66,27 +66,44 @@ final class PlaceTagger {
     }
 
     private func processPending() async {
-        await processPendingPhotos()
+        // Places just recorded come first. A photo import can take hours to name, and today's
+        // places used to wait behind it reading "正在识别地点…" all the while.
+        switch await tagRecorded() {
+        case .stopped: return
+        case .more: needsAnotherPass = true; return
+        case .none: break
+        }
+        guard await processPendingPhotos() else { return }
+        await fillTimeZones()
+        await localizeNames()
+    }
+
+    private enum Recorded { case none, more, stopped }
+
+    private var hasRecordedPending: Bool {
+        let pending = TagState.pending.rawValue
+        return ((try? context.fetchCount(FetchDescriptor<Stay>(predicate: #Predicate { $0.tagStateRaw == pending && $0.sourceRaw == nil }))) ?? 0) > 0
+    }
+
+    /// Names recorded places waiting for it, newest first, a batch at a time. `.stopped` when
+    /// there's no network or Apple's limit holds: nothing else will get through either.
+    private func tagRecorded() async -> Recorded {
         let pending = TagState.pending.rawValue
         var descriptor = FetchDescriptor<Stay>(predicate: #Predicate { $0.tagStateRaw == pending && $0.sourceRaw == nil },
                                                sortBy: [SortDescriptor(\.arrival, order: .reverse)])
         descriptor.fetchLimit = 120
-        guard let stays = try? context.fetch(descriptor), !stays.isEmpty else {
-            await fillTimeZones()
-            await localizeNames()
-            return
-        }
+        guard let stays = try? context.fetch(descriptor), !stays.isEmpty else { return .none }
 
         for stay in stays {
             if Self.isGone(stay) { continue }
             let outcome = await tagPatiently(stay)
             try? context.save()
-            if outcome != .done { return }
+            if outcome != .done { return .stopped }
             if !Self.isGone(stay) { onTagged?(stay) }
             // Up to three map requests per place; stay well under Apple's rate limit.
             try? await Task.sleep(for: .milliseconds(2000))
         }
-        needsAnotherPass = true
+        return .more
     }
 
     /// Places named before time zones were kept get theirs: one lookup per one-degree area,
@@ -142,6 +159,8 @@ final class PlaceTagger {
         defer { try? context.save() }
         for stay in all where !fits(stay.city) || !fits(stay.country) {
             if Self.isGone(stay) { continue }
+            // A place recorded meanwhile is named first; this picks up again after it.
+            if hasRecordedPending { needsAnotherPass = true; return }
             if stay.isFromPhotos, let neighbour = named.nearest(to: stay, within: 3_000) {
                 stay.country = neighbour.country
                 stay.city = neighbour.city
@@ -185,7 +204,8 @@ final class PlaceTagger {
     /// held in memory; a visit with a named neighbour copies its city and country, and only
     /// one visit per empty area is sent to the geocoder. Saves are batched so the screens
     /// showing places don't redraw thousands of times.
-    private func processPendingPhotos() async {
+    /// False when it had to stop for want of network or Apple's leave.
+    private func processPendingPhotos() async -> Bool {
         let pending = TagState.pending.rawValue, tagged = TagState.tagged.rawValue
         let waiting = (try? context.fetch(FetchDescriptor<Stay>(predicate: #Predicate { $0.tagStateRaw == pending && $0.sourceRaw != nil },
                                                                  sortBy: [SortDescriptor(\.arrival, order: .reverse)]))) ?? []
@@ -196,7 +216,7 @@ final class PlaceTagger {
                 _ = await PhotoFootprints.consolidate(in: context)
                 UserDefaults.standard.set(true, forKey: consolidatedKey)
             }
-            return
+            return true
         }
         let named = (try? context.fetch(FetchDescriptor<Stay>(predicate: #Predicate { $0.tagStateRaw == tagged && $0.countryCode != nil }))) ?? []
         var grid = PhotoGrid()
@@ -220,7 +240,10 @@ final class PlaceTagger {
         onPhotosTagged?()
 
         var geocoded = 0
+        var finished = true
         for stay in unnamed {
+            // Somewhere recorded while this runs doesn't wait for the rest of the library.
+            if hasRecordedPending, await tagRecorded() == .stopped { finished = false; break }
             if Self.isGone(stay) { continue }
             if let neighbour = grid.nearest(to: stay, within: 3_000) {
                 // Named by a visit geocoded a moment ago.
@@ -228,7 +251,7 @@ final class PlaceTagger {
                 continue
             }
             let outcome = await tagPatiently(stay, lookForNeighbour: false)
-            if outcome != .done { break }
+            if outcome != .done { finished = false; break }
             if !Self.isGone(stay), stay.countryCode != nil { grid.add(stay) }
             geocoded += 1
             // Every save redraws whatever shows places; a dozen at a time is plenty.
@@ -240,6 +263,7 @@ final class PlaceTagger {
         UserDefaults.standard.set(true, forKey: consolidatedKey)
         onPhotosTagged?()
         Diagnostics.record("photoTag named=\(waiting.count - unnamed.count) geocoded=\(unnamed.count)")
+        return finished
     }
 
     private enum Outcome { case done, offline, throttled }
@@ -477,6 +501,19 @@ enum CityName {
         return address
     }
 
+    /// A state's letters tacked on to a city aren't part of its name: "里约热内卢 - RJ",
+    /// "Mascot NSW".
+    static func tidy(_ name: String) -> String {
+        var name = name
+        if let dash = name.range(of: " - ") { name = String(name[..<dash.lowerBound]) }
+        let words = name.split(separator: " ")
+        if words.count > 1, let last = words.last, (2...3).contains(last.count),
+           last.unicodeScalars.allSatisfy({ ("A"..."Z").contains(Character($0)) }) {
+            name = words.dropLast().joined(separator: " ")
+        }
+        return name
+    }
+
     private static let tokyoNames: Set<String> = ["Tokyo", "東京", "東京都", "东京", "东京都", "도쿄", "도쿄도"]
 
     static func normalized(cityName: String?, shortContext: String?, countryCode: String?, regionName: String? = nil) -> String? {
@@ -503,7 +540,7 @@ enum CityName {
         }
         // A river or a lake can lead the context: "Huangpu River, Shanghai".
         if let cityName, parts.dropFirst().contains(cityName) { return cityName }
-        return parts.first ?? cityName?.split(separator: ",").first.map { $0.trimmingCharacters(in: .whitespaces) }
+        return (parts.first ?? cityName?.split(separator: ",").first.map { $0.trimmingCharacters(in: .whitespaces) }).map(tidy)
     }
 }
 
