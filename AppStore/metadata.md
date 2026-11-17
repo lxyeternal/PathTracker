@@ -66,11 +66,19 @@
 关于耗电：后台持续使用定位会增加耗电，漫迹会在你静止时自动降低定位频率，你也可以在设置里随时暂停记录或选择省电模式。
 
 ### 此版本的新增内容 What's New（4000）
-修复了在部分 iPhone 上一打开就闪退的问题。
+此生必去里可以添加自己想去的地方了：搜索任何城市或景点收进来，到过之后会像清单上的地方一样被点亮，旅行盲盒也会抽到它们。去过的省份和国家排在清单最前面。
 
-旅行盲盒给长假安排的周边地方，现在都和目的地在同一个国家或地区，不会再把需要另办证件的地方排进同一趟行程。
+旅行盲盒的“一个周末”只会给离你不远的地方；还不知道你在哪儿的时候，它会先告诉你，不再随手抽一个很远的地方。
 
-诊断日志会记下上一次意外退出的原因，在“设置 › 导出诊断日志”里可以发给我们。
+今天的时间线默认把最新的放在最上面，点标题右边可以换回从早到晚。日期移到了顶栏里，地图往上挪了一截。
+
+点开一段路线，地图会放大到刚好装下它。
+
+刚记录的地点现在最先识别名字，不用再等照片导入的地点排完队；统计里会说明还有多少地点正在识别。
+
+年度足迹里，国外城市会尽量用 App 的语言显示，“第一次去”的城市排得更整齐。
+
+修复了时间线上的照片滑动时会盖住左边时间的问题。
 
 ---
 
@@ -126,11 +134,19 @@ Waytrace has no server of its own. Your tracks, places, trips and photos stay on
 About battery: continued use of location in the background can decrease battery life. Waytrace lowers the location rate when you're still, and you can pause recording or choose a power-saving mode at any time.
 
 ### What's New (4000)
-Fixed a crash on launch on some iPhones.
+Add your own places to the must-see lists: search for any city or sight, and it lights up once you've been there, just like the ones on the lists. The Travel Blind Box can draw them too. Provinces and countries you've been to now come first.
 
-The places the Travel Blind Box adds around a longer trip are now always in the same country or region as the destination, so a trip never needs a second permit.
+A weekend from the Travel Blind Box is always somewhere near you. When it doesn't know where you are yet, it says so, and no longer picks somewhere far away.
 
-The diagnostics log now notes why the app last closed unexpectedly; send it to us from Settings › Export Diagnostics Log.
+Today's timeline starts with the latest place; tap beside its title for earliest first. The date moved into the top bar, so the map sits higher.
+
+Opening a stretch of route zooms the map to fit it.
+
+Places you've just recorded are named first, ahead of those from a photo import, and Stats says how many are still being named.
+
+In your Year in Footprints, cities abroad appear in the app's language where possible, and first-time cities line up neatly.
+
+Fixed photos on the timeline sliding over the times beside them.
 
 ---
 
