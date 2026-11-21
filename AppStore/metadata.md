@@ -66,19 +66,17 @@
 关于耗电：后台持续使用定位会增加耗电，漫迹会在你静止时自动降低定位频率，你也可以在设置里随时暂停记录或选择省电模式。
 
 ### 此版本的新增内容 What's New（4000）
-此生必去里可以添加自己想去的地方了：搜索任何城市或景点收进来，到过之后会像清单上的地方一样被点亮，旅行盲盒也会抽到它们。去过的省份和国家排在清单最前面。
+护照里去过的国家换成了一张地图：去过的国家会描出轮廓并亮起来，上面立着国旗，去过的城市是一个个光点。可以按大洲切换，也可以展开成全屏慢慢看。
 
-旅行盲盒的“一个周末”只会给离你不远的地方；还不知道你在哪儿的时候，它会先告诉你，不再随手抽一个很远的地方。
+此生必去里，去过却没亮的地方可以自己点亮了，还能放上几张当时的照片，填上去的那天。
 
-今天的时间线默认把最新的放在最上面，点标题右边可以换回从早到晚。日期移到了顶栏里，地图往上挪了一截。
+旅行盲盒换了新样子：一个牛皮纸包裹，系着麻绳和行李牌。选项收在一处，一屏就能看完；同一个地方不会再连着抽到。
 
-点开一段路线，地图会放大到刚好装下它。
+邀请朋友看平行足迹更可靠了：邀请链接会打开漫迹自己的页面，在微信、Instagram 等 App 里打开时会告诉你怎么继续；没成功的时候会说明原因。
 
-刚记录的地点现在最先识别名字，不用再等照片导入的地点排完队；统计里会说明还有多少地点正在识别。
+地点的类型多了“商场”和“餐厅”，标一次，以后再去也记得。
 
-年度足迹里，国外城市会尽量用 App 的语言显示，“第一次去”的城市排得更整齐。
-
-修复了时间线上的照片滑动时会盖住左边时间的问题。
+旅程详情里的照片合并到了一处。
 
 ---
 
@@ -134,19 +132,17 @@ Waytrace has no server of its own. Your tracks, places, trips and photos stay on
 About battery: continued use of location in the background can decrease battery life. Waytrace lowers the location rate when you're still, and you can pause recording or choose a power-saving mode at any time.
 
 ### What's New (4000)
-Add your own places to the must-see lists: search for any city or sight, and it lights up once you've been there, just like the ones on the lists. The Travel Blind Box can draw them too. Provinces and countries you've been to now come first.
+The countries in your passport are now a map: each one you've been to is outlined and lit, with its flag standing on it and your cities as points of light. Switch between continents, or open the map full screen.
 
-A weekend from the Travel Blind Box is always somewhere near you. When it doesn't know where you are yet, it says so, and no longer picks somewhere far away.
+On the must-see lists, light up a place yourself when you've been there but it didn't light up, and add a few photos and the date of your visit.
 
-Today's timeline starts with the latest place; tap beside its title for earliest first. The date moved into the top bar, so the map sits higher.
+The Travel Blind Box has a new look: a parcel in brown paper, tied with string and a luggage tag. The choices sit together on one screen, and it no longer draws the same place twice in a row.
 
-Opening a stretch of route zooms the map to fit it.
+Inviting a friend to Parallel Footprints is more reliable: the link opens Waytrace's own page, which tells you how to continue when it's opened inside apps such as WeChat or Instagram, and the app says why when something doesn't work.
 
-Places you've just recorded are named first, ahead of those from a photo import, and Stats says how many are still being named.
+Places can now be marked as a mall or a restaurant; mark one once and later visits remember it.
 
-In your Year in Footprints, cities abroad appear in the app's language where possible, and first-time cities line up neatly.
-
-Fixed photos on the timeline sliding over the times beside them.
+A trip's photos are now in one place.
 
 ---
 

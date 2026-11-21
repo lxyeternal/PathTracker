@@ -13539,6 +13539,450 @@
           }
         }
       }
+    },
+    "这是你自己的邀请": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is your own invitation"
+          }
+        }
+      }
+    },
+    "把这个链接发给朋友，由 Ta 来打开。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send this link to a friend for them to open."
+          }
+        }
+      }
+    },
+    "已接受邀请": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invitation accepted"
+          }
+        }
+      }
+    },
+    "朋友的足迹还在路上，稍后在“平行足迹”里下拉刷新。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your friend's footprints are on their way. Pull to refresh in Parallel Footprints in a moment."
+          }
+        }
+      }
+    },
+    "你们已经互相共享了": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're sharing with each other"
+          }
+        }
+      }
+    },
+    "在“你的故事”里打开“平行足迹”，看看你和%@的足迹在哪里交汇。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Parallel Footprints in Your Stories to see where your footprints and %@'s meet."
+          }
+        }
+      }
+    },
+    "没能接受邀请": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't accept the invitation"
+          }
+        }
+      }
+    },
+    "iCloud 储存空间已满，腾出一些空间后再试。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your iCloud storage is full. Free up some space and try again."
+          }
+        }
+      }
+    },
+    "这个邀请已经失效，请让朋友重新发一次。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This invitation no longer works. Ask your friend to send it again."
+          }
+        }
+      }
+    },
+    "接下来会打开分享面板：把你的邀请发回给 Ta，Ta 打开之后，你们就互相看得到了。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The share sheet opens next: send your invitation back to them, and once they open it you'll see each other."
+          }
+        }
+      }
+    },
+    "把我的邀请发回给 Ta": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send my invitation back"
+          }
+        }
+      }
+    },
+    "正在打开邀请…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening the invitation…"
+          }
+        }
+      }
+    },
+    "没能打开邀请": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't open the invitation"
+          }
+        }
+      }
+    },
+    "怎么开始": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How to start"
+          }
+        }
+      }
+    },
+    "把邀请发给朋友": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send a friend your invitation"
+          }
+        }
+      }
+    },
+    "微信、信息、WhatsApp 都可以，发出去的是一个链接。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messages, WhatsApp, WeChat: any app works. What goes out is a link."
+          }
+        }
+      }
+    },
+    "朋友打开链接，再把自己的邀请发回来": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They open it, and send their own invitation back"
+          }
+        }
+      }
+    },
+    "Ta 需要先装好漫迹。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They need Waytrace installed first."
+          }
+        }
+      }
+    },
+    "你打开 Ta 的邀请": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You open theirs"
+          }
+        }
+      }
+    },
+    "两边都共享之后，你们才会互相看到。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You only see each other once you both share."
+          }
+        }
+      }
+    },
+    "Ta 已接受，等 Ta 把邀请发回来": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accepted. Waiting for their invitation"
+          }
+        }
+      }
+    },
+    "你添加的 %lld 张": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld you added"
+          }
+        }
+      }
+    },
+    "取消点亮“%@”？": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlight “%@”?"
+          }
+        }
+      }
+    },
+    "取消点亮": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlight"
+          }
+        }
+      }
+    },
+    "你在这里添加的照片和日期也会移除，相册里的原图不受影响。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The photos and date you added here will be removed too. The originals in your library aren’t affected."
+          }
+        }
+      }
+    },
+    "%@ 来过这里": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Here on %@"
+          }
+        }
+      }
+    },
+    "去过却没亮？可能那时还没有记录，也没在那里拍照。自己点亮它，再放上几张当时的照片。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Been here but it isn’t lit? Maybe you weren’t recording then and took no photos there. Light it yourself, and add a few photos from that trip."
+          }
+        }
+      }
+    },
+    "其实没去过，取消点亮": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I haven’t been here after all"
+          }
+        }
+      }
+    },
+    "添加照片": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Photos"
+          }
+        }
+      }
+    },
+    "再加几张": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add More"
+          }
+        }
+      }
+    },
+    "去的那天": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date of Visit"
+          }
+        }
+      }
+    },
+    "清除日期": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear Date"
+          }
+        }
+      }
+    },
+    "加上日期": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Date"
+          }
+        }
+      }
+    },
+    "是你自己点亮的。照片只存在这台设备上；以后足迹或相册到了这里，会换成那一天。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You lit this one yourself. The photos stay on this device. If your footprints or photo library reach it later, that day takes over."
+          }
+        }
+      }
+    },
+    "自己点亮的": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "lit by you"
+          }
+        }
+      }
+    },
+    "移除这张照片？": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove this photo?"
+          }
+        }
+      }
+    },
+    "只从这里移除，相册里的原图不受影响。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It’s only removed here. The original in your library isn’t affected."
+          }
+        }
+      }
+    },
+    "出国旅行后，去过的国家会在地图上亮起来。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Countries you travel to will light up on the map."
+          }
+        }
+      }
+    },
+    "这片大陆还在等你。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This continent is still waiting for you."
+          }
+        }
+      }
+    },
+    "去过的国家": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visited"
+          }
+        }
+      }
+    },
+    "还没去过的 %lld 个": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld not visited yet"
+          }
+        }
+      }
+    },
+    "place.kind.mall": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mall"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "商场"
+          }
+        }
+      }
+    },
+    "place.kind.restaurant": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restaurant"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "餐厅"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -71,7 +71,7 @@
 | **Two ways to record** | **All day**, so every outing has its route; or **only when you ask**, using location only after you press Start, with no "Always" permission needed. Switch any time in Settings. |
 | **Pause any time** | One tap pauses until you tap Resume, or let it come back by itself in an hour, three hours or tomorrow morning. While paused, or in manual-only mode when nothing is being recorded, location isn't used at all and the location arrow doesn't stay on screen. |
 | **How you got there** | The iPhone's motion coprocessor and your speed tell walking, running, cycling, driving and flying apart, each drawn in its own colour. A subway ride with no signal is filled in from the phone's own motion history and drawn dashed. |
-| **Where you were** | A few minutes in one place becomes a stay, named as the shop, sight, city and country it is. |
+| **Where you were** | A few minutes in one place becomes a stay, named as the shop, sight, city and country it is. When it gets one wrong, mark it yourself as home, school, work, a sight, a mall or a restaurant; mark it once and later visits remember. |
 | **Easy on the battery** | Location sleeps while the phone is still. After ten minutes in one place GPS turns off entirely, replaced by a 150 m geofence that wakes it when you leave. In the background the stats are worked out at most every five minutes, not after every stretch saved. |
 | **Timeline** | Each day runs down a fine line: the times in the margin, each place a node on it with the photos you took there, and each journey a single line saying how you went, how far and how long, with the route traced beside it. Turn on Past Routes to see the roads you've taken around there on other days, beneath today's. |
 
@@ -119,6 +119,7 @@
 The places you've been aren't a number. They're stamps, pressed one by one into a passport you can leaf through.
 
 - **Entry and exit stamps**: each country in its own script (日本国, 대한민국, SCHWEIZ · SUISSE), with the real date and the airport or border crossing; leaving adds an exit stamp, "stayed 9 days". Your home country doesn't stamp you: it issues the passport.
+- **The countries you've been to, on a map**: under the passport is a dark map where each country you've visited is outlined and lit, with its flag standing on it and your cities as points of light. Switch between continents, or open it full screen.
 - **Province seals**: China's 34 provinces, each a cinnabar seal with its one-character name: 沪, 粤, 蜀, 黔, 滇, 秦, 陇… laid out roughly where they are.
 - **City stamps**: one for every city, **with the path you walked on your first day there drawn in the middle**, so no two people's Shanghai stamp look alike. About 150 well-known cities have their own design: 北京 · 京华, 京都 · 古都, PARIS · LA VILLE LUMIÈRE.
 - **Keepsakes**: crossing the equator or the date line, the Arctic Circle; where each New Year began; and **your four corners**, the farthest north, south, east and west you've been, written like an old deed, plus the highest point you've reached.
@@ -161,6 +162,7 @@ The visas in your passport, stacked like cards in Apple Wallet, each showing how
 See where your footprints and a friend's overlap: **passing within the same hour**, **in the same city on the same day**, or **at the same place at different times**.
 
 - It appears only once you've invited each other and both agreed to share; no contacts, no groups, a friend is whoever accepted your invitation link.
+- The invitation link opens Waytrace's own page (waytrace.cn); one tap takes you back to the app to accept. Opened inside apps such as WeChat or Instagram, the page tells you how to continue in a browser, and the app says why when something doesn't work.
 - Only a summary is shared: the rough area you were in each day (about 20 km) and the square of about 1 km you were in each hour. Nothing within 2 km of home, work or school, no place names, exact coordinates, routes or photos.
 - Shared through iCloud and compared on each phone; stop at any time and the summary is deleted from iCloud.
 
@@ -177,6 +179,7 @@ Two lists of Waytrace's own: **China 100** (Hong Kong, Macao and Taiwan included
 - **A night map**: places not yet reached are faint stars; places you've been glow warm gold.
 - **A hundred small squares**: one fills for each place reached, so you can see how far you've come. The words change as you go, from "the first light is waiting for you" to "all one hundred".
 - **No checking in**: stay nearby or take a photo there (imported photos count too) and it lights up on its own. A park is as big as the park.
+- **Or light it yourself**: somewhere you've been that didn't light up (before you started recording, with no photo taken there) lights with "I've been here", and you can add a few photos from the trip and the date of your visit.
 - **A page for each place**: tap any of them to see it at its best: a real photograph, a few lines written for Waytrace, the best time to go and how far it is, plus a flight around it from the air and a walk through Look Around. Places you've been also show your own photos from there.
 - **Back to that day**: from a place you've been, one tap opens the day you first got there, with that day's route and photos.
 - **Want to go**: tap ♡ to keep a place for later, and see **your nearest next stop** and how far it is.
@@ -200,7 +203,7 @@ Don't know where to go? Open one. Waytrace knows where you've been, where you ha
 - **It knows what kind of day it is**: on a Saturday morning it's "You're free today. Why not go now?"; midweek it's "5 days to the weekend. Give yourself something to look forward to." When a Chinese public holiday is near (New Year, Spring Festival, Qingming, May Day, Dragon Boat, Mid-Autumn, National Day) it counts down to it and picks a fitting length for you.
 - **How much time you have**: a day nearby, a weekend, a long weekend (three to five days) or a long break (about a week, further out).
 - **How you want to feel**: anything, switch off, work up a sweat, old things, or city life.
-- **Press and hold to open**: the box shakes harder and harder, the phone shakes with it, the lid flies off and a boarding pass flips over. Three a day.
+- **Press and hold to open**: the box is a parcel in brown paper, tied with string, with a luggage tag that only says "?". Hold it and it shakes harder and harder, the phone shakes with it, the lid flies off and a boarding pass flips over. Three a day, and never the same place twice in a row.
 - **A reason that's true**: it only says what your own footprints show, such as "You haven't lit a single must-see in Shanxi. Start here." or "You've lit 5 places, and not one is a mountain." Places on your wish list, and countries you hold a valid visa for, come up more often. Now and then it simply says: "No reason. That's what a blind box is."
 - **A day nearby**: Apple Maps finds hills, water, old towns and streets near you that you haven't been to, with a time to set off (earlier if you're an early riser), the drive, and that day's weather, with a word if it'll rain. Tap Directions and Apple Maps has the route ready.
 - **Longer breaks**: a route that makes sense, such as "Days 1–2 Mount Fanjing, Day 3 Fenghuang Old Town, Day 4 Zhangjiajie", each stop with its best season. Stops are only looked for in the same country or region, so nothing that needs separate papers gets slipped in. Just a suggestion; stay as long as you like.
