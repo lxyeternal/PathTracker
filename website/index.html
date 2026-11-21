@@ -207,6 +207,18 @@
   .download .icon { width: 120px; height: 120px; border-radius: 28px; margin: 0 auto 30px; box-shadow: 0 20px 60px rgba(255,159,10,.25); }
   .download .cta { justify-content: center; margin-top: 34px; }
   .download .soon { margin-top: 22px; }
+  .android { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px 18px; max-width: 760px; margin: 56px auto 0; padding: 22px 24px; text-align: left; border: 1px solid rgba(255,255,255,.12); border-radius: 24px; background: rgba(255,255,255,.04); }
+  .android > svg { width: 34px; height: 34px; color: #8fd694; }
+  .android h3 { margin: 0 0 4px; font-size: 18px; }
+  .android p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.6; }
+  .android-actions { display: flex; gap: 10px; }
+  .android .btn { padding: 11px 18px; font-size: 15px; font-family: inherit; background: none; cursor: pointer; }
+  .android .android-note { grid-column: 1 / -1; font-size: 13px; opacity: .8; }
+  @media (max-width: 720px) {
+    .android { grid-template-columns: auto 1fr; padding: 20px; }
+    .android-actions { grid-column: 1 / -1; flex-wrap: wrap; }
+    .android-actions .btn { flex: 1; justify-content: center; }
+  }
 
   footer { border-top: 1px solid var(--line); padding: 36px 0 calc(36px + env(safe-area-inset-bottom)); color: var(--muted); font-size: 14px; }
   footer .wrap { display: flex; flex-wrap: wrap; gap: 14px 26px; justify-content: space-between; }
@@ -500,6 +512,18 @@
       </a>
     </div>
     <p class="soon">需要 iOS 26 或更新的系统 · 目前在中国大陆、美国、新加坡和马来西亚的 App Store 提供</p>
+    <div class="android" id="android">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 18c0 .55.45 1 1 1h1v3.5a1.5 1.5 0 0 0 3 0V19h2v3.5a1.5 1.5 0 0 0 3 0V19h1c.55 0 1-.45 1-1V8H6v10ZM3.5 8A1.5 1.5 0 0 0 2 9.5v7a1.5 1.5 0 0 0 3 0v-7A1.5 1.5 0 0 0 3.5 8Zm17 0A1.5 1.5 0 0 0 19 9.5v7a1.5 1.5 0 0 0 3 0v-7A1.5 1.5 0 0 0 20.5 8Zm-4.97-5.84 1.3-1.3a.5.5 0 0 0-.7-.7l-1.48 1.47A5.84 5.84 0 0 0 12 1c-.96 0-1.86.23-2.66.63L7.85.15a.5.5 0 0 0-.7.7l1.31 1.31A5.98 5.98 0 0 0 6 7h12a5.98 5.98 0 0 0-2.47-4.84ZM10 5H9V4h1v1Zm5 0h-1V4h1v1Z"/></svg>
+      <div class="android-text">
+        <h3>在用安卓手机？</h3>
+        <p>漫迹目前只有 iPhone 版。想要安卓版，就发一封邮件告诉我们，做出来第一时间通知你。</p>
+      </div>
+      <div class="android-actions">
+        <a class="btn ghost" href="mailto:honywendev@gmail.com?subject=%E7%99%BB%E8%AE%B0%E6%BC%AB%E8%BF%B9%E5%AE%89%E5%8D%93%E7%89%88&amp;body=%E6%88%91%E6%83%B3%E7%94%A8%E6%BC%AB%E8%BF%B9%E7%9A%84%E5%AE%89%E5%8D%93%E7%89%88%EF%BC%8C%E5%81%9A%E5%87%BA%E6%9D%A5%E8%AF%B7%E9%80%9A%E7%9F%A5%E6%88%91%E3%80%82%0A%0A%E6%89%8B%E6%9C%BA%E5%93%81%E7%89%8C%E5%92%8C%E5%9E%8B%E5%8F%B7%EF%BC%88%E9%80%89%E5%A1%AB%EF%BC%89%EF%BC%9A%0A%E6%89%80%E5%9C%A8%E5%9B%BD%E5%AE%B6%E6%88%96%E5%9C%B0%E5%8C%BA%EF%BC%88%E9%80%89%E5%A1%AB%EF%BC%89%EF%BC%9A">发邮件登记</a>
+        <button class="btn ghost" type="button" id="copy-mail" data-mail="honywendev@gmail.com">复制邮箱</button>
+      </div>
+      <p class="android-note" id="copy-note">手机上没设置邮箱？复制地址，用你常用的邮箱发一句“想要安卓版”就行。你的邮箱只用来通知这一件事。</p>
+    </div>
     </div>
   </div>
 </section>
@@ -561,6 +585,24 @@
     });
   }, { threshold: .18 });
   document.querySelectorAll('.reveal').forEach(function (el) { seen.observe(el); });
+</script>
+<script>
+(function () {
+  var button = document.getElementById('copy-mail');
+  if (!button) return;
+  button.addEventListener('click', function () {
+    var mail = button.getAttribute('data-mail');
+    function done(ok) { button.textContent = ok ? '已复制 ' + mail : mail; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(mail).then(function () { done(true); }, function () { done(false); });
+    } else {
+      var field = document.createElement('input');
+      field.value = mail; document.body.appendChild(field); field.select();
+      var ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(field); done(ok);
+    }
+  });
+})();
 </script>
 </body>
 </html>
