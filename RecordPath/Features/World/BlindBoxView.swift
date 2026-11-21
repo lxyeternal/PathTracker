@@ -4,15 +4,16 @@ import WeatherKit
 
 struct BlindBoxRoute: Hashable {}
 
-private let night = Color(red: 0.05, green: 0.05, blue: 0.14)
+/// The same night as the must-see list, so the two read as one place.
+private let night = Color(red: 0.06, green: 0.07, blue: 0.13)
 private let gold = LinearGradient(colors: [Color(red: 1, green: 0.88, blue: 0.55), Color(red: 1, green: 0.62, blue: 0.22)], startPoint: .top, endPoint: .bottom)
 /// The gold as one colour, for outlines and tints.
 private let amber = Color(red: 1, green: 0.76, blue: 0.40)
 
 // MARK: - The sky
 
-/// A night going warm towards the horizon, stars that twinkle, a violet glow high up and an
-/// amber one low down that brightens while the box is opening.
+/// A deep-blue night, stars that twinkle, a faint blue glow high up and an amber one low down
+/// that brightens while the parcel is opening.
 private struct BlindBoxSky: View {
     var glow: Double
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -30,7 +31,7 @@ private struct BlindBoxSky: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Color(red: 0.03, green: 0.03, blue: 0.11), night, Color(red: 0.10, green: 0.06, blue: 0.20), Color(red: 0.20, green: 0.09, blue: 0.21)],
+            LinearGradient(colors: [Color(red: 0.03, green: 0.04, blue: 0.09), night, Color(red: 0.07, green: 0.09, blue: 0.18), Color(red: 0.10, green: 0.11, blue: 0.21)],
                            startPoint: .top, endPoint: .bottom)
             TimelineView(.animation(minimumInterval: 1 / 15, paused: reduceMotion)) { timeline in
                 let time = timeline.date.timeIntervalSinceReferenceDate
@@ -44,7 +45,7 @@ private struct BlindBoxSky: View {
             }
             GeometryReader { geo in
                 Ellipse()
-                    .fill(Color(red: 0.46, green: 0.32, blue: 0.98).opacity(0.24))
+                    .fill(Color(red: 0.24, green: 0.40, blue: 0.90).opacity(0.16))
                     .frame(width: geo.size.width * 1.1, height: 300)
                     .blur(radius: 90)
                     .position(x: geo.size.width * 0.2, y: geo.size.height * 0.08)
@@ -308,11 +309,19 @@ enum BlindBoxPlanner {
 
 // MARK: - The box
 
-/// A plain cardboard-coloured mystery: a lid, a ribbon, and a light from inside as it opens.
+/// A parcel in brown paper, tied with string: airmail stripes along the lid, a postmark, a
+/// luggage tag that doesn't say where to, and light leaking from under the lid as it's about
+/// to open. It belongs with the boarding pass and the arrival postmark that come out of it.
 private struct MysteryBox: View {
     /// 0 shut, 1 lid gone.
     var open: Double
     var glow: Double
+
+    private static let kraft = Color(red: 0.80, green: 0.64, blue: 0.44)
+    private static let kraftDark = Color(red: 0.60, green: 0.45, blue: 0.29)
+    private static let string = Color(red: 0.95, green: 0.90, blue: 0.78)
+    private static let light = Color(red: 1.0, green: 0.93, blue: 0.72)
+    private static let postInk = Color(red: 0.62, green: 0.16, blue: 0.14)
 
     var body: some View {
         ZStack {
@@ -322,34 +331,168 @@ private struct MysteryBox: View {
                 .scaleEffect(0.6 + glow * 0.7)
                 .opacity(0.25 + glow * 0.75)
                 .offset(y: -20)
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(LinearGradient(colors: [Color(red: 0.30, green: 0.22, blue: 0.56), Color(red: 0.14, green: 0.11, blue: 0.34)], startPoint: .top, endPoint: .bottom))
-                .frame(width: 156, height: 112)
-                .overlay { Rectangle().fill(gold).frame(width: 22) }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.white.opacity(0.12), lineWidth: 1)
-                }
-                .offset(y: 30)
+            base.offset(y: 32)
+            // Light from inside, along the seam.
+            Capsule()
+                .fill(Self.light)
+                .frame(width: 150, height: 7)
+                .blur(radius: 7)
+                .opacity(0.1 + glow * 0.9)
+                .offset(y: -22)
             lid
                 .rotationEffect(.degrees(open * -28), anchor: .leading)
-                .offset(x: open * 40, y: -34 - open * 160)
+                .offset(x: open * 40, y: -38 - open * 160)
                 .opacity(1 - open)
+            ForEach(0..<3, id: \.self) { index in
+                Image(systemName: "sparkle")
+                    .font(.system(size: [13, 9, 11][index], weight: .bold))
+                    .foregroundStyle(gold)
+                    .offset(x: [-98, 100, 88][index], y: [-52, -80, 30][index])
+                    .opacity(0.3 + glow * 0.7)
+                    .scaleEffect(0.8 + glow * 0.4)
+            }
         }
         .frame(width: 200, height: 200)
         .accessibilityHidden(true)
     }
 
-    private var lid: some View {
+    private var base: some View {
+        let shape = UnevenRoundedRectangle(cornerRadii: .init(topLeading: 4, bottomLeading: 10, bottomTrailing: 10, topTrailing: 4), style: .continuous)
+        return shape
+            .fill(LinearGradient(colors: [Self.kraft, Self.kraftDark], startPoint: .top, endPoint: .bottom))
+            .frame(width: 156, height: 112)
+            .overlay { PaperFibres().opacity(0.55) }
+            // The side away from the light.
+            .overlay { LinearGradient(colors: [.white.opacity(0.10), .clear, .black.opacity(0.22)], startPoint: .leading, endPoint: .trailing) }
+            // The lid's shadow.
+            .overlay(alignment: .top) { LinearGradient(colors: [.black.opacity(0.4), .clear], startPoint: .top, endPoint: .bottom).frame(height: 20) }
+            .overlay(alignment: .bottomLeading) { postmark.offset(x: 12, y: -10) }
+            // String once round each way.
+            .overlay { twine.frame(width: 3.5) }
+            .overlay { twine.frame(height: 3.5).offset(y: 14) }
+            .clipShape(shape)
+            .overlay { shape.strokeBorder(.black.opacity(0.18), lineWidth: 1) }
+            .overlay(alignment: .topTrailing) { tag.offset(x: 4, y: 6) }
+    }
+
+    private var twine: some View {
+        Rectangle().fill(Self.string)
+            .overlay { Rectangle().fill(.black.opacity(0.12)).padding(.leading, 2).padding(.top, 2) }
+            .shadow(color: .black.opacity(0.35), radius: 1.5, y: 1)
+    }
+
+    /// Where it was posted from is smudged; only that it was.
+    private var postmark: some View {
+        ZStack {
+            Circle().strokeBorder(Self.postInk, lineWidth: 1.6)
+            Circle().inset(by: 4).strokeBorder(Self.postInk, lineWidth: 0.7)
+            Image(systemName: "airplane").font(.system(size: 13, weight: .bold)).foregroundStyle(Self.postInk).rotationEffect(.degrees(-45))
+            ForEach(0..<3, id: \.self) { line in
+                Capsule().fill(Self.postInk).frame(width: 30, height: 1.4).offset(x: 34, y: CGFloat(line - 1) * 6)
+            }
+        }
+        .frame(width: 40, height: 40)
+        .rotationEffect(.degrees(-14))
+        .opacity(0.62)
+        .blendMode(.multiply)
+    }
+
+    /// A luggage tag on its own bit of string, with the one thing it can't tell you.
+    private var tag: some View {
         ZStack(alignment: .top) {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(LinearGradient(colors: [Color(red: 0.40, green: 0.30, blue: 0.68), Color(red: 0.25, green: 0.18, blue: 0.50)], startPoint: .top, endPoint: .bottom))
+            Rectangle().fill(Self.string).frame(width: 1.4, height: 16).offset(y: -12)
+            UnevenRoundedRectangle(cornerRadii: .init(topLeading: 9, bottomLeading: 3, bottomTrailing: 3, topTrailing: 9), style: .continuous)
+                .fill(Color(red: 0.98, green: 0.95, blue: 0.88))
+                .frame(width: 30, height: 42)
+                .overlay(alignment: .top) { Circle().fill(Self.kraftDark).frame(width: 5, height: 5).padding(.top, 5) }
+                .overlay {
+                    Text(verbatim: "?")
+                        .font(.system(size: 20, weight: .bold, design: .serif))
+                        .foregroundStyle(Color(red: 0.14, green: 0.13, blue: 0.20))
+                        .offset(y: 5)
+                }
+                .shadow(color: .black.opacity(0.35), radius: 3, y: 2)
+        }
+        .rotationEffect(.degrees(9), anchor: .top)
+    }
+
+    private var lid: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .fill(LinearGradient(colors: [Color(red: 0.87, green: 0.72, blue: 0.52), Color(red: 0.70, green: 0.54, blue: 0.36)], startPoint: .top, endPoint: .bottom))
                 .frame(width: 176, height: 38)
-                .overlay { Rectangle().fill(gold).frame(width: 22) }
-                .clipShape(.rect(cornerRadius: 10, style: .continuous))
-            Image(systemName: "sparkle")
-                .font(.system(size: 30, weight: .bold))
-                .foregroundStyle(gold)
-                .offset(y: -28)
+                .overlay { PaperFibres().opacity(0.5) }
+                .overlay { LinearGradient(colors: [.white.opacity(0.10), .clear, .black.opacity(0.2)], startPoint: .leading, endPoint: .trailing) }
+                .overlay(alignment: .bottom) { AirmailStripes().frame(height: 6) }
+                .overlay { twine.frame(width: 3.5) }
+                .overlay(alignment: .top) { Capsule().fill(.white.opacity(0.4)).frame(height: 1.2).padding(.horizontal, 10).padding(.top, 2) }
+                .clipShape(.rect(cornerRadius: 7, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(.black.opacity(0.18), lineWidth: 1) }
+                .shadow(color: .black.opacity(0.4), radius: 5, y: 4)
+            bow.offset(y: -22)
+        }
+    }
+
+    /// String tied off: two loops, two loose ends and the knot.
+    private var bow: some View {
+        ZStack {
+            ForEach([-1.0, 1.0], id: \.self) { side in
+                Capsule()
+                    .fill(Self.string)
+                    .frame(width: 2.6, height: 20)
+                    .rotationEffect(.degrees(side * -34), anchor: .top)
+                    .offset(x: side * 2, y: 10)
+                Ellipse()
+                    .strokeBorder(Self.string, lineWidth: 2.8)
+                    .frame(width: 30, height: 17)
+                    .rotationEffect(.degrees(side * -20))
+                    .offset(x: side * 15, y: -3)
+            }
+            Circle().fill(Self.string).frame(width: 7, height: 7)
+        }
+        .shadow(color: .black.opacity(0.4), radius: 1.5, y: 1)
+    }
+}
+
+/// The short fibres and flecks of brown wrapping paper, always the same.
+private struct PaperFibres: View {
+    var body: some View {
+        Canvas { context, size in
+            var random = SeededRandom(11)
+            for _ in 0..<70 {
+                let x = random.unit() * size.width, y = random.unit() * size.height
+                let length = 3 + random.unit() * 9, slope = (random.unit() - 0.5) * 3
+                var fibre = Path()
+                fibre.move(to: CGPoint(x: x, y: y))
+                fibre.addLine(to: CGPoint(x: x + length, y: y + slope))
+                context.stroke(fibre, with: .color(random.unit() > 0.5 ? .white.opacity(0.22) : .black.opacity(0.16)), lineWidth: 0.6)
+            }
+        }
+    }
+}
+
+/// The red and blue slanted bars along the edge of an airmail envelope.
+private struct AirmailStripes: View {
+    var body: some View {
+        Canvas { context, size in
+            let bar: CGFloat = 9
+            var x: CGFloat = -size.height
+            var index = 0
+            while x < size.width {
+                var path = Path()
+                path.move(to: CGPoint(x: x, y: size.height))
+                path.addLine(to: CGPoint(x: x + size.height, y: 0))
+                path.addLine(to: CGPoint(x: x + size.height + bar, y: 0))
+                path.addLine(to: CGPoint(x: x + bar, y: size.height))
+                path.closeSubpath()
+                if index % 2 == 0 {
+                    context.fill(path, with: .color(index % 4 == 0 ? Color(red: 0.75, green: 0.20, blue: 0.18) : Color(red: 0.16, green: 0.27, blue: 0.55)))
+                } else {
+                    context.fill(path, with: .color(Color(red: 0.97, green: 0.94, blue: 0.87)))
+                }
+                x += bar
+                index += 1
+            }
         }
     }
 }
@@ -419,7 +562,7 @@ struct BoardingPass: View {
                     .mapStyle(.hybrid(elevation: .flat, pointsOfInterest: .excludingAll))
                     .allowsHitTesting(false)
             } else {
-                LinearGradient(colors: [Color(red: 0.2, green: 0.17, blue: 0.42), Color(red: 0.45, green: 0.3, blue: 0.5)], startPoint: .top, endPoint: .bottom)
+                LinearGradient(colors: [Color(red: 0.10, green: 0.14, blue: 0.30), Color(red: 0.22, green: 0.27, blue: 0.46)], startPoint: .top, endPoint: .bottom)
             }
             LinearGradient(colors: [.black.opacity(0.5), .clear], startPoint: .top, endPoint: .center)
             HStack {
@@ -757,6 +900,7 @@ struct BlindBoxView: View {
         .navigationTitle("旅行盲盒")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
         .environment(\.colorScheme, .dark)
         .onAppear(perform: setUp)
         .sheet(item: $viewing) { TicketSheet(ticket: $0, here: here) }
@@ -791,9 +935,16 @@ struct BlindBoxView: View {
             }
             .padding(.top, 4)
             .frame(maxWidth: .infinity)
-            spanPicker
-            moodPicker
+            // The box first: it's what the page is for. What to ask of it sits underneath.
             box
+            VStack(alignment: .leading, spacing: 16) {
+                spanPicker
+                Rectangle().fill(.white.opacity(0.08)).frame(height: 1)
+                moodPicker
+            }
+            .padding(16)
+            .background(.white.opacity(0.05), in: .rect(cornerRadius: 28, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous).strokeBorder(.white.opacity(0.08), lineWidth: 1))
         }
     }
 
@@ -801,40 +952,51 @@ struct BlindBoxView: View {
         Text(title).font(.footnote.weight(.semibold)).foregroundStyle(.white.opacity(0.6))
     }
 
-    /// Chosen: a gold outline and a warm tint. The solid gold is kept for the one thing to press.
+    /// Chosen: the lighter segment, as the system's own pickers show it on a dark page. Gold is
+    /// kept for the icon and for the one thing to press.
     private func choice(_ selected: Bool, in shape: some InsettableShape) -> some View {
-        shape.fill(selected ? amber.opacity(0.16) : .white.opacity(0.06))
-            .overlay(shape.strokeBorder(selected ? amber : .white.opacity(0.08), lineWidth: selected ? 1.5 : 1))
+        shape.fill(selected ? .white.opacity(0.17) : .white.opacity(0.001))
+            .overlay(shape.strokeBorder(.white.opacity(selected ? 0.16 : 0), lineWidth: 1))
+            .shadow(color: .black.opacity(selected ? 0.25 : 0), radius: 4, y: 2)
     }
 
+    /// Four lengths of time side by side, the chosen one explained in a line underneath.
     private var spanPicker: some View {
         VStack(alignment: .leading, spacing: 10) {
-            section("你有多少时间")
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                section("你有多少时间")
+                Spacer()
+                Text(verbatim: span.detail)
+                    .font(.footnote).foregroundStyle(.white.opacity(0.6))
+                    .contentTransition(.opacity)
+                    .id(span)
+            }
+            HStack(spacing: 2) {
                 ForEach(BlindBox.Span.allCases) { option in
                     let selected = option == span
                     Button {
                         withAnimation(.snappy) { span = option; nothing = nil }
                     } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: option.symbol).font(.body)
+                        VStack(spacing: 6) {
+                            Image(systemName: option.symbol).font(.title3)
                                 .foregroundStyle(selected ? AnyShapeStyle(gold) : AnyShapeStyle(.white.opacity(0.55)))
-                                .frame(width: 24)
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text(verbatim: option.title).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
-                                    .lineLimit(1).minimumScaleFactor(0.75)
-                                Text(verbatim: option.detail).font(.caption2).foregroundStyle(.white.opacity(selected ? 0.75 : 0.5))
-                                    .lineLimit(1).minimumScaleFactor(0.8)
-                            }
-                            Spacer(minLength: 0)
+                                .frame(height: 24)
+                            Text(verbatim: option.title).font(.footnote.weight(.semibold))
+                                .foregroundStyle(.white.opacity(selected ? 1 : 0.8))
+                                .lineLimit(1).minimumScaleFactor(0.7)
                         }
-                        .padding(.horizontal, 12).padding(.vertical, 11)
-                        .background { choice(selected, in: RoundedRectangle(cornerRadius: 16, style: .continuous)) }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 11).padding(.horizontal, 4)
+                        .background { choice(selected, in: RoundedRectangle(cornerRadius: 15, style: .continuous)) }
+                        .contentShape(.rect)
                     }
                     .buttonStyle(PressableStyle())
+                    .accessibilityLabel(Text(verbatim: "\(option.title)，\(option.detail)"))
                     .accessibilityAddTraits(selected ? .isSelected : [])
                 }
             }
+            .padding(4)
+            .background(.white.opacity(0.07), in: .rect(cornerRadius: 19, style: .continuous))
         }
         .sensoryFeedback(.selection, trigger: span)
     }
@@ -842,26 +1004,32 @@ struct BlindBoxView: View {
     private var moodPicker: some View {
         VStack(alignment: .leading, spacing: 10) {
             section("想要什么感觉")
-            WrappingLayout(spacing: 8) {
-                ForEach(BlindBox.Mood.allCases) { option in
-                    let selected = option == mood
-                    Button {
-                        withAnimation(.snappy) { moodRaw = option.rawValue; nothing = nil }
-                    } label: {
-                        Label {
-                            Text(verbatim: option.title).foregroundStyle(.white)
-                        } icon: {
-                            Image(systemName: option.symbol)
-                                .foregroundStyle(selected ? AnyShapeStyle(gold) : AnyShapeStyle(.white.opacity(0.55)))
+            ScrollView(.horizontal) {
+                HStack(spacing: 8) {
+                    ForEach(BlindBox.Mood.allCases) { option in
+                        let selected = option == mood
+                        Button {
+                            withAnimation(.snappy) { moodRaw = option.rawValue; nothing = nil }
+                        } label: {
+                            Label {
+                                Text(verbatim: option.title).foregroundStyle(.white)
+                            } icon: {
+                                Image(systemName: option.symbol)
+                                    .foregroundStyle(selected ? AnyShapeStyle(gold) : AnyShapeStyle(.white.opacity(0.55)))
+                            }
+                            .font(.subheadline.weight(.medium))
+                            .padding(.horizontal, 13).padding(.vertical, 9)
+                            .background(.white.opacity(selected ? 0.17 : 0.07), in: .capsule)
+                            .overlay(Capsule().strokeBorder(.white.opacity(selected ? 0.16 : 0), lineWidth: 1))
                         }
-                        .font(.subheadline.weight(.medium))
-                        .padding(.horizontal, 13).padding(.vertical, 8)
-                        .background { choice(selected, in: Capsule()) }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(selected ? .isSelected : [])
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(selected ? .isSelected : [])
                 }
+                .padding(.horizontal, 16)
             }
+            .scrollIndicators(.hidden)
+            .padding(.horizontal, -16)
         }
         .sensoryFeedback(.selection, trigger: moodRaw)
     }
@@ -871,27 +1039,29 @@ struct BlindBoxView: View {
         return VStack(spacing: 14) {
             ZStack {
                 // How far the hold has got, drawn round the box.
-                Circle().strokeBorder(.white.opacity(0.06), lineWidth: 1).frame(width: 214, height: 214)
+                Circle().strokeBorder(.white.opacity(0.07), lineWidth: 1).frame(width: 262, height: 262)
+                Circle().strokeBorder(.white.opacity(0.04), lineWidth: 1).frame(width: 310, height: 310)
                 Circle()
                     .trim(from: 0, to: holdProgress)
-                    .stroke(gold, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                    .stroke(gold, style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
                     .rotationEffect(.degrees(-90))
-                    .frame(width: 211, height: 211)
+                    .frame(width: 259, height: 259)
+                    .shadow(color: .orange.opacity(0.7), radius: 6)
                     .opacity(phase == .choosing ? 1 : 0)
                 Ellipse()
-                    .fill(.black.opacity(0.45))
-                    .frame(width: floating ? 120 : 140, height: 16)
-                    .blur(radius: 7)
-                    .offset(y: 92)
+                    .fill(.black.opacity(0.5))
+                    .frame(width: floating ? 150 : 176, height: 18)
+                    .blur(radius: 8)
+                    .offset(y: 112)
                 TimelineView(.animation(paused: holdStart == nil && phase != .opening)) { timeline in
                     let amount = shake(at: timeline.date)
                     MysteryBox(open: lidOpen, glow: phase == .opening ? 1 : max(amount, 0.25))
                         .rotationEffect(.degrees(reduceMotion ? 0 : sin(timeline.date.timeIntervalSinceReferenceDate * 48) * amount * 5))
-                        .scaleEffect(1 + amount * 0.06)
+                        .scaleEffect(1.22 + amount * 0.07)
                 }
                 .offset(y: floating && holdStart == nil && phase == .choosing ? -8 : 0)
             }
-            .frame(height: 224)
+            .frame(height: 272)
             .onAppear {
                 guard !reduceMotion else { return }
                 withAnimation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) { floating = true }
@@ -916,8 +1086,7 @@ struct BlindBoxView: View {
                     Label("长按拆开", systemImage: "hand.tap.fill")
                         .font(.subheadline.weight(.semibold)).foregroundStyle(.white)
                         .padding(.horizontal, 16).padding(.vertical, 9)
-                        .background(.white.opacity(0.1), in: .capsule)
-                        .overlay(Capsule().strokeBorder(.white.opacity(0.1), lineWidth: 1))
+                        .glassEffect(.regular, in: .capsule)
                     HStack(spacing: 6) {
                         ForEach(0..<BlindBoxStore.dailyLimit, id: \.self) { index in
                             Capsule()
@@ -1031,7 +1200,7 @@ struct BlindBoxView: View {
 
     /// The back of the ticket: same notches, a starry envelope, nothing given away.
     private var sealed: some View {
-        LinearGradient(colors: [Color(red: 0.32, green: 0.23, blue: 0.60), Color(red: 0.12, green: 0.10, blue: 0.30)], startPoint: .topLeading, endPoint: .bottomTrailing)
+        LinearGradient(colors: [Color(red: 0.16, green: 0.20, blue: 0.40), Color(red: 0.07, green: 0.08, blue: 0.18)], startPoint: .topLeading, endPoint: .bottomTrailing)
             .frame(height: 400)
             .overlay {
                 VStack(spacing: 14) {
@@ -1326,7 +1495,7 @@ struct BlindBoxCard: View {
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
         .background(
-            LinearGradient(colors: [Color(red: 0.42, green: 0.20, blue: 0.40), Color(red: 0.78, green: 0.38, blue: 0.28)], startPoint: .topLeading, endPoint: .bottomTrailing),
+            LinearGradient(colors: [Color(red: 0.07, green: 0.08, blue: 0.18), Color(red: 0.16, green: 0.15, blue: 0.27), Color(red: 0.30, green: 0.21, blue: 0.22)], startPoint: .topLeading, endPoint: .bottomTrailing),
             in: .rect(cornerRadius: 26, style: .continuous)
         )
     }
