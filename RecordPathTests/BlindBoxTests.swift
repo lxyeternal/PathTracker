@@ -82,6 +82,30 @@ struct BlindBoxTests {
         #expect(drawn.contains { $0.reason == .wished })
     }
 
+    @Test func neverRepeatsWhileSomethingElseIsInReach() {
+        // Kuala Lumpur: one of the two hundred a weekend away. Opened once, it mustn't come again
+        // while anything else can be reached, even if that means letting the range stretch.
+        let kualaLumpur = CLLocation(latitude: 3.14, longitude: 101.69)
+        let first = draws(.weekend, context: .init(here: kualaLumpur), count: 50)
+        let only = Set(first.map(\.place.id))
+        #expect(!only.isEmpty)
+        let again = draws(.weekend, context: .init(here: kualaLumpur, recent: only), count: 50)
+        #expect(!again.isEmpty)
+        #expect(again.allSatisfy { !only.contains($0.place.id) })
+        #expect(again.allSatisfy { ($0.distance ?? .infinity) <= 1_200_000 })
+    }
+
+    @Test func citiesKeepTheBoxFromRunningDry() {
+        let kualaLumpur = CLLocation(latitude: 3.14, longitude: 101.69)
+        let cities = BlindBoxPlanner.cities(awayFrom: [kualaLumpur.coordinate])
+        // Not the city the person is in, nor one the lists already have.
+        #expect(!cities.contains { $0.id == "city-Kuala Lumpur" })
+        #expect(!cities.contains { $0.id == "city-Tokyo" })
+        #expect(cities.contains { $0.id == "city-Penang" })
+        let results = draws(.weekend, context: .init(here: kualaLumpur, cities: cities), count: 300)
+        #expect(Set(results.map(\.place.id)).count >= 3)
+    }
+
     @Test func cityNamesLoseTheirStateLetters() {
         #expect(CityName.tidy("里约热内卢 - RJ") == "里约热内卢")
         #expect(CityName.tidy("Rio de Janeiro - RJ") == "Rio de Janeiro")

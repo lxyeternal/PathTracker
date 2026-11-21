@@ -10,9 +10,42 @@ struct MustSeeRoute: Hashable {
 @Observable
 final class MustSeeProgress {
     static let shared = MustSeeProgress()
+    /// When each place was first reached. A place lit by hand and found in no stay has no
+    /// date of its own; it's here all the same, so every count agrees, under `unknownDate`.
     private(set) var firstVisits: [String: Date] = [:]
     private(set) var isLoaded = false
+    /// Places the person says they've been to: before the app, without a photo, or anywhere
+    /// the footprints missed. Kept on the device and carried between devices by iCloud.
+    private(set) var manual: Set<String>
+    @ObservationIgnored private var found: [String: Date] = [:]
     @ObservationIgnored private var computedFor = -1
+
+    static let unknownDate = Date.distantPast
+    private static let manualKey = "mustSee.manual"
+
+    private init() {
+        func read(_ text: String?) -> Set<String> { Set((text ?? "").split(separator: ",").map(String.init)) }
+        manual = read(UserDefaults.standard.string(forKey: Self.manualKey)).union(read(NSUbiquitousKeyValueStore.default.string(forKey: Self.manualKey)))
+        firstVisits = Dictionary(uniqueKeysWithValues: manual.map { ($0, Self.unknownDate) })
+    }
+
+    /// Lit only because the person said so: there's no day to go back to.
+    func isManual(_ id: String) -> Bool { manual.contains(id) && found[id] == nil }
+
+    /// When the footprints first reached a place, if they did.
+    func date(_ id: String) -> Date? { found[id] }
+
+    func setManual(_ id: String, _ on: Bool) {
+        if on { manual.insert(id) } else { manual.remove(id) }
+        let text = manual.sorted().joined(separator: ",")
+        UserDefaults.standard.set(text, forKey: Self.manualKey)
+        NSUbiquitousKeyValueStore.default.set(text, forKey: Self.manualKey)
+        withAnimation(.smooth) { firstVisits = merged() }
+    }
+
+    private func merged() -> [String: Date] {
+        found.merging(manual.map { ($0, Self.unknownDate) }) { detected, _ in detected }
+    }
 
     func update(from stays: [Stay]) async {
         let revision = PlaceSummaries.shared.revision
@@ -23,8 +56,9 @@ final class MustSeeProgress {
         let found = await Task.detached(priority: .utility) {
             MustSee.firstVisits(MustSee.china + MustSee.world, visits: visits)
         }.value
+        self.found = found
         withAnimation(.smooth) {
-            firstVisits = found
+            firstVisits = merged()
             isLoaded = true
         }
     }
@@ -68,6 +102,11 @@ struct MustSeeView: View {
     private var places: [MustSeePlace] { list.places }
     private var wishes: Set<String> { Set(wishesRaw.split(separator: ",").map(String.init)) }
     private func visited(_ place: MustSeePlace) -> Date? { progress.firstVisits[place.id] }
+    /// "2025年12月30日 · 10 个月前", or that the person lit it themselves.
+    private func visitText(_ place: MustSeePlace, _ date: Date) -> String {
+        progress.isManual(place.id) ? String(localized: "去过 · 自己点亮的", bundle: .appLanguage)
+            : "\(date.formatted(.dateTime.year().month().day().locale(appLocale))) · \(Self.ago(date))"
+    }
     private var litCount: Int { places.filter { visited($0) != nil }.count }
 
     private var shown: [MustSeePlace] {
@@ -256,7 +295,9 @@ struct MustSeeView: View {
             Image(systemName: place.kind.symbol).foregroundStyle(visited(place) != nil ? .yellow : .white.opacity(0.7))
             VStack(alignment: .leading, spacing: 1) {
                 Text(verbatim: place.localizedName).font(.subheadline.weight(.semibold))
-                if let date = visited(place) {
+                if progress.isManual(place.id) {
+                    Text("去过").font(.caption2)
+                } else if let date = visited(place) {
                     Text("\(date.formatted(.dateTime.year().month().day().locale(appLocale))) 第一次到这里").font(.caption2)
                 } else {
                     Text("还没去过").font(.caption2).opacity(0.7)
@@ -359,7 +400,7 @@ struct MustSeeView: View {
                             .font(.body.weight(date != nil ? .semibold : .regular))
                             .foregroundStyle(.primary)
                         if let date {
-                            Text("\(date.formatted(.dateTime.year().month().day().locale(appLocale))) · \(Self.ago(date))")
+                            Text(verbatim: visitText(place, date))
                                 .font(.caption).foregroundStyle(.orange)
                         } else if wishes.contains(place.id) {
                             Text("想去").font(.caption).foregroundStyle(.pink)

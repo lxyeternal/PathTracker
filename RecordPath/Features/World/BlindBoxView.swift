@@ -156,6 +156,7 @@ enum BlindBoxPlanner {
         context.here = here(now: fix)
         context.custom = WishPlaces.shared.waiting.map(\.place)
         context.wishes.formUnion(context.custom.map(\.id))
+        context.cities = cities(awayFrom: summaries.dots.map(\.coordinate))
         if let here = context.here {
             context.farthest = summaries.stays.map { $0.location.distance(from: here) }.max() ?? 0
         }
@@ -166,6 +167,25 @@ enum BlindBoxPlanner {
             }
         }
         return context
+    }
+
+    /// The well-known cities with none of the person's places near them, as places to draw.
+    /// One of the two hundred already standing for a city (Tokyo, London) is left to it.
+    static func cities(awayFrom visited: [CLLocationCoordinate2D]) -> [BlindBox.Place] {
+        let listed = (MustSee.china + MustSee.world).map(\.coordinate)
+        func near(_ city: WorldCities.City, _ points: [CLLocationCoordinate2D], _ metres: Double) -> Bool {
+            let centre = CLLocation(latitude: city.latitude, longitude: city.longitude)
+            return points.contains {
+                abs($0.latitude - city.latitude) < 0.5 && abs(($0.longitude - city.longitude).remainder(dividingBy: 360)) < 1
+                    && centre.distance(from: CLLocation(latitude: $0.latitude, longitude: $0.longitude)) < metres
+            }
+        }
+        return WorldCities.all.filter { !near($0, visited, WorldCities.reach) && !near($0, listed, 20_000) }.map { city in
+            var place = BlindBox.Place(id: "city-\(city.english)", name: MustSee.isChinese ? city.chinese : city.english, region: "",
+                                       latitude: city.latitude, longitude: city.longitude, kind: .city)
+            place.radius = 15
+            return place
+        }
     }
 
     /// Where the person is, as well as the app knows: a fix from the last few days, the latest

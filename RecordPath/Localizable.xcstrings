@@ -13479,6 +13479,66 @@
           }
         }
       }
+    },
+    "去过 · 自己点亮的": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Been there · lit by you"
+          }
+        }
+      }
+    },
+    "你来过这里": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've been here"
+          }
+        }
+      }
+    },
+    "已点亮 · 点一下取消": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lit · tap to undo"
+          }
+        }
+      }
+    },
+    "我去过这里": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I've Been Here"
+          }
+        }
+      }
+    },
+    "是你自己点亮的。以后足迹或照片到了这里，会补上日期。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You lit this one yourself. If your footprints or photos reach it later, the date will be filled in."
+          }
+        }
+      }
+    },
+    "去过却没亮？可能那时还没有记录，也没在那里拍照。自己点亮它。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Been here and it isn't lit? It may have been before you were recording, with no photo taken there. Light it yourself."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

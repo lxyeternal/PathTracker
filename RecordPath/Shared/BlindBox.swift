@@ -265,6 +265,8 @@ enum BlindBox {
         var recent: Set<String> = []
         /// Places the person added to their own list and hasn't reached. Their ids are wishes too.
         var custom: [Place] = []
+        /// Well-known cities the person hasn't been near, so there's always somewhere new.
+        var cities: [Place] = []
 
         func lit(_ kind: MustSeePlace.Kind) -> Int { litByKind[kind, default: 0] }
         var litTotal: Int { visited.count }
@@ -326,26 +328,31 @@ enum BlindBox {
         let unseen = (MustSee.china + MustSee.world)
             .filter { !context.visited.contains($0.id) && !leftOut.contains($0.id) }
             .map(Place.init)
-        // Places of the person's own that they haven't reached, wherever they are.
-        var pool = unseen + nearby + context.custom
+        // Places of the person's own that they haven't reached, and well-known cities they
+        // haven't been near, wherever they are.
+        let all = unseen + nearby + context.custom + context.cities
+        var pool = all
         if let here = context.here {
-            let reachable = pool.filter { span.range.contains(here.distance(from: $0.location) / 1000) }
-            if !reachable.isEmpty {
-                pool = reachable
-            } else {
-                // Somewhere remote: the closest few that are left, as far as the time allows.
-                // Past that, better to say so than to send them far away.
-                pool = Array(pool.filter { here.distance(from: $0.location) / 1000 <= span.farthest }
-                    .sorted { here.distance(from: $0.location) < here.distance(from: $1.location) }.prefix(6))
-            }
+            func kilometres(_ place: Place) -> Double { here.distance(from: place.location) / 1000 }
+            let fresh = all.filter { !context.recent.contains($0.id) }
+            let inRange = fresh.filter { span.range.contains(kilometres($0)) }
+            let suited = inRange.filter { mood.kinds.contains($0.placeKind) }
+            // Somewhere new every time comes first. With few places in reach the same one used
+            // to come out again and again, so before repeating anything the box lets go of the
+            // mood, then of the nearer edge of the range, then reaches as far as the time allows.
+            let within = fresh.filter { kilometres($0) <= span.range.upperBound }
+            let stretched = Array(fresh.filter { kilometres($0) <= span.farthest }.sorted { kilometres($0) < kilometres($1) }.prefix(6))
+            let seenBefore = all.filter { span.range.contains(kilometres($0)) }
+            pool = [suited, inRange, within, stretched, seenBefore].first { !$0.isEmpty } ?? []
         } else if span == .day || span == .weekend {
             // Near means near somewhere: without knowing where the person is, nothing is.
             return nil
+        } else {
+            let suited = pool.filter { mood.kinds.contains($0.placeKind) }
+            if !suited.isEmpty { pool = suited }
+            let fresh = pool.filter { !context.recent.contains($0.id) }
+            if !fresh.isEmpty { pool = fresh }
         }
-        let suited = pool.filter { mood.kinds.contains($0.placeKind) }
-        if !suited.isEmpty { pool = suited }
-        let fresh = pool.filter { !context.recent.contains($0.id) }
-        if !fresh.isEmpty { pool = fresh }
         guard let place = weightedPick(pool, mood: mood, context: context, using: &generator) else { return nil }
         let distance = context.here.map { $0.distance(from: place.location) }
         let reason = reason(for: place, span: span, mood: mood, distance: distance, context: context, using: &generator)
@@ -357,6 +364,8 @@ enum BlindBox {
         let weights = pool.map { place -> Double in
             var weight = 1.0
             if context.wishes.contains(place.id) { weight *= 6 }
+            // The two hundred lead; a plain city is there so the box never runs dry.
+            if place.id.hasPrefix("city-") { weight *= 0.4 }
             if visa(for: place, context: context) != nil { weight *= 3 }
             if mood == .any {
                 if place.placeKind == favourite { weight *= 2 }

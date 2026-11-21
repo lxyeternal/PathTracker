@@ -30,7 +30,10 @@ struct MustSeePlaceView: View {
     private static let gold = LinearGradient(colors: [Color(red: 1, green: 0.88, blue: 0.55), .orange], startPoint: .top, endPoint: .bottom)
     private let heroHeight: CGFloat = 520
 
-    private var firstVisit: Date? { progress.firstVisits[place.id] }
+    /// The day the footprints first reached here; nil when it's unlit, or lit by hand.
+    private var firstVisit: Date? { progress.date(place.id) }
+    private var isManual: Bool { progress.isManual(place.id) }
+    private var isLit: Bool { progress.firstVisits[place.id] != nil }
     private var story: MustSeeStory? { MustSee.story(place.id) }
     private var wishes: Set<String> { Set(wishesRaw.split(separator: ",").map(String.init)) }
     private var wished: Bool { wishes.contains(place.id) }
@@ -57,7 +60,8 @@ struct MustSeePlaceView: View {
                     }
                     elsewhere.reveal(appeared, delay: 0.65)
                     if firstVisit == nil {
-                        wishButton.reveal(appeared, delay: 0.7)
+                        if !isLit { wishButton.reveal(appeared, delay: 0.7) }
+                        beenButton.reveal(appeared, delay: 0.75)
                     }
                     if let credit = MustSeePhotos.credit(place.id) {
                         creditLine(credit)
@@ -157,6 +161,15 @@ struct MustSeePlaceView: View {
             HStack(spacing: 6) {
                 Image(systemName: "sparkles")
                 Text("\(firstVisit.formatted(.dateTime.year().month().day().locale(appLocale))) 第一次到这里")
+            }
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Self.gold)
+            .padding(.horizontal, 12).padding(.vertical, 7)
+            .glassEffect(.regular.tint(.orange.opacity(0.18)), in: .capsule)
+        } else if isManual {
+            HStack(spacing: 6) {
+                Image(systemName: "sparkles")
+                Text("你来过这里")
             }
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(Self.gold)
@@ -287,6 +300,34 @@ struct MustSeePlaceView: View {
     }
 
     // MARK: Wish
+
+    /// For somewhere the footprints missed: been there before the app, or without a photo.
+    private var beenButton: some View {
+        VStack(spacing: 10) {
+            Button {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { progress.setManual(place.id, !isManual) }
+                if isManual { UINotificationFeedbackGenerator().notificationOccurred(.success) }
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: isManual ? "checkmark.circle.fill" : "checkmark.circle")
+                        .contentTransition(.symbolEffect(.replace))
+                    Text(isManual ? "已点亮 · 点一下取消" : "我去过这里")
+                }
+                .font(.headline)
+                .foregroundStyle(isManual ? AnyShapeStyle(Self.gold) : AnyShapeStyle(Color.white))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(Capsule().fill(isManual ? AnyShapeStyle(Color.orange.opacity(0.16)) : AnyShapeStyle(.white.opacity(0.1))))
+                .overlay(Capsule().strokeBorder(.white.opacity(isManual ? 0 : 0.18), lineWidth: 1))
+            }
+            .buttonStyle(PressableStyle())
+            Text(isManual ? "是你自己点亮的。以后足迹或照片到了这里，会补上日期。" : "去过却没亮？可能那时还没有记录，也没在那里拍照。自己点亮它。")
+                .font(.footnote)
+                .foregroundStyle(.white.opacity(0.5))
+                .multilineTextAlignment(.center)
+                .contentTransition(.opacity)
+        }
+    }
 
     private var wishButton: some View {
         VStack(spacing: 10) {
