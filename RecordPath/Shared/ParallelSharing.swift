@@ -190,9 +190,8 @@ final class ParallelSharing {
         }
     }
 
-    /// The invite page on Waytrace's own site. Nil until the site has its domain: until then
-    /// invitations go out as plain iCloud links.
-    static let invitePage: URL? = nil
+    /// The invite page on Waytrace's own site. When nil, invitations go out as plain iCloud links.
+    static let invitePage = URL(string: "https://waytrace.cn/join.html")
 
     /// The invitation as a page of our own site, which WeChat and others show as a Waytrace
     /// card, and which passes on to the iCloud link. Nil when the share has no link yet.
