@@ -1,10 +1,18 @@
 import SwiftUI
 import MapKit
 
-/// Country outlines from Natural Earth (public domain, 1:50m), loaded on first use. Mainland
-/// China, Hong Kong, Macao, Taiwan and India are left out on purpose: a border drawn by the app
-/// there is not an approved map in China, so those countries show their visited cities only.
+/// Country outlines from Natural Earth (public domain, 1:50m), loaded on first use. China is
+/// the exception: its outline is the national boundary as China's standard map draws it, from
+/// DataV.GeoAtlas (AutoNavi data), with Taiwan, Hainan and the South China Sea in it, and it is
+/// always drawn whole. Hong Kong, Macao and Taiwan are their coastlines and local boundary from
+/// Natural Earth 1:10m, as are countries too small to have a shape at 1:50m; overseas territories
+/// counted on their own (French Guiana, Réunion, Svalbard…) are split from their countries.
+/// India has no outline: its border as Natural Earth draws it is not an approved map in China,
+/// so it shows its visited cities only.
 enum CountryBorders {
+    /// Countries whose outline is never drawn in part.
+    static let drawnWhole: Set<String> = ["CN"]
+
     @MainActor private static var loaded: [String: [[CLLocationCoordinate2D]]]?
 
     @MainActor
@@ -89,7 +97,7 @@ struct CountryMap: View {
             ForEach(outline.indices, id: \.self) { index in
                 MapPolygon(coordinates: outline[index])
                     .foregroundStyle(tint.opacity(0.08))
-                    .stroke(tint.opacity(0.85), lineWidth: 1.6)
+                    .stroke(tint.opacity(0.85), style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
             }
             ForEach(glows) { glow in
                 MapCircle(center: glow.center, radius: glow.radius * 1.6)
@@ -153,10 +161,18 @@ struct CountryMap: View {
         // Outline only the parts of the country that were visited (France without its
         // overseas regions, the US without Alaska unless you went), and frame on them.
         let visited = rings.filter { ring in dots.contains { CountryBorders.contains(ring, $0.coordinate) } }
-        outline = visited.isEmpty ? rings.filter { $0.count > 30 }.prefix(1).map { $0 } : visited
+        if CountryBorders.drawnWhole.contains(code) {
+            outline = rings
+        } else {
+            // Nothing matched (a place just off the coastline as drawn): the mainland alone.
+            outline = visited.isEmpty ? Array(rings.sorted { $0.count > $1.count }.prefix(1)) : visited
+        }
         guard !ready else { return }
         ready = true
-        let points = outline.flatMap { $0 } + dots.map(\.coordinate)
+        // A country drawn whole is framed on where you went: all of China for a weekend in
+        // Shanghai would leave the visit a speck.
+        let places = dots.map(\.coordinate)
+        let points = CountryBorders.drawnWhole.contains(code) && !places.isEmpty ? places : outline.flatMap { $0 } + places
         if let region = Self.region(around: points) {
             position = .region(region)
             updateLabels(span: region.span)

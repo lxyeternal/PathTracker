@@ -133,26 +133,26 @@ struct StampBookView: View {
 
     // MARK: World
 
+    /// Launched with -stampMapCountries "SG,FR,US": the map as someone who went there would see it.
+    private var mapCountries: Set<String> {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        if let flag = arguments.firstIndex(of: "-stampMapCountries"), flag + 1 < arguments.count {
+            return Set(arguments[flag + 1].split(separator: ",").map(String.init))
+        }
+        #endif
+        return insights.countries
+    }
+
     private var world: some View {
         VStack(alignment: .leading, spacing: 18) {
             PassportBook(book: book) { stamp in
                 openCountry = summaries.world.countries.first { $0.code == stamp.countryCode }
             }
             VisaShelf()
-            ProgressHeader(lit: insights.countries.count, total: Continent.all.reduce(0) { $0 + $1.regions.count },
-                           title: "去过的国家和地区", tint: .red,
-                           detail: String(localized: "跨越 \(insights.continentsVisited) 个大洲", bundle: .appLanguage))
-            ForEach(continents) { continent in
-                FlagWall(continent: continent, visited: insights.countries, countries: summaries.world.countries)
-            }
-        }
-    }
-
-    /// Continents with visits first, the rest in a stable order.
-    private var continents: [Continent] {
-        Continent.all.sorted {
-            let a = $0.regions.filter(insights.countries.contains).count, b = $1.regions.filter(insights.countries.contains).count
-            return a != b ? a > b : $0.id < $1.id
+            WorldStampMap(visited: mapCountries, countries: summaries.world.countries,
+                          cities: mapCountries == insights.countries ? book.cities : [], continentsVisited: insights.continentsVisited) { openCountry = $0 }
+                .padding(.top, 6)
         }
     }
 
@@ -265,46 +265,6 @@ struct ProvinceTileMap: View {
                 }
                 .frame(width: side, height: side)
         }
-    }
-}
-
-private struct FlagWall: View {
-    let continent: Continent
-    let visited: Set<String>
-    let countries: [CountrySummary]
-
-    private var litCount: Int { continent.regions.filter(visited.contains).count }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(continent.name).font(.headline)
-                Spacer()
-                Text("\(litCount) / \(continent.regions.count)").font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
-            }
-            ProgressView(value: Double(litCount), total: Double(max(continent.regions.count, 1)))
-                .tint(.red)
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 34), spacing: 6)], spacing: 6) {
-                ForEach(continent.regions, id: \.self) { code in
-                    let lit = visited.contains(code)
-                    let flag = Text(String.flag(for: code))
-                        .font(.system(size: 26))
-                        .grayscale(lit ? 0 : 1)
-                        .opacity(lit ? 1 : 0.22)
-                    Group {
-                        if let country = countries.first(where: { $0.code == code }) {
-                            NavigationLink(value: country) { flag }.buttonStyle(PressableStyle())
-                        } else {
-                            flag
-                        }
-                    }
-                        .accessibilityLabel(appLocale.localizedString(forRegionCode: code) ?? code)
-                        .accessibilityValue(lit ? String(localized: "去过", bundle: .appLanguage) : String(localized: "还没去过", bundle: .appLanguage))
-                }
-            }
-        }
-        .padding(16)
-        .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
     }
 }
 
