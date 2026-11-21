@@ -104,8 +104,11 @@ struct MustSeeView: View {
     private func visited(_ place: MustSeePlace) -> Date? { progress.firstVisits[place.id] }
     /// "2025年12月30日 · 10 个月前", or that the person lit it themselves.
     private func visitText(_ place: MustSeePlace, _ date: Date) -> String {
-        progress.isManual(place.id) ? String(localized: "去过 · 自己点亮的", bundle: .appLanguage)
-            : "\(date.formatted(.dateTime.year().month().day().locale(appLocale))) · \(Self.ago(date))"
+        if progress.isManual(place.id) {
+            guard let day = MustSeeMemories.shared.date(place.id) else { return String(localized: "去过 · 自己点亮的", bundle: .appLanguage) }
+            return "\(day.formatted(.dateTime.year().month().day().locale(appLocale))) · \(String(localized: "自己点亮的", bundle: .appLanguage))"
+        }
+        return "\(date.formatted(.dateTime.year().month().day().locale(appLocale))) · \(Self.ago(date))"
     }
     private var litCount: Int { places.filter { visited($0) != nil }.count }
 

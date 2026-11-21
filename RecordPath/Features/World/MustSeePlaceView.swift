@@ -1,6 +1,7 @@
 import SwiftUI
 import MapKit
 import Photos
+import PhotosUI
 
 struct MustSeePlaceRoute: Hashable {
     let id: String
@@ -21,6 +22,11 @@ struct MustSeePlaceView: View {
     @State private var viewing: AssetPagerStart?
     @State private var appeared = false
     @State private var burst = 0
+    private var memories = MustSeeMemories.shared
+    @State private var pickerItems: [PhotosPickerItem] = []
+    @State private var isImporting = false
+    @State private var viewingMemory: MemoryPagerStart?
+    @State private var confirmingUnlight = false
 
     init(place: MustSeePlace) {
         self.place = place
@@ -34,6 +40,9 @@ struct MustSeePlaceView: View {
     private var firstVisit: Date? { progress.date(place.id) }
     private var isManual: Bool { progress.isManual(place.id) }
     private var isLit: Bool { progress.firstVisits[place.id] != nil }
+    /// Photos the person added themselves, for a place lit by hand.
+    private var kept: [URL] { isManual ? memories.photos(place.id) : [] }
+    private var manualDate: Date? { isManual ? memories.date(place.id) : nil }
     private var story: MustSeeStory? { MustSee.story(place.id) }
     private var wishes: Set<String> { Set(wishesRaw.split(separator: ",").map(String.init)) }
     private var wished: Bool { wishes.contains(place.id) }
@@ -57,11 +66,17 @@ struct MustSeePlaceView: View {
                     facts.reveal(appeared, delay: 0.5)
                     if firstVisit != nil {
                         yours.reveal(appeared, delay: 0.6)
+                    } else if isManual {
+                        memory.reveal(appeared, delay: 0.6)
                     }
                     elsewhere.reveal(appeared, delay: 0.65)
                     if firstVisit == nil {
-                        if !isLit { wishButton.reveal(appeared, delay: 0.7) }
-                        beenButton.reveal(appeared, delay: 0.75)
+                        if !isLit {
+                            wishButton.reveal(appeared, delay: 0.7)
+                            beenButton.reveal(appeared, delay: 0.75)
+                        } else {
+                            unlightButton.reveal(appeared, delay: 0.75)
+                        }
                     }
                     if let credit = MustSeePhotos.credit(place.id) {
                         creditLine(credit)
@@ -81,6 +96,18 @@ struct MustSeePlaceView: View {
         .toolbar(.hidden, for: .tabBar)
         .mapItemDetailSheet(item: $placeCard)
         .fullScreenCover(item: $viewing) { AssetPager(assets: photos, selection: $0.id) }
+        .fullScreenCover(item: $viewingMemory) { start in
+            MemoryPager(urls: kept, selection: start.id) { memories.remove($0) }
+        }
+        .onChange(of: pickerItems) { _, items in importMemories(items) }
+        .confirmationDialog("取消点亮“\(place.localizedName)”？", isPresented: $confirmingUnlight, titleVisibility: .visible) {
+            Button("取消点亮", role: .destructive) {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { progress.setManual(place.id, false) }
+                memories.forget(place.id)
+            }
+        } message: {
+            Text("你在这里添加的照片和日期也会移除，相册里的原图不受影响。")
+        }
         .sensoryFeedback(.impact(weight: .light), trigger: burst)
         .task {
             withAnimation(.smooth(duration: 0.9)) { appeared = true }
@@ -94,7 +121,7 @@ struct MustSeePlaceView: View {
 
     /// The place at its best first, then what you saw there yourself.
     private var slides: [ReelSlide] {
-        (MustSeePhotos.credit(place.id) != nil ? [.cover(place.id)] : []) + photos.prefix(8).map { .asset($0) }
+        (MustSeePhotos.credit(place.id) != nil ? [.cover(place.id)] : []) + kept.prefix(8).map { .file($0) } + photos.prefix(8).map { .asset($0) }
     }
 
     private var hero: some View {
@@ -169,7 +196,11 @@ struct MustSeePlaceView: View {
         } else if isManual {
             HStack(spacing: 6) {
                 Image(systemName: "sparkles")
-                Text("你来过这里")
+                if let manualDate {
+                    Text("\(manualDate.formatted(.dateTime.year().month().day().locale(appLocale))) 来过这里")
+                } else {
+                    Text("你来过这里")
+                }
             }
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(Self.gold)
@@ -305,27 +336,129 @@ struct MustSeePlaceView: View {
     private var beenButton: some View {
         VStack(spacing: 10) {
             Button {
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { progress.setManual(place.id, !isManual) }
-                if isManual { UINotificationFeedbackGenerator().notificationOccurred(.success) }
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { progress.setManual(place.id, true) }
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
             } label: {
                 HStack(spacing: 10) {
-                    Image(systemName: isManual ? "checkmark.circle.fill" : "checkmark.circle")
-                        .contentTransition(.symbolEffect(.replace))
-                    Text(isManual ? "已点亮 · 点一下取消" : "我去过这里")
+                    Image(systemName: "checkmark.circle")
+                    Text("我去过这里")
                 }
                 .font(.headline)
-                .foregroundStyle(isManual ? AnyShapeStyle(Self.gold) : AnyShapeStyle(Color.white))
+                .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
-                .background(Capsule().fill(isManual ? AnyShapeStyle(Color.orange.opacity(0.16)) : AnyShapeStyle(.white.opacity(0.1))))
-                .overlay(Capsule().strokeBorder(.white.opacity(isManual ? 0 : 0.18), lineWidth: 1))
+                .background(Capsule().fill(.white.opacity(0.1)))
+                .overlay(Capsule().strokeBorder(.white.opacity(0.18), lineWidth: 1))
             }
             .buttonStyle(PressableStyle())
-            Text(isManual ? "是你自己点亮的。以后足迹或照片到了这里，会补上日期。" : "去过却没亮？可能那时还没有记录，也没在那里拍照。自己点亮它。")
+            Text("去过却没亮？可能那时还没有记录，也没在那里拍照。自己点亮它，再放上几张当时的照片。")
                 .font(.footnote)
                 .foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
-                .contentTransition(.opacity)
+        }
+    }
+
+    private var unlightButton: some View {
+        Button {
+            if kept.isEmpty && manualDate == nil {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { progress.setManual(place.id, false) }
+            } else {
+                confirmingUnlight = true
+            }
+        } label: {
+            Text("其实没去过，取消点亮")
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.5))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: Memory
+
+    /// A place lit by hand: the day, if remembered, and a few photos from then.
+    private var memory: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionTitle("你在这里留下的", subtitle: kept.isEmpty ? nil : "\(kept.count) 张照片")
+            let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 3)
+            LazyVGrid(columns: columns, spacing: 6) {
+                ForEach(kept, id: \.self) { url in
+                    Button {
+                        viewingMemory = MemoryPagerStart(id: url)
+                    } label: {
+                        Color.clear
+                            .aspectRatio(1, contentMode: .fit)
+                            .overlay { MemoryThumbnail(url: url) }
+                            .clipShape(.rect(cornerRadius: 14, style: .continuous))
+                    }
+                    .buttonStyle(PressableStyle())
+                }
+                if kept.count < MustSeeMemories.maxPhotos {
+                    PhotosPicker(selection: $pickerItems, maxSelectionCount: MustSeeMemories.maxPhotos - kept.count, matching: .images) {
+                        Color.clear
+                            .aspectRatio(1, contentMode: .fit)
+                            .overlay {
+                                VStack(spacing: 6) {
+                                    if isImporting {
+                                        ProgressView().tint(.white)
+                                    } else {
+                                        Image(systemName: "plus").font(.title2.weight(.semibold))
+                                        Text(kept.isEmpty ? "添加照片" : "再加几张").font(.caption.weight(.semibold))
+                                    }
+                                }
+                                .foregroundStyle(Self.gold)
+                            }
+                            .background(.white.opacity(0.07), in: .rect(cornerRadius: 14, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .strokeBorder(.white.opacity(0.22), style: StrokeStyle(lineWidth: 1, dash: [5, 4])))
+                    }
+                    .buttonStyle(PressableStyle())
+                    .disabled(isImporting)
+                }
+            }
+            HStack {
+                Image(systemName: "calendar").font(.title3).foregroundStyle(Self.gold)
+                Text("去的那天").font(.headline)
+                Spacer()
+                if let manualDate {
+                    DatePicker("去的那天", selection: Binding(get: { manualDate }, set: { memories.setDate($0, for: place.id) }),
+                               in: ...Date(), displayedComponents: .date)
+                        .labelsHidden()
+                    Button("清除日期", systemImage: "xmark.circle.fill") {
+                        withAnimation(.smooth) { memories.setDate(nil, for: place.id) }
+                    }
+                    .labelStyle(.iconOnly)
+                    .foregroundStyle(.white.opacity(0.4))
+                } else {
+                    Button("加上日期") {
+                        withAnimation(.smooth) { memories.setDate(Date(), for: place.id) }
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Self.gold)
+                }
+            }
+            .padding(.horizontal, 16).padding(.vertical, 10)
+            .frame(minHeight: 56)
+            .background(.white.opacity(0.07), in: .rect(cornerRadius: 20, style: .continuous))
+            Text("是你自己点亮的。照片只存在这台设备上；以后足迹或相册到了这里，会换成那一天。")
+                .font(.footnote)
+                .foregroundStyle(.white.opacity(0.5))
+        }
+    }
+
+    private func importMemories(_ items: [PhotosPickerItem]) {
+        guard !items.isEmpty else { return }
+        isImporting = true
+        Task {
+            var images: [Data] = []
+            for item in items {
+                if let data = try? await item.loadTransferable(type: Data.self) { images.append(data) }
+            }
+            await memories.add(images, to: place.id)
+            pickerItems = []
+            withAnimation(.smooth) { isImporting = false }
         }
     }
 
@@ -487,9 +620,11 @@ private struct Flyover: View {
 private enum ReelSlide: Identifiable {
     case cover(String)
     case asset(PHAsset)
+    case file(URL)
 
     var id: String {
         switch self {
+        case .file(let url): url.lastPathComponent
         case .cover(let id): "cover-\(id)"
         case .asset(let asset): asset.localIdentifier
         }
@@ -538,6 +673,7 @@ private struct DriftingPhoto: View {
         }
         .task {
             switch slide {
+            case .file(let url): image = await MemoryImages.image(url, side: 2048)
             case .cover(let id): image = await MustSeePhotos.cover(id)
             case .asset(let asset): image = await AssetLoader.image(for: asset, size: CGSize(width: 1600, height: 1600), exact: false)
             }
