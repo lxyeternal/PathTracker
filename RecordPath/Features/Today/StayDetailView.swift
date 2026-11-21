@@ -27,7 +27,7 @@ struct StayDetailView: View {
     @State private var viewingAsset: AssetPagerStart?
 
     enum PlaceKind: String, CaseIterable, Identifiable {
-        case none, home, school, work, sight
+        case none, home, school, work, sight, mall, restaurant
         var id: String { rawValue }
         var title: String {
             switch self {
@@ -36,11 +36,15 @@ struct StayDetailView: View {
             case .home: String(localized: "家", bundle: .appLanguage)
             case .school: String(localized: "学校", bundle: .appLanguage)
             case .work: String(localized: "公司", bundle: .appLanguage)
+            case .mall: String(localized: "place.kind.mall", defaultValue: "商场", bundle: .appLanguage)
+            case .restaurant: String(localized: "place.kind.restaurant", defaultValue: "餐厅", bundle: .appLanguage)
             }
         }
+        /// What the place is called when it has no name of its own. A sight, a mall or a
+        /// restaurant keeps the name it has.
         var name: String {
             switch self {
-            case .none: ""
+            case .none, .mall, .restaurant: ""
             case .home: String(localized: "家", bundle: .appLanguage)
             case .school: String(localized: "学校", bundle: .appLanguage)
             case .work: String(localized: "公司", bundle: .appLanguage)
@@ -54,6 +58,8 @@ struct StayDetailView: View {
             case .home: "house.fill"
             case .school: "graduationcap.fill"
             case .work: "briefcase.fill"
+            case .mall: "bag.fill"
+            case .restaurant: "fork.knife"
             }
         }
     }
@@ -306,7 +312,7 @@ struct StayDetailView: View {
         let previousKind = Self.kind(of: stay)
         var newName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         // A name that was only the old type's ("家") follows the type, rather than sticking.
-        if kind != previousKind, previousKind != .none, previousKind != .sight, newName == previousKind.name { newName = "" }
+        if kind != previousKind, !previousKind.name.isEmpty, newName == previousKind.name { newName = "" }
         if newName != (stay.customName ?? "") || kind != previousKind {
             let change: KnownPlaces.CategoryChange = switch kind {
             case .sight: .sight

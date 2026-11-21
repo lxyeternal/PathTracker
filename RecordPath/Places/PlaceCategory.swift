@@ -15,9 +15,15 @@ enum PlaceCategory: Equatable {
         case "home": self = .home
         case "school": self = .school
         case "work": self = .work
+        case "mall": self = .shopping
+        case "restaurant": self = .food
         default: self = PlaceCategory(MKPointOfInterestCategory(rawValue: rawValue))
         }
     }
+
+    /// Types the person chose by hand. They are kept as they are, on every visit nearby,
+    /// rather than looked up again.
+    static let chosenRawValues: Set<String> = ["home", "school", "work", "mall", "restaurant"]
 
     init(_ category: MKPointOfInterestCategory) {
         switch category {

@@ -364,7 +364,7 @@ final class PlaceTagger {
         }
 
         // Home, school and overnight stays are never sightseeing, even next to a famous sight.
-        let personal = ["home", "school", "work"].contains(stay.categoryRaw ?? "")
+        let personal = PlaceCategory.chosenRawValues.contains(stay.categoryRaw ?? "")
         let overnight = stay.departure.map { $0.timeIntervalSince(stay.arrival) > 6 * 3600 } ?? false
         if !personal, UserMarkedSights.contains(stay) {
             // The user called this a sight; keep it one on every visit.
@@ -449,13 +449,20 @@ enum KnownPlaces {
     static let radius: CLLocationDistance = 150
 
     static func applyName(to stay: Stay, in context: ModelContext) {
-        let descriptor = FetchDescriptor<Stay>(predicate: #Predicate { $0.customName != nil })
-        guard let named = try? context.fetch(descriptor) else { return }
-        if let match = named.min(by: { $0.location.distance(from: stay.location) < $1.location.distance(from: stay.location) }),
-           match.location.distance(from: stay.location) <= radius {
-            stay.customName = match.customName
-            if let raw = match.categoryRaw, ["home", "school", "work"].contains(raw) { stay.categoryRaw = raw }
+        func nearest(_ stays: [Stay]) -> Stay? {
+            stays.min { $0.location.distance(from: stay.location) < $1.location.distance(from: stay.location) }
+                .flatMap { $0.location.distance(from: stay.location) <= radius ? $0 : nil }
         }
+        let named = (try? context.fetch(FetchDescriptor<Stay>(predicate: #Predicate { $0.customName != nil }))) ?? []
+        if let match = nearest(named) {
+            stay.customName = match.customName
+            if let raw = match.categoryRaw, PlaceCategory.chosenRawValues.contains(raw) { stay.categoryRaw = raw }
+        }
+        // A mall or restaurant keeps its own name, so it's found by its type alone.
+        guard stay.categoryRaw == nil else { return }
+        let mall = "mall", restaurant = "restaurant"
+        let typed = (try? context.fetch(FetchDescriptor<Stay>(predicate: #Predicate { $0.categoryRaw == mall || $0.categoryRaw == restaurant }))) ?? []
+        if let match = nearest(typed.filter { $0.persistentModelID != stay.persistentModelID }) { stay.categoryRaw = match.categoryRaw }
     }
 
     enum CategoryChange { case keep, set(String), sight, clear }
@@ -472,7 +479,7 @@ enum KnownPlaces {
                 other.isLandmark = false
             case .sight:
                 // Marked by hand: a sight even if MapKit has nothing famous there.
-                if ["home", "school", "work"].contains(other.categoryRaw ?? "") || other.categoryRaw == nil {
+                if PlaceCategory.chosenRawValues.contains(other.categoryRaw ?? "") || other.categoryRaw == nil {
                     other.categoryRaw = MKPointOfInterestCategory.landmark.rawValue
                 }
                 other.isLandmark = true
