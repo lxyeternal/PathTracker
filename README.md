@@ -110,10 +110,11 @@
 ## 🛂 护照与印章
 
 <p align="center">
-  <img src="docs/images/passport.jpg" width="190" alt="护照">
-  <img src="docs/images/seals.jpg" width="190" alt="省份印">
-  <img src="docs/images/city-stamps.jpg" width="190" alt="城市章">
-  <img src="docs/images/four-corners.jpg" width="190" alt="四至">
+  <img src="docs/images/passport.jpg" width="170" alt="护照">
+  <img src="docs/images/passport-map.jpg" width="170" alt="去过的国家地图">
+  <img src="docs/images/seals.jpg" width="170" alt="省份印">
+  <img src="docs/images/city-stamps.jpg" width="170" alt="城市章">
+  <img src="docs/images/four-corners.jpg" width="170" alt="四至">
 </p>
 
 去过的地方不是一个数字，而是一枚枚盖上去的章，收在一本可以翻页的护照里。

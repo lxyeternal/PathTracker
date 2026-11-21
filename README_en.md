@@ -110,10 +110,11 @@
 ## 🛂 Passport and stamps
 
 <p align="center">
-  <img src="docs/images/passport.jpg" width="190" alt="Passport">
-  <img src="docs/images/seals.jpg" width="190" alt="Province seals">
-  <img src="docs/images/city-stamps.jpg" width="190" alt="City stamps">
-  <img src="docs/images/four-corners.jpg" width="190" alt="Four corners">
+  <img src="docs/images/passport.jpg" width="170" alt="Passport">
+  <img src="docs/images/passport-map.jpg" width="170" alt="The countries you've been to">
+  <img src="docs/images/seals.jpg" width="170" alt="Province seals">
+  <img src="docs/images/city-stamps.jpg" width="170" alt="City stamps">
+  <img src="docs/images/four-corners.jpg" width="170" alt="Four corners">
 </p>
 
 The places you've been aren't a number. They're stamps, pressed one by one into a passport you can leaf through.
