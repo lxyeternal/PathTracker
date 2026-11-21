@@ -21,6 +21,7 @@
 
 <p align="center">
   <a href="https://apps.apple.com/app/id6827694426"><img src="https://img.shields.io/badge/App%20Store-Download%20free-0D96F6?style=for-the-badge&logo=appstore&logoColor=white" height="40" alt="Download on the App Store"></a>
+  <a href="https://waytrace.cn"><img src="https://img.shields.io/badge/Website-waytrace.cn-1d2550?style=for-the-badge&logo=safari&logoColor=white" height="40" alt="Waytrace website"></a>
 </p>
 
 <p align="center">

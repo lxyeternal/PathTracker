@@ -21,6 +21,7 @@
 
 <p align="center">
   <a href="https://apps.apple.com/cn/app/id6827694426"><img src="https://img.shields.io/badge/App%20Store-%E5%85%8D%E8%B4%B9%E4%B8%8B%E8%BD%BD-0D96F6?style=for-the-badge&logo=appstore&logoColor=white" height="40" alt="在 App Store 下载"></a>
+  <a href="https://waytrace.cn"><img src="https://img.shields.io/badge/%E5%AE%98%E7%BD%91-waytrace.cn-1d2550?style=for-the-badge&logo=safari&logoColor=white" height="40" alt="漫迹官网 waytrace.cn"></a>
 </p>
 
 <p align="center">

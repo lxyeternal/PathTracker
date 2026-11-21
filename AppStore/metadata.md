@@ -4,9 +4,9 @@
 
 | 栏目 | 填写 |
 |---|---|
-| 隐私政策网址 Privacy Policy URL | https://lxyeternal.github.io/PathTracker/privacy.html |
-| 技术支持网址 Support URL | https://lxyeternal.github.io/PathTracker/#support |
-| 营销网址 Marketing URL（可选） | https://lxyeternal.github.io/PathTracker/ |
+| 隐私政策网址 Privacy Policy URL | https://waytrace.cn/privacy.html |
+| 技术支持网址 Support URL | https://waytrace.cn/#support |
+| 营销网址 Marketing URL（可选） | https://waytrace.cn/ |
 | 主要类别 Primary Category | 旅游 Travel |
 | 次要类别 Secondary Category | 健康健美 Health & Fitness |
 | 年龄分级 Age Rating | 4+（所有问题都选“无”） |
