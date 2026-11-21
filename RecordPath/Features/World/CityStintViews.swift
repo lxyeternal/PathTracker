@@ -253,6 +253,8 @@ private struct TrailingIconLabelStyle: LabelStyle {
 /// Tap it and they spread out into two rows you can scroll; "All" opens every one by day.
 struct PhotoStack: View {
     let assets: [PHAsset]
+    /// Something to do with the photos beside the title, such as adding more.
+    var accessory: AnyView?
     let openAll: () -> Void
     @State private var expanded = false
     @State private var viewing: AssetPagerStart?
@@ -272,6 +274,7 @@ struct PhotoStack: View {
                         .font(.subheadline.weight(.semibold))
                         .padding(.leading, 10)
                 }
+                if let accessory { accessory.padding(.leading, 10) }
             }
             if expanded { spread } else { pile }
         }

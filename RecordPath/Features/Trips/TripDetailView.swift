@@ -48,13 +48,11 @@ struct TripDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                if !libraryPhotos.isEmpty {
-                    PhotoStack(assets: libraryPhotos) { showingGallery = true }
-                }
+                photosSection
                 mapCard
                 if trip.isActive { endButton }
                 metrics
-                photosSection
+                if libraryPhotos.isEmpty && photos.isEmpty { addPhotosRow }
                 notesSection
                 if !trip.isActive && !stays.isEmpty {
                     PostcardInvite(trip: trip, stays: stays, chunks: chunks, assets: libraryPhotos)
@@ -258,40 +256,68 @@ struct TripDetailView: View {
         }
     }
 
-    private var photosSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                SectionHeader(title: "照片")
-                if isImporting { ProgressView().padding(.top, 8) }
-                PhotosPicker(selection: $pickerItems, maxSelectionCount: 30, matching: .images) {
-                    Label("添加", systemImage: "plus").font(.subheadline.weight(.semibold))
-                }
-                .padding(.top, 8)
-            }
-            if photos.isEmpty {
-                PhotosPicker(selection: $pickerItems, maxSelectionCount: 30, matching: .images) {
-                    VStack(spacing: 8) {
-                        Image(systemName: "photo.on.rectangle.angled").font(.largeTitle)
-                        Text(trip.isRecording ? "为这次记录添加照片" : "为这段旅程添加照片").font(.subheadline)
-                    }
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 120)
-                    .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
-                }
-                .buttonStyle(.plain)
-            } else {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 4)], spacing: 4) {
-                    ForEach(photos) { photo in
-                        Button { viewingPhoto = photo } label: {
-                            PhotoThumbnail(photo: photo)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .clipShape(.rect(cornerRadius: 20, style: .continuous))
+    private var addButton: some View {
+        HStack(spacing: 8) {
+            if isImporting { ProgressView() }
+            PhotosPicker(selection: $pickerItems, maxSelectionCount: 30, matching: .images) {
+                Label("添加", systemImage: "plus").font(.subheadline.weight(.semibold))
             }
         }
+    }
+
+    /// One place for the trip's photos: the ones the library has from those days, in a pile,
+    /// and under them any added by hand (from another camera, or someone else's phone).
+    @ViewBuilder
+    private var photosSection: some View {
+        if !libraryPhotos.isEmpty || !photos.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                if libraryPhotos.isEmpty {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("照片").font(.title3.bold())
+                        Text("\(photos.count)").font(.subheadline).foregroundStyle(.secondary)
+                        Spacer()
+                        addButton
+                    }
+                } else {
+                    PhotoStack(assets: libraryPhotos, accessory: AnyView(addButton)) { showingGallery = true }
+                }
+                if !photos.isEmpty {
+                    if !libraryPhotos.isEmpty {
+                        Text("你添加的 \(photos.count) 张").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
+                    }
+                    ScrollView(.horizontal) {
+                        LazyHStack(spacing: 6) {
+                            ForEach(photos) { photo in
+                                Button { viewingPhoto = photo } label: {
+                                    PhotoThumbnail(photo: photo, cornerRadius: 14)
+                                        .frame(width: 96, height: 96)
+                                }
+                                .buttonStyle(PressableStyle())
+                            }
+                        }
+                    }
+                    .scrollIndicators(.hidden)
+                    .scrollClipDisabled()
+                    .frame(height: 96)
+                }
+            }
+        }
+    }
+
+    /// With no photos at all, a quiet line rather than a second, empty photo section.
+    private var addPhotosRow: some View {
+        PhotosPicker(selection: $pickerItems, maxSelectionCount: 30, matching: .images) {
+            HStack(spacing: 12) {
+                Image(systemName: "photo.badge.plus").font(.title3).foregroundStyle(.tint)
+                Text(trip.isRecording ? "为这次记录添加照片" : "为这段旅程添加照片").font(.subheadline.weight(.medium))
+                Spacer()
+                if isImporting { ProgressView() }
+                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+            }
+            .padding(16)
+            .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 
     private var notesSection: some View {
