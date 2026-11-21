@@ -3,79 +3,217 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>漫迹 · 平行足迹邀请</title>
-<meta name="description" content="一起看看你们的足迹在哪里交汇：哪天在同一座城市，在哪里擦肩而过。">
-<meta property="og:title" content="漫迹 · 平行足迹邀请">
+<title>漫迹 Waytrace · 平行足迹邀请</title>
+<meta name="description" content="一起看看你们的足迹在哪里交汇：哪天在同一座城市，在哪里擦肩而过。See where your footprints and a friend's meet.">
+<meta property="og:title" content="漫迹 Waytrace · 平行足迹邀请">
 <meta property="og:description" content="一起看看你们的足迹在哪里交汇：哪天在同一座城市，在哪里擦肩而过。">
 <meta property="og:image" content="https://waytrace.cn/images/icon.png">
 <meta property="og:type" content="website">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0b0d1a">
 <link rel="icon" href="images/icon.png">
 <style>
-  :root { --bg:#0b0d1a; --card:#161a2e; --text:#f5f5f7; --muted:#9a9cb3; --accent:#0a84ff; --warm:#ff9f0a; --cool:#30d5c8; }
+  :root { --bg:#0b0d1a; --card:#161a2e; --line:rgba(255,255,255,.08); --text:#f5f5f7; --muted:#9a9cb3; --accent:#0a84ff; --warm:#ff9f0a; --cool:#30d5c8; --gold:#ffd60a; }
   * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
   html, body { margin:0; background:var(--bg); color:var(--text); font:17px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif; }
-  main { max-width: 440px; margin: 0 auto; padding: 56px 24px calc(48px + env(safe-area-inset-bottom)); text-align: center; }
-  .paths { width: 120px; height: 150px; margin: 0 auto 8px; display:block; }
-  .icon { width: 64px; height: 64px; border-radius: 15px; box-shadow: 0 8px 22px rgba(0,0,0,.4); }
-  h1 { font: 700 28px/1.3 "Songti SC", "STSong", serif; margin: 18px 0 10px; }
-  p { color: var(--muted); margin: 0 0 10px; }
-  .card { background: var(--card); border-radius: 22px; padding: 18px 20px; margin: 26px 0; text-align: left; }
-  .card div { display:flex; gap:12px; align-items:flex-start; margin: 8px 0; color: var(--muted); font-size: 15px; }
-  .dot { flex: none; width: 10px; height: 10px; border-radius: 50%; margin-top: 7px; }
-  .button { display:block; background: var(--accent); color:#fff; text-decoration:none; font-weight:600; border-radius: 16px; padding: 15px; margin: 8px 0 14px; }
+  body { background: radial-gradient(700px 420px at 50% -60px, #1d2550 0%, transparent 70%), var(--bg); min-height: 100vh; min-height: 100svh; }
+  main { max-width: 440px; margin: 0 auto; padding: 44px 24px calc(40px + env(safe-area-inset-bottom)); text-align: center; }
+  .paths { width: 104px; height: 130px; margin: 0 auto 4px; display:block; }
+  .paths .mine, .paths .theirs { stroke-dasharray: 220; stroke-dashoffset: 220; animation: draw 1.6s cubic-bezier(.2,.8,.2,1) .2s forwards; }
+  .paths .theirs { animation-delay: .45s; }
+  .paths .meet { opacity: 0; transform-box: fill-box; transform-origin: center; animation: pop .6s cubic-bezier(.2,.8,.2,1) 1.5s forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes pop { 0% { opacity:0; transform: scale(.3); } 70% { opacity:1; transform: scale(1.3); } 100% { opacity:1; transform:none; } }
+  h1 { font: 700 27px/1.3 "Songti SC", "STSong", "Noto Serif SC", Georgia, serif; margin: 16px 0 8px; text-wrap: balance; }
+  p { color: var(--muted); margin: 0 0 10px; text-wrap: pretty; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 16px 20px; margin: 24px 0; text-align: left; }
+  .card div { display:flex; gap:12px; align-items:flex-start; margin: 8px 0; color: #c9cadb; font-size: 15px; }
+  .dot { flex: none; width: 9px; height: 9px; border-radius: 50%; margin-top: 8px; }
+  .button { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; min-height: 54px; border:0; background: var(--accent); color:#fff; text-decoration:none; font: 600 17px/1.2 inherit; font-family: inherit; border-radius: 16px; padding: 14px; margin: 10px 0; cursor: pointer; transition: transform .2s, opacity .2s; -webkit-tap-highlight-color: transparent; }
+  .button:active { transform: scale(.98); opacity: .9; }
+  .button.quiet { background: rgba(255,255,255,.08); color: var(--text); }
   .button.off { background:#2c2f45; color:#8e90a6; pointer-events:none; }
+  .button svg { width: 20px; height: 20px; flex: none; }
+  :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
   .small { font-size: 14px; }
+  .more { display:none; margin-top: 6px; padding: 18px 20px 10px; border-radius: 22px; background: var(--card); border: 1px solid var(--line); text-align:left; }
+  .more.on { display:block; animation: rise .4s cubic-bezier(.2,.8,.2,1); }
+  @keyframes rise { from { opacity:0; transform: translateY(10px); } }
+  .more b { display:block; color: var(--text); margin-bottom: 2px; }
+  .more p { font-size: 15px; }
   a { color: var(--accent); }
-  /* In WeChat: point at the menu that opens the page in Safari. */
-  .wechat { display:none; position:fixed; inset:0; background:rgba(0,0,0,.82); z-index:9; color:#fff; text-align:right; padding: 18px 22px; }
-  .wechat.on { display:block; }
-  .wechat .arrow { font-size: 46px; line-height: 1; margin-right: 6px; }
-  .wechat .tip { text-align:left; background: var(--card); border-radius: 18px; padding: 18px 20px; margin-top: 10px; font-size: 16px; }
-  .wechat .tip b { color: var(--warm); }
+  .foot { margin-top: 26px; font-size: 13px; }
+  .foot a { color: var(--muted); }
+  /* Inside another app's browser: point at the menu that opens the page in Safari. */
+  .inapp { display:none; position:fixed; inset:0; background:rgba(4,5,12,.88); z-index:9; color:#fff; padding: calc(10px + env(safe-area-inset-top)) 20px 20px; }
+  .inapp.on { display:block; }
+  .inapp .arrow { text-align:right; font-size: 44px; line-height: 1; margin-right: 4px; color: var(--gold); animation: nudge 1.4s ease-in-out infinite; }
+  @keyframes nudge { 50% { transform: translate(4px,-4px); } }
+  .inapp .tip { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 18px 20px; margin-top: 8px; font-size: 16px; }
+  .inapp .tip b { color: var(--gold); font-weight: 600; }
+  .inapp .tip div + div { margin-top: 8px; color: #c9cadb; }
+  .inapp button { margin-top: 14px; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .paths .mine, .paths .theirs { stroke-dashoffset: 0; } .paths .meet { opacity: 1; } }
 </style>
 </head>
 <body>
-<div class="wechat" id="wechat">
-  <div class="arrow">↗</div>
+<div class="inapp" id="inapp" role="dialog" aria-modal="true">
+  <div class="arrow" aria-hidden="true">↗</div>
   <div class="tip">
-    <div>微信里打不开这个邀请。</div>
-    <div>请点右上角 <b>···</b>，选择 <b>在默认浏览器中打开</b>（Safari），再点“在漫迹中打开”。</div>
+    <div id="inapp-title"></div>
+    <div id="inapp-how"></div>
+    <button class="button quiet" id="inapp-copy" type="button"></button>
+    <button class="button quiet" id="inapp-close" type="button"></button>
   </div>
 </div>
 <main>
   <svg class="paths" viewBox="0 0 120 150" aria-hidden="true">
     <rect width="120" height="150" rx="26" fill="#161a2e"/>
-    <path d="M18 135 C24 70, 84 82, 102 15" stroke="#ff9f0a" stroke-width="5" fill="none" stroke-linecap="round"/>
-    <path d="M102 135 C96 70, 36 82, 18 15" stroke="#30d5c8" stroke-width="5" fill="none" stroke-linecap="round" stroke-dasharray="1 9"/>
-    <circle cx="60" cy="74" r="11" fill="#ffd60a" opacity=".3"/>
-    <circle cx="60" cy="74" r="6" fill="#ffd60a"/>
+    <path class="mine" d="M18 135 C24 70, 84 82, 102 15" stroke="#ff9f0a" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path class="theirs" d="M102 135 C96 70, 36 82, 18 15" stroke="#30d5c8" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <g class="meet"><circle cx="60" cy="74" r="12" fill="#ffd60a" opacity=".3"/><circle cx="60" cy="74" r="6" fill="#ffd60a"/></g>
   </svg>
-  <h1 id="title">一起看看你们的平行足迹</h1>
-  <p>哪天在同一座城市，在哪里擦肩而过，<br>又去过哪些同样的地方。</p>
+  <h1 id="title"></h1>
+  <p id="lead"></p>
 
   <div class="card">
-    <div><span class="dot" style="background:var(--warm)"></span>接受邀请后，你也把足迹共享给对方，你们就能看到彼此交汇的地方。</div>
-    <div><span class="dot" style="background:var(--cool)"></span>只共享粗略的足迹摘要：家附近 2 公里、地点名称、路线和照片都不会共享。</div>
+    <div><span class="dot" style="background:var(--warm)"></span><span id="point1"></span></div>
+    <div><span class="dot" style="background:var(--cool)"></span><span id="point2"></span></div>
   </div>
 
-  <a class="button off" id="open" href="#">在漫迹中打开</a>
-  <p class="small" id="hint">这个邀请链接不完整，请让朋友重新发一次。</p>
-  <p class="small">还没有漫迹？<a href="./">了解漫迹</a></p>
+  <a class="button off" id="open" href="#"></a>
+  <p class="small" id="hint"></p>
+
+  <div class="more" id="more">
+    <b id="more-title"></b>
+    <p id="more-text"></p>
+    <a class="button" id="store" href="https://apps.apple.com/app/id6827694426"></a>
+    <a class="button quiet" id="icloud" href="#"></a>
+    <button class="button quiet" id="copy" type="button"></button>
+  </div>
+
+  <p class="foot"><a href="./" id="about"></a></p>
 </main>
 <script>
   (function () {
+    var zh = /^zh\b/i.test(navigator.language || '');
+    var T = zh ? {
+      title: '一起看看你们的平行足迹', titleFrom: ' 邀请你看看你们的平行足迹',
+      lead: '哪天在同一座城市，在哪里擦肩而过，又去过哪些同样的地方。',
+      point1: '接受邀请后，你也把足迹共享给对方，你们就能看到彼此交汇的地方。',
+      point2: '只共享粗略的足迹摘要：家附近 2 公里、地点名称、路线和照片都不会共享。',
+      open: '在漫迹中打开', hint: '需要 iPhone 上的漫迹。打开后，漫迹会请你接受邀请。',
+      broken: '这个邀请链接不完整，请让朋友重新发一次。',
+      notPhone: '平行足迹在 iPhone 上的漫迹里看。请在 iPhone 上打开这个链接。',
+      moreTitle: '没有打开？', moreText: '还没装漫迹的话，先在 App Store 下载，装好后再回来点一次“在漫迹中打开”。已经装了，可以改用 iCloud 链接。',
+      store: '在 App Store 下载漫迹', icloud: '用 iCloud 链接打开', copy: '复制邀请链接', copied: '已复制',
+      about: '了解漫迹 Waytrace',
+      inappTitle: '在{app}里打不开这个邀请', inappHow: '请点右上角的 <b>···</b>，选择 <b>{menu}</b>，再点“在漫迹中打开”。',
+      inappClose: '我知道了', here: '这里'
+    } : {
+      title: 'See where your footprints meet', titleFrom: ' invites you to compare footprints',
+      lead: 'The days you were in the same city, the times you passed each other, the places you both know.',
+      point1: 'After you accept, share yours back and you’ll both see where your paths crossed.',
+      point2: 'Only a rough summary is shared: nothing within 2 km of home, no place names, routes or photos.',
+      open: 'Open in Waytrace', hint: 'You need Waytrace on an iPhone. Once it opens, it asks you to accept.',
+      broken: 'This invitation link is incomplete. Ask your friend to send it again.',
+      notPhone: 'Parallel Footprints lives in Waytrace on iPhone. Open this link on your iPhone.',
+      moreTitle: 'Nothing happened?', moreText: 'If you don’t have Waytrace yet, get it from the App Store, then come back and tap “Open in Waytrace” again. If you do, try the iCloud link instead.',
+      store: 'Get Waytrace on the App Store', icloud: 'Open with the iCloud link', copy: 'Copy the invitation link', copied: 'Copied',
+      about: 'About Waytrace',
+      inappTitle: 'This invitation can’t open inside {app}', inappHow: 'Tap <b>···</b> at the top right, choose <b>{menu}</b>, then tap “Open in Waytrace”.',
+      inappClose: 'Got it', here: 'this app'
+    };
+    document.documentElement.lang = zh ? 'zh-Hans' : 'en';
+    var $ = function (id) { return document.getElementById(id); };
+    ['lead', 'point1', 'point2', 'about', 'store', 'icloud', 'copy'].forEach(function (id) {
+      $(id).textContent = T[{ about: 'about', store: 'store', icloud: 'icloud', copy: 'copy' }[id] || id];
+    });
+    $('more-title').textContent = T.moreTitle;
+    $('more-text').textContent = T.moreText;
+    $('open').textContent = T.open;
+    $('inapp-close').textContent = T.inappClose;
+    $('inapp-copy').textContent = T.copy;
+
     var query = new URLSearchParams(location.search);
     var token = query.get('s') || '';
-    var name = (query.get('n') || '').slice(0, 30);
-    // Only an iCloud share id goes into the link: nothing else can be sent anywhere from here.
-    if (/^[A-Za-z0-9_-]{8,80}$/.test(token)) {
-      var open = document.getElementById('open');
-      open.href = 'https://www.icloud.com/share/' + token;
-      open.className = 'button';
-      document.getElementById('hint').textContent = '需要先安装漫迹。打开后，漫迹会请你接受邀请。';
+    var china = query.get('h') === 'cn';
+    var name = (query.get('n') || '').trim().slice(0, 30);
+    $('title').textContent = name ? name + T.titleFrom : T.title;
+
+    // Only an iCloud share id and which iCloud it lives on go into the links: nothing is
+    // sent anywhere from this page.
+    var valid = /^[A-Za-z0-9_-]{8,80}$/.test(token);
+    var ua = navigator.userAgent || '';
+    var phone = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+
+    function copy(button) {
+      var done = function () { var was = button.textContent; button.textContent = T.copied; setTimeout(function () { button.textContent = was; }, 1600); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(location.href).then(done, fallback);
+      } else { fallback(); }
+      function fallback() {
+        var field = document.createElement('textarea');
+        field.value = location.href; field.setAttribute('readonly', '');
+        field.style.cssText = 'position:fixed;opacity:0';
+        document.body.appendChild(field); field.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(field);
+      }
     }
-    if (name) document.getElementById('title').textContent = name + ' 邀请你看看你们的平行足迹';
-    if (/MicroMessenger/i.test(navigator.userAgent)) document.getElementById('wechat').className = 'wechat on';
+    $('copy').addEventListener('click', function () { copy($('copy')); });
+    $('inapp-copy').addEventListener('click', function () { copy($('inapp-copy')); });
+    $('inapp-close').addEventListener('click', function () { $('inapp').className = 'inapp'; });
+
+    if (!valid) { $('hint').textContent = T.broken; return; }
+    if (!phone) { $('hint').textContent = T.notPhone; $('more').className = 'more on'; $('more-title').style.display = $('more-text').style.display = $('icloud').style.display = 'none'; return; }
+
+    var share = 'https://www.icloud.com' + (china ? '.cn' : '') + '/share/' + token;
+    var app = 'waytrace://join?s=' + token + (china ? '&h=cn' : '');
+    var open = $('open');
+    open.href = app;
+    open.className = 'button';
+    $('icloud').href = share;
+    $('hint').textContent = T.hint;
+
+    // If the app didn't come to the front, say what to do next.
+    open.addEventListener('click', function () {
+      var left = false;
+      var gone = function () { left = true; };
+      document.addEventListener('visibilitychange', gone, { once: true });
+      window.addEventListener('pagehide', gone, { once: true });
+      setTimeout(function () {
+        if (!left && !document.hidden) { $('more').className = 'more on'; $('more').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+      }, 1800);
+    });
+
+    // Browsers built into other apps can't hand a link to Waytrace. Each hides "open in
+    // Safari" under a differently named menu item.
+    var apps = [
+      [/MicroMessenger/i, zh ? '微信' : 'WeChat', zh ? '在默认浏览器中打开' : 'Open in Default Browser'],
+      [/\bQQ\//i, 'QQ', zh ? '用 Safari 打开' : 'Open in Safari'],
+      [/Weibo/i, zh ? '微博' : 'Weibo', zh ? '在浏览器中打开' : 'Open in Browser'],
+      [/DingTalk/i, zh ? '钉钉' : 'DingTalk', zh ? '在 Safari 中打开' : 'Open in Safari'],
+      [/AlipayClient/i, zh ? '支付宝' : 'Alipay', zh ? '在 Safari 中打开' : 'Open in Safari'],
+      [/aweme|BytedanceWebview|musical_ly|TikTok/i, zh ? '抖音 / TikTok' : 'TikTok', zh ? '在浏览器中打开' : 'Open in browser'],
+      [/Instagram/i, 'Instagram', zh ? '在外部浏览器中打开' : 'Open in external browser'],
+      [/FBAN|FBAV|FB_IAB/i, 'Facebook', zh ? '在浏览器中打开' : 'Open in browser'],
+      [/\bLine\//i, 'LINE', zh ? '在浏览器中打开' : 'Open in browser'],
+      [/KAKAOTALK/i, 'KakaoTalk', zh ? '在其他浏览器中打开' : 'Open in other browser'],
+      [/Snapchat/i, 'Snapchat', zh ? '在 Safari 中打开' : 'Open in Safari'],
+      [/Twitter/i, 'X', zh ? '在 Safari 中打开' : 'Open in Safari'],
+      [/LinkedInApp/i, 'LinkedIn', zh ? '在 Safari 中打开' : 'Open in Safari']
+    ];
+    for (var i = 0; i < apps.length; i++) {
+      if (apps[i][0].test(ua)) {
+        $('inapp-title').textContent = T.inappTitle.replace('{app}', apps[i][1]);
+        $('inapp-how').innerHTML = T.inappHow.replace('{menu}', apps[i][2]);
+        $('inapp').className = 'inapp on';
+        break;
+      }
+    }
   })();
 </script>
 </body>

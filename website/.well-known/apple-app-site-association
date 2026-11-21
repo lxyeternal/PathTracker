@@ -1,0 +1,12 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["46CMLTF7SR.com.honywen.waytrace"],
+        "components": [
+          { "/": "/join.html", "comment": "Parallel Footprints invitations" }
+        ]
+      }
+    ]
+  }
+}

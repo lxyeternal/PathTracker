@@ -147,11 +147,30 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 
 final class SceneDelegate: NSObject, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        guard let metadata = connectionOptions.cloudKitShareMetadata else { return }
-        Task { @MainActor in await ParallelSharing.shared.accept(metadata) }
+        if let metadata = connectionOptions.cloudKitShareMetadata {
+            Task { @MainActor in await ParallelSharing.shared.accept(metadata) }
+        }
+        // The app was closed when an invitation link was tapped.
+        let links = connectionOptions.urlContexts.map(\.url) + connectionOptions.userActivities.compactMap(\.webpageURL)
+        if let link = links.first { open(link) }
     }
 
     func windowScene(_ windowScene: UIWindowScene, userDidAcceptCloudKitShareWith cloudKitShareMetadata: CKShare.Metadata) {
         Task { @MainActor in await ParallelSharing.shared.accept(cloudKitShareMetadata) }
+    }
+
+    /// `waytrace://join`, from the button on the invite page.
+    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        if let link = URLContexts.first?.url { open(link) }
+    }
+
+    /// The invite page's own address, tapped in Messages, WhatsApp or anywhere else that
+    /// hands links to the system.
+    func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
+        if userActivity.activityType == NSUserActivityTypeBrowsingWeb, let link = userActivity.webpageURL { open(link) }
+    }
+
+    private func open(_ link: URL) {
+        Task { @MainActor in await ParallelSharing.shared.open(invite: link) }
     }
 }

@@ -51,6 +51,28 @@ struct RootView: View {
         .onChange(of: showingSettings) { presentCeremonyIfDue() }
         // Someone's invitation to 平行足迹 was just accepted: offer to share back.
         .sheet(item: Binding(get: { parallel.justAccepted }, set: { parallel.justAccepted = $0 })) { ShareBackSheet(friend: $0) }
+        // Invitation links: the invite page's address, or waytrace://join from its button.
+        .onOpenURL { link in Task { await parallel.open(invite: link) } }
+        .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
+            if let link = activity.webpageURL { Task { await parallel.open(invite: link) } }
+        }
+        .overlay(alignment: .top) {
+            if parallel.isOpeningInvite {
+                Label { Text("正在打开邀请…") } icon: { ProgressView() }
+                    .font(.subheadline.weight(.medium))
+                    .padding(.horizontal, 16).padding(.vertical, 10)
+                    .glassEffect(.regular, in: .capsule)
+                    .padding(.top, 8)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.snappy, value: parallel.isOpeningInvite)
+        // Any other end to opening an invitation is said, so a tapped link never does nothing.
+        .alert(parallel.acceptNotice?.title ?? "", isPresented: Binding(get: { parallel.acceptNotice != nil }, set: { if !$0 { parallel.acceptNotice = nil } })) {
+            Button("好") { parallel.acceptNotice = nil }
+        } message: {
+            Text(parallel.acceptNotice?.message ?? "")
+        }
         .environment(navigator)
         .environment(\.locale, language.locale)
     }

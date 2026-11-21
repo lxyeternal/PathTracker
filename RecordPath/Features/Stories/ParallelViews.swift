@@ -77,6 +77,14 @@ struct ParallelView: View {
                 .padding(.vertical, 6)
             }
 
+            if !sharing.friends.contains(where: { $0.state == .mutual }) {
+                Section("怎么开始") {
+                    step(1, "把邀请发给朋友", "微信、信息、WhatsApp 都可以，发出去的是一个链接。")
+                    step(2, "朋友打开链接，再把自己的邀请发回来", "Ta 需要先装好漫迹。")
+                    step(3, "你打开 Ta 的邀请", "两边都共享之后，你们才会互相看到。")
+                }
+            }
+
             if !sharing.friends.isEmpty {
                 Section("朋友") {
                     ForEach(sharing.friends) { friend in
@@ -155,13 +163,30 @@ struct ParallelView: View {
             HStack {
                 Label(friend.name, systemImage: "person.fill.questionmark")
                 Spacer()
-                Button("共享回去") { invite() }.buttonStyle(.borderedProminent).controlSize(.small)
+                Button("共享回去") {
+                    if sharing.hasConsented { invite() } else { askingConsent = true }
+                }
+                .buttonStyle(.borderedProminent).controlSize(.small)
             }
         case .waitingForThem:
-            LabeledContent { Text("等 Ta 共享回来").font(.footnote) } label: { Label(friend.name, systemImage: "hourglass") }
+            LabeledContent { Text("Ta 已接受，等 Ta 把邀请发回来").font(.footnote) } label: { Label(friend.name, systemImage: "hourglass") }
         case .invited:
             LabeledContent { Text("已邀请，等待接受").font(.footnote) } label: { Label(friend.name, systemImage: "envelope") }
         }
+    }
+
+    private func step(_ number: Int, _ title: LocalizedStringKey, _ detail: LocalizedStringKey) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text("\(number)").font(.footnote.weight(.bold)).monospacedDigit()
+                .frame(width: 24, height: 24)
+                .background(Color.orange.opacity(0.18), in: .circle)
+                .foregroundStyle(.orange)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.subheadline.weight(.semibold))
+                Text(detail).font(.footnote).foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 2)
     }
 
     private func invite() {
@@ -172,7 +197,8 @@ struct ParallelView: View {
                 let share = try await sharing.prepareShare()
                 InviteSharing.present(share: share) { Task { await sharing.refresh() } }
             } catch {
-                await sharing.refresh()
+                // The reason stays on screen: without it the button seems to do nothing.
+                await sharing.refresh(keepingError: true)
             }
         }
     }
@@ -255,6 +281,8 @@ struct ShareBackSheet: View {
                 .multilineTextAlignment(.center)
             Text("你也共享给 Ta，你们就能看到彼此的平行足迹：哪天在同一座城市，在哪里擦肩而过。")
                 .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+            Text("接下来会打开分享面板：把你的邀请发回给 Ta，Ta 打开之后，你们就互相看得到了。")
+                .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
             Spacer()
             if let error = sharing.lastError {
                 Text(error).font(.footnote).foregroundStyle(.red).multilineTextAlignment(.center)
@@ -271,7 +299,7 @@ struct ShareBackSheet: View {
                     InviteSharing.present(share: share) { Task { await sharing.refresh() } }
                 }
             } label: {
-                Group { if working { ProgressView() } else { Text("共享我的足迹给 Ta") } }
+                Group { if working { ProgressView() } else { Text("把我的邀请发回给 Ta") } }
                     .font(.headline).frame(maxWidth: .infinity).frame(height: 50)
             }
             .buttonStyle(.glassProminent)
@@ -295,11 +323,23 @@ enum InviteSharing {
         }
         let controller = UIActivityViewController(activityItems: [InviteItem(url: url)], applicationActivities: nil)
         controller.completionWithItemsHandler = { _, _, _, _ in onChange() }
-        guard let root = UIApplication.shared.connectedScenes.compactMap({ ($0 as? UIWindowScene)?.keyWindow }).first?.rootViewController else { return }
-        var top = root
-        while let presented = top.presentedViewController { top = presented }
+        guard let top = presenter() else { return }
         controller.popoverPresentationController?.sourceView = top.view
         top.present(controller, animated: true)
+    }
+
+    /// The screen on top, to present from. Skips one that is on its way out, since nothing
+    /// can be presented from it.
+    static func presenter() -> UIViewController? {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let scene = scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
+        guard let root = (scene?.keyWindow ?? scene?.windows.first)?.rootViewController else {
+            Diagnostics.record("parallel invite: no window to present from")
+            return nil
+        }
+        var top = root
+        while let presented = top.presentedViewController, !presented.isBeingDismissed { top = presented }
+        return top
     }
 
     /// The link, with a title and the app's icon for the share sheet's preview.
@@ -342,9 +382,8 @@ enum CloudSharing {
         controller.delegate = delegate
         // The controller holds its delegate weakly.
         objc_setAssociatedObject(controller, &Delegate.key, delegate, .OBJC_ASSOCIATION_RETAIN)
-        guard let root = UIApplication.shared.connectedScenes.compactMap({ ($0 as? UIWindowScene)?.keyWindow }).first?.rootViewController else { return }
-        var top = root
-        while let presented = top.presentedViewController { top = presented }
+        Diagnostics.record("parallel invite: Apple's sharing screen, link=\(share.url != nil)")
+        guard let top = InviteSharing.presenter() else { return }
         top.present(controller, animated: true)
     }
 

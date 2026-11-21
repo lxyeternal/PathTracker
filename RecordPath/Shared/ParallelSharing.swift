@@ -29,6 +29,16 @@ final class ParallelSharing {
     private(set) var lastError: String?
     /// Who just shared with this person, to offer sharing back.
     var justAccepted: Friend?
+    /// An invitation link is being looked up, which takes a moment.
+    private(set) var isOpeningInvite = false
+    /// What came of opening an invitation, when there's no sharing back to offer: said once.
+    var acceptNotice: AcceptNotice?
+
+    struct AcceptNotice: Identifiable {
+        let id = UUID()
+        let title: String
+        let message: String
+    }
 
     /// The person agreed to share their footprints (asked once, before the first invite).
     var hasConsented: Bool {
@@ -50,6 +60,8 @@ final class ParallelSharing {
     private let log = Logger(subsystem: "PathTracker", category: "Parallel")
     @ObservationIgnored private var modelContainer: ModelContainer?
     @ObservationIgnored private var lastUpload = Date.distantPast
+    @ObservationIgnored private var lastSummary = ""
+    @ObservationIgnored private var lastInvite: (link: URL, at: Date)?
 
     private init() {}
 
@@ -61,11 +73,12 @@ final class ParallelSharing {
     /// before anyone is invited.
     func prepareShare() async throws -> CKShare {
         do {
+            guard try await container.accountStatus() == .available else { throw CKError(.notAuthenticated) }
             // Each zone and record reports its own result; a failure there doesn't throw by itself.
             let zones = try await privateDB.modifyRecordZones(saving: [CKRecordZone(zoneID: zoneID)], deleting: [])
             _ = try zones.saveResults[zoneID]?.get()
             let share: CKShare
-            if let existing = try? await privateDB.record(for: CKRecord.ID(recordName: CKRecordNameZoneWideShare, zoneID: zoneID)) as? CKShare {
+            if let existing = try await existingShare() {
                 if existing.publicPermission == .none {
                     // Shares from before invitations went through a link anyone can forward.
                     existing.publicPermission = .readOnly
@@ -88,6 +101,7 @@ final class ParallelSharing {
                 share = stored
             }
             isSharing = true
+            Diagnostics.record("parallel share ready link=\(share.url != nil)")
             // The history goes up in the background: the invitation shouldn't wait for years
             // of days to upload.
             Task {
@@ -96,8 +110,19 @@ final class ParallelSharing {
             return share
         } catch {
             log.error("Couldn't prepare the share: \(error.localizedDescription)")
+            Diagnostics.record("parallel share failed \(error)")
             lastError = Self.describe(error)
             throw error
+        }
+    }
+
+    /// This person's share, or nil when there isn't one yet. Any other failure is thrown: a
+    /// second share can't be made over one that's only out of reach.
+    private func existingShare() async throws -> CKShare? {
+        do {
+            return try await privateDB.record(for: CKRecord.ID(recordName: CKRecordNameZoneWideShare, zoneID: zoneID)) as? CKShare
+        } catch let error as CKError where error.code == .unknownItem || error.code == .zoneNotFound {
+            return nil
         }
     }
 
@@ -196,11 +221,28 @@ final class ParallelSharing {
     /// The invitation as a page of our own site, which WeChat and others show as a Waytrace
     /// card, and which passes on to the iCloud link. Nil when the share has no link yet.
     func inviteURL(for share: CKShare, from name: String?) -> URL? {
-        guard let page = Self.invitePage,
-              let token = share.url?.pathComponents.last, !token.isEmpty, token != "/" else { return nil }
+        guard let page = Self.invitePage, let link = share.url else { return nil }
+        return Self.inviteURL(page: page, shareLink: link, from: name)
+    }
+
+    /// The page's address for one iCloud share link. Accounts in mainland China have their
+    /// shares on icloud.com.cn, so the page is told which iCloud to send people to. A link
+    /// from anywhere else isn't wrapped: it goes out as it is.
+    nonisolated static func inviteURL(page: URL, shareLink: URL, from name: String?) -> URL? {
+        let token = shareLink.lastPathComponent
+        guard shareLink.pathComponents.contains("share"), !token.isEmpty, token != "/", token != "share",
+              let host = shareLink.host()?.lowercased() else { return nil }
+        var items = [URLQueryItem(name: "s", value: token)]
+        if host == "icloud.com.cn" || host.hasSuffix(".icloud.com.cn") {
+            items.append(URLQueryItem(name: "h", value: "cn"))
+        } else if !(host == "icloud.com" || host.hasSuffix(".icloud.com")) {
+            return nil
+        }
+        if let name = name?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty {
+            items.append(URLQueryItem(name: "n", value: String(name.prefix(30))))
+        }
         var components = URLComponents(url: page, resolvingAgainstBaseURL: false)
-        components?.queryItems = [URLQueryItem(name: "s", value: token)]
-            + (name.map { [URLQueryItem(name: "n", value: String($0.prefix(30)))] } ?? [])
+        components?.queryItems = items
         return components?.url
     }
 
@@ -208,14 +250,17 @@ final class ParallelSharing {
 
     /// Works out who shares with whom: the people on this person's share, and the people
     /// whose footprint zones were shared with them.
-    func refresh() async {
+    /// `keepingError` leaves the last failure on screen, for a refresh that follows one.
+    func refresh(keepingError: Bool = false) async {
         isLoading = true
         defer { isLoading = false }
-        lastError = nil
+        if !keepingError { lastError = nil }
         var byID: [String: Friend] = [:]
+        var invited = 0, zones = 0
 
         if let share = try? await privateDB.record(for: CKRecord.ID(recordName: CKRecordNameZoneWideShare, zoneID: zoneID)) as? CKShare {
             for participant in share.participants where participant.role != .owner {
+                invited += 1
                 guard let id = participant.userIdentity.userRecordID?.recordName else { continue }
                 if let name = Self.givenName(of: participant.userIdentity) { Self.knownNames[id] = name }
                 byID[id] = Friend(id: id, name: Self.name(for: id),
@@ -225,6 +270,7 @@ final class ParallelSharing {
         do {
             for zone in try await sharedDB.allRecordZones() where zone.zoneID.zoneName == zoneID.zoneName {
                 let ownerID = zone.zoneID.ownerName
+                zones += 1
                 let owner = (try? await sharedDB.record(for: CKRecord.ID(recordName: CKRecordNameZoneWideShare, zoneID: zone.zoneID)) as? CKShare)?.owner
                 if let owner, let name = Self.givenName(of: owner.userIdentity) { Self.knownNames[ownerID] = name }
                 var friend = byID[ownerID] ?? Friend(id: ownerID, name: Self.name(for: ownerID), state: .theyShared)
@@ -241,6 +287,9 @@ final class ParallelSharing {
             lastError = Self.describe(error)
         }
         friends = byID.values.sorted { ($0.state == .mutual ? 0 : 1, $0.name) < ($1.state == .mutual ? 0 : 1, $1.name) }
+        // Written when it changes: enough to tell, from a log, where two people got stuck.
+        let summary = "parallel friends onMyShare=\(invited) sharedWithMe=\(zones) listed=\(friends.count) mutual=\(friends.count { $0.state == .mutual })"
+        if summary != lastSummary { lastSummary = summary; Diagnostics.record(summary) }
         try? await upload()
     }
 
@@ -271,18 +320,72 @@ final class ParallelSharing {
         return days
     }
 
-    /// Accepting an invitation someone sent.
-    func accept(_ metadata: CKShare.Metadata) async {
+    /// The iCloud share behind an invitation link: our invite page's address (opened as a
+    /// universal link) or `waytrace://join`. Nil for any other link.
+    nonisolated static func shareLink(fromInvite url: URL) -> URL? {
+        let isPage = url.scheme == "https" && ["waytrace.cn", "www.waytrace.cn"].contains(url.host()?.lowercased() ?? "")
+            && url.path() == "/join.html"
+        let isScheme = url.scheme?.lowercased() == "waytrace" && url.host()?.lowercased() == "join"
+        guard isPage || isScheme,
+              let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems,
+              let token = items.first(where: { $0.name == "s" })?.value,
+              token.wholeMatch(of: /[A-Za-z0-9_-]{8,80}/) != nil else { return nil }
+        let host = items.first(where: { $0.name == "h" })?.value == "cn" ? "www.icloud.com.cn" : "www.icloud.com"
+        return URL(string: "https://\(host)/share/\(token)")
+    }
+
+    /// Opens an invitation that arrived as a link, without leaving the app: looks the share
+    /// up and accepts it. Returns false when the link isn't an invitation.
+    @discardableResult
+    func open(invite url: URL) async -> Bool {
+        guard let link = Self.shareLink(fromInvite: url) else { return false }
+        // The same tap can arrive more than one way; it's opened once.
+        guard !isOpeningInvite, lastInvite?.link != link || Date().timeIntervalSince(lastInvite?.at ?? .distantPast) > 5 else { return true }
+        lastInvite = (link, Date())
+        Diagnostics.record("parallel invite link opened")
+        isOpeningInvite = true
+        defer { isOpeningInvite = false }
         do {
-            _ = try await container.accept(metadata)
-            let ownerID = metadata.ownerIdentity.userRecordID?.recordName
-            if let ownerID, let name = Self.givenName(of: metadata.ownerIdentity) { Self.knownNames[ownerID] = name }
+            guard try await container.accountStatus() == .available else { throw CKError(.notAuthenticated) }
+            let metadata = try await container.shareMetadata(for: link)
+            await accept(metadata)
+        } catch {
+            Diagnostics.record("parallel invite link failed \(error)")
+            acceptNotice = AcceptNotice(title: String(localized: "没能打开邀请", bundle: .appLanguage), message: Self.describe(error))
+        }
+        return true
+    }
+
+    /// Accepting an invitation someone sent. Whatever comes of it is said: the offer to share
+    /// back, that they can already see each other, or why it didn't work.
+    func accept(_ metadata: CKShare.Metadata) async {
+        let ownerID = metadata.ownerIdentity.userRecordID?.recordName
+        if let ownerID, let name = Self.givenName(of: metadata.ownerIdentity) { Self.knownNames[ownerID] = name }
+        if metadata.participantRole == .owner {
+            Diagnostics.record("parallel accept: own invitation")
+            acceptNotice = AcceptNotice(title: String(localized: "这是你自己的邀请", bundle: .appLanguage),
+                                        message: String(localized: "把这个链接发给朋友，由 Ta 来打开。", bundle: .appLanguage))
+            return
+        }
+        do {
+            if metadata.participantStatus != .accepted { _ = try await container.accept(metadata) }
+            Diagnostics.record("parallel accept ok")
             await refresh()
-            if let friend = friends.first(where: { $0.id == ownerID }), friend.state == .theyShared {
+            guard let friend = friends.first(where: { $0.id == ownerID }) else {
+                acceptNotice = AcceptNotice(title: String(localized: "已接受邀请", bundle: .appLanguage),
+                                            message: String(localized: "朋友的足迹还在路上，稍后在“平行足迹”里下拉刷新。", bundle: .appLanguage))
+                return
+            }
+            if friend.state == .mutual {
+                acceptNotice = AcceptNotice(title: String(localized: "你们已经互相共享了", bundle: .appLanguage),
+                                            message: String(localized: "在“你的故事”里打开“平行足迹”，看看你和\(friend.name)的足迹在哪里交汇。", bundle: .appLanguage))
+            } else {
                 justAccepted = friend
             }
         } catch {
+            Diagnostics.record("parallel accept failed \(error)")
             lastError = Self.describe(error)
+            acceptNotice = AcceptNotice(title: String(localized: "没能接受邀请", bundle: .appLanguage), message: Self.describe(error))
         }
     }
 
@@ -344,8 +447,14 @@ final class ParallelSharing {
         if let error = error as? CKError, error.code == .notAuthenticated {
             return String(localized: "需要登录 iCloud 才能使用平行足迹。", bundle: .appLanguage)
         }
-        if let error = error as? CKError, [.networkUnavailable, .networkFailure].contains(error.code) {
+        if let error = error as? CKError, [.networkUnavailable, .networkFailure, .serviceUnavailable, .requestRateLimited, .zoneBusy].contains(error.code) {
             return String(localized: "网络不可用，稍后再试。", bundle: .appLanguage)
+        }
+        if let error = error as? CKError, error.code == .quotaExceeded {
+            return String(localized: "iCloud 储存空间已满，腾出一些空间后再试。", bundle: .appLanguage)
+        }
+        if let error = error as? CKError, [.unknownItem, .zoneNotFound, .participantMayNeedVerification].contains(error.code) {
+            return String(localized: "这个邀请已经失效，请让朋友重新发一次。", bundle: .appLanguage)
         }
         return error.localizedDescription
     }
