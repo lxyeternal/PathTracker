@@ -204,48 +204,110 @@ enum BlindBoxPlanner {
     }
 
     /// Places worth a day out, away from the everyday and not yet visited.
+    ///
+    /// A day out isn't only the famous two hundred. It can be a museum or an old street in the
+    /// city, a lake or a trail at its edge, or a town an hour or two away, so the box looks in
+    /// three rings:
+    /// - in town, a box of 40 km around the person, for sights and the mood's own words;
+    /// - the whole of a day's reach, 300 km across, for the mood's words;
+    /// - six points 75 km out, each searched for one of the mood's words, because Apple Maps
+    ///   answers with the two dozen results nearest a search's centre, and one search from
+    ///   where the person stands mostly finds what's round the corner.
+    /// Every search is held to its own region: left alone, Apple Maps leans towards where the
+    /// phone is, not where the person lives. They go one after another and stop if Apple Maps
+    /// says it has been asked too much. What comes back is kept for an hour.
     @MainActor
     static func nearby(around here: CLLocation, mood: BlindBox.Mood) async -> [BlindBox.Place] {
+        let key = String(format: "%.1f,%.1f,%@", here.coordinate.latitude, here.coordinate.longitude, mood.rawValue)
+        if let kept = searched[key], kept.at.timeIntervalSinceNow > -3600 { return kept.places }
         let stays = PlaceSummaries.shared.stays.map(\.location)
         let center = here.coordinate.onMap
         let origin = CLLocation(latitude: center.latitude, longitude: center.longitude)
-        var found: [BlindBox.Place] = []
-        await withTaskGroup(of: [MKMapItem].self) { group in
-            for term in terms(for: mood, chinese: ChinaCoordinates.isInMainland(here.coordinate) || MustSee.isChinese) {
-                group.addTask {
-                    let request = MKLocalSearch.Request()
-                    request.naturalLanguageQuery = term.query
-                    request.resultTypes = .pointOfInterest
-                    request.region = MKCoordinateRegion(center: center, latitudinalMeters: 300_000, longitudinalMeters: 300_000)
-                    return (try? await MKLocalSearch(request: request).start().mapItems) ?? []
-                }
-            }
-            for await items in group {
-                for item in items {
-                    let distance = item.location.distance(from: origin) / 1000
-                    guard let name = item.name, BlindBox.Span.day.range.contains(distance), !isErrand(name, category: item.pointOfInterestCategory) else { continue }
-                    let coordinate = item.location.coordinate
-                    let id = String(format: "nearby-%.3f-%.3f", coordinate.latitude, coordinate.longitude)
-                    guard !found.contains(where: { $0.id == id }) else { continue }
-                    // Within a kilometre and a half of a past stay: already been.
-                    let location = item.location
-                    guard !stays.contains(where: { $0.distance(from: location) < 1_500 }) else { continue }
-                    found.append(BlindBox.Place(id: id, name: name, region: item.addressRepresentations?.cityName ?? "",
-                                                latitude: coordinate.latitude, longitude: coordinate.longitude,
-                                                kind: kind(of: item.pointOfInterestCategory, query: mood)))
-                }
-            }
+        let chinese = ChinaCoordinates.isInMainland(here.coordinate) || MustSee.isChinese
+        let words = terms(for: mood, chinese: chinese).map(\.query)
+        var searches: [(word: String, center: CLLocationCoordinate2D, metres: Double)] = []
+        searches.append((chinese ? "景点" : "tourist attraction", center, 40_000))
+        for word in words.prefix(2) { searches.append((word, center, 40_000)) }
+        for word in words { searches.append((word, center, 300_000)) }
+        for (index, point) in ring(around: center, kilometres: 75).enumerated() {
+            searches.append((words[index % words.count], point, 110_000))
         }
+        var items: [MKMapItem] = []
+        var turnedAway = false
+        for search in searches where !turnedAway {
+            let request = MKLocalSearch.Request()
+            request.naturalLanguageQuery = search.word
+            request.resultTypes = .pointOfInterest
+            request.region = MKCoordinateRegion(center: search.center, latitudinalMeters: search.metres, longitudinalMeters: search.metres)
+            request.regionPriority = .required
+            do {
+                items += try await MKLocalSearch(request: request).start().mapItems
+            } catch let error as MKError where error.code == .loadingThrottled {
+                turnedAway = true
+            } catch {}
+        }
+        var found: [BlindBox.Place] = []
+        var known: Set<String> = []
+        var names = Set<String>()
+        for item in items {
+            let distance = item.location.distance(from: origin) / 1000
+            // From three kilometres out: in a dense city or on a small island the day out is
+            // close by. The draw still prefers the ones a proper trip away.
+            guard let name = item.name, name.count >= 2, distance >= 3, distance <= BlindBox.Span.day.range.upperBound,
+                  !isErrand(name, category: item.pointOfInterestCategory), names.insert(name).inserted else { continue }
+            let coordinate = item.location.coordinate
+            let id = String(format: "nearby-%.3f-%.3f", coordinate.latitude, coordinate.longitude)
+            guard !found.contains(where: { $0.id == id }) else { continue }
+            // Within a kilometre and a half of a past stay: already been.
+            let location = item.location
+            guard !stays.contains(where: { $0.distance(from: location) < 1_500 }) else { continue }
+            found.append(BlindBox.Place(id: id, name: name, region: item.addressRepresentations?.cityName ?? "",
+                                        latitude: coordinate.latitude, longitude: coordinate.longitude,
+                                        kind: kind(of: item.pointOfInterestCategory, query: mood)))
+            // Apple Maps itself calls it a park, a museum, a beach: more likely worth the trip
+            // than something that only matched a word.
+            if PlaceCategory.isSight(item.pointOfInterestCategory) || item.pointOfInterestCategory == .hiking { known.insert(id) }
+        }
+        found = balanced(found, known: known, from: origin)
+        Diagnostics.record("blind box nearby mood=\(mood.rawValue) asked=\(items.count) kept=\(found.count) throttled=\(turnedAway)")
+        // An empty answer is often a search that failed; ask again next time.
+        if !found.isEmpty { searched[key] = (found, .now) }
         return found
     }
 
+    /// Up to twenty from each ring (in town, the edge of town, an hour or two out), the ones
+    /// Apple Maps knows as sights first. Without this a city with a great park two hours away
+    /// would only ever send people there, and one with nothing beyond its edge would look empty.
+    static func balanced(_ places: [BlindBox.Place], known: Set<String>, from origin: CLLocation) -> [BlindBox.Place] {
+        let rings: [Range<Double>] = [0..<15, 15..<60, 60..<100_000]
+        return rings.flatMap { ring in
+            places.filter { ring.contains(origin.distance(from: $0.location) / 1000) }
+                .sorted { known.contains($0.id) && !known.contains($1.id) }
+                .prefix(20)
+        }
+    }
+
+    @MainActor private static var searched: [String: (places: [BlindBox.Place], at: Date)] = [:]
+
+    /// Six points around a place, a given distance out.
+    static func ring(around center: CLLocationCoordinate2D, kilometres: Double) -> [CLLocationCoordinate2D] {
+        (0..<6).map { index in
+            let bearing = Double(index) * .pi / 3
+            let latitude = center.latitude + kilometres / 111 * cos(bearing)
+            let longitude = center.longitude + kilometres / (111 * max(cos(center.latitude * .pi / 180), 0.2)) * sin(bearing)
+            return CLLocationCoordinate2D(latitude: min(max(latitude, -85), 85), longitude: longitude)
+        }
+    }
+
     private static func terms(for mood: BlindBox.Mood, chinese: Bool) -> [(query: String, unused: Void)] {
+        // What a day out can be, in the words people search with. The first two are also
+        // looked for in town.
         let words: [String] = switch mood {
-        case .quiet: chinese ? ["湖", "湿地公园", "海滩", "水库"] : ["lake", "beach", "nature reserve"]
-        case .climb: chinese ? ["森林公园", "国家公园", "登山", "山风景区"] : ["hiking trail", "national park", "mountain"]
-        case .history: chinese ? ["古镇", "古迹", "博物馆", "古村"] : ["historic site", "old town", "museum"]
-        case .city: chinese ? ["老街", "历史街区", "美术馆"] : ["old town", "art museum", "historic district"]
-        case .any: chinese ? ["风景区", "古镇", "森林公园", "湖"] : ["scenic area", "national park", "historic site", "lake"]
+        case .quiet: chinese ? ["湖", "湿地公园", "海滩", "水库", "植物园", "温泉"] : ["lake", "beach", "botanical garden", "nature reserve", "hot spring", "waterfall"]
+        case .climb: chinese ? ["森林公园", "登山步道", "国家公园", "山风景区", "峡谷", "徒步"] : ["hiking trail", "national park", "mountain", "state park", "canyon", "viewpoint"]
+        case .history: chinese ? ["博物馆", "古迹", "古镇", "古村", "寺", "遗址"] : ["museum", "historic site", "old town", "castle", "temple", "ruins"]
+        case .city: chinese ? ["老街", "美术馆", "历史街区", "夜市", "动物园", "公园"] : ["old town", "art museum", "market", "historic district", "zoo", "city park"]
+        case .any: chinese ? ["风景区", "博物馆", "古镇", "森林公园", "湖", "步道"] : ["scenic area", "museum", "national park", "historic site", "lake", "hiking trail"]
         }
         return words.map { ($0, ()) }
     }
@@ -262,8 +324,10 @@ enum BlindBoxPlanner {
     private static func kind(of category: MKPointOfInterestCategory?, query mood: BlindBox.Mood) -> MustSeePlace.Kind {
         switch category {
         case .beach: .water
-        case .nationalPark, .park: mood == .climb ? .mountain : .wild
+        case .nationalPark, .park, .campground: mood == .climb ? .mountain : .wild
+        case .hiking: .mountain
         case .museum, .castle, .fortress, .landmark, .nationalMonument: .heritage
+        case .zoo, .aquarium, .amusementPark: .city
         default:
             switch mood {
             case .quiet: .water

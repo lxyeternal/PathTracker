@@ -262,4 +262,32 @@ struct BlindBoxTests {
         let first = date(2027, 4, 1)
         #expect(BlindBox.arrival(of: ticket, in: [visit(date(2027, 5, 1)), visit(first)]) == first)
     }
+
+    @Test func aDayOutDrawsFromTownItsEdgeAndFartherOut() {
+        let here = CLLocation(latitude: 45.677, longitude: -111.043)
+        func place(_ id: String, kilometresNorth: Double) -> BlindBox.Place {
+            BlindBox.Place(id: id, name: id, region: "", latitude: 45.677 + kilometresNorth / 111, longitude: -111.043, kind: .wild)
+        }
+        // A great park two hours out with a hundred overlooks, a few things in town.
+        let far = (0..<100).map { place("far-\($0)", kilometresNorth: 100 + Double($0) / 10) }
+        let town = (0..<5).map { place("town-\($0)", kilometresNorth: 5 + Double($0)) }
+        let edge = (0..<30).map { place("edge-\($0)", kilometresNorth: 20 + Double($0)) }
+        let kept = BlindBoxPlanner.balanced(far + town + edge, known: ["edge-29"], from: here)
+        #expect(kept.filter { $0.id.hasPrefix("far") }.count == 20)
+        #expect(kept.filter { $0.id.hasPrefix("town") }.count == 5)
+        #expect(kept.filter { $0.id.hasPrefix("edge") }.count == 20)
+        // What Apple Maps knows as a sight is kept ahead of what only matched a word.
+        #expect(kept.contains { $0.id == "edge-29" })
+    }
+
+    @Test func somewhereCloseIsADayOutWhenNothingIsFarther() {
+        // An island: everything worth a day is within a few kilometres.
+        let singapore = CLLocation(latitude: 1.3521, longitude: 103.8198)
+        let garden = BlindBox.Place(id: "nearby-garden", name: "Garden", region: "", latitude: 1.40, longitude: 103.82, kind: .wild)
+        var generator = SystemRandomNumberGenerator()
+        var context = BlindBox.Context()
+        context.here = singapore
+        let draw = BlindBox.draw(span: .day, mood: .quiet, context: context, nearby: [garden], using: &generator)
+        #expect(draw != nil)
+    }
 }
