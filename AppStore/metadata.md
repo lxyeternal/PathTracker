@@ -66,17 +66,7 @@
 关于耗电：后台持续使用定位会增加耗电，漫迹会在你静止时自动降低定位频率，你也可以在设置里随时暂停记录或选择省电模式。
 
 ### 此版本的新增内容 What's New（4000）
-护照里去过的国家换成了一张地图：去过的国家会描出轮廓并亮起来，上面立着国旗，去过的城市是一个个光点。可以按大洲切换，也可以展开成全屏慢慢看。
-
-此生必去里，去过却没亮的地方可以自己点亮了，还能放上几张当时的照片，填上去的那天。
-
-旅行盲盒换了新样子：一个牛皮纸包裹，系着麻绳和行李牌。选项收在一处，一屏就能看完；同一个地方不会再连着抽到。
-
-邀请朋友看平行足迹更可靠了：邀请链接会打开漫迹自己的页面，在微信、Instagram 等 App 里打开时会告诉你怎么继续；没成功的时候会说明原因。
-
-地点的类型多了“商场”和“餐厅”，标一次，以后再去也记得。
-
-旅程详情里的照片合并到了一处。
+修复了点“邀请朋友”时出现一段英文报错、发不出邀请的问题。以前和朋友共享过平行足迹的人会遇到，现在可以正常邀请了。
 
 ---
 
@@ -132,17 +122,7 @@ Waytrace has no server of its own. Your tracks, places, trips and photos stay on
 About battery: continued use of location in the background can decrease battery life. Waytrace lowers the location rate when you're still, and you can pause recording or choose a power-saving mode at any time.
 
 ### What's New (4000)
-The countries in your passport are now a map: each one you've been to is outlined and lit, with its flag standing on it and your cities as points of light. Switch between continents, or open the map full screen.
-
-On the must-see lists, light up a place yourself when you've been there but it didn't light up, and add a few photos and the date of your visit.
-
-The Travel Blind Box has a new look: a parcel in brown paper, tied with string and a luggage tag. The choices sit together on one screen, and it no longer draws the same place twice in a row.
-
-Inviting a friend to Parallel Footprints is more reliable: the link opens Waytrace's own page, which tells you how to continue when it's opened inside apps such as WeChat or Instagram, and the app says why when something doesn't work.
-
-Places can now be marked as a mall or a restaurant; mark one once and later visits remember it.
-
-A trip's photos are now in one place.
+Fixed an error that appeared when tapping Invite a Friend and kept the invitation from being sent. It affected people who had shared Parallel Footprints with a friend before; inviting works again.
 
 ---
 
