@@ -317,7 +317,9 @@ enum InviteSharing {
     static func present(share: CKShare, onChange: @escaping () -> Void) {
         let sharing = ParallelSharing.shared
         let name = AppServices.shared.account.profile.displayName
-        guard let url = sharing.inviteURL(for: share, from: name) else {
+        // A share without a public link only lets in people invited by name, which is what
+        // Apple's screen does.
+        guard share.publicPermission != .none, let url = sharing.inviteURL(for: share, from: name) else {
             CloudSharing.present(share: share, container: sharing.container, onChange: onChange)
             return
         }

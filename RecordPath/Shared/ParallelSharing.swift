@@ -82,8 +82,16 @@ final class ParallelSharing {
                 if existing.publicPermission == .none {
                     // Shares from before invitations went through a link anyone can forward.
                     existing.publicPermission = .readOnly
-                    let saved = try await privateDB.modifyRecords(saving: [existing], deleting: [])
-                    share = try saved.saveResults[existing.recordID]?.get() as? CKShare ?? existing
+                    do {
+                        let saved = try await privateDB.modifyRecords(saving: [existing], deleting: [])
+                        share = try saved.saveResults[existing.recordID]?.get() as? CKShare ?? existing
+                    } catch {
+                        // iCloud can refuse to change an older share (one made through Apple's
+                        // sharing screen carries single-use links). The share as it is still
+                        // works: the invitation then goes through Apple's screen instead.
+                        Diagnostics.record("parallel share kept private: \(error)")
+                        share = try await existingShare() ?? existing
+                    }
                 } else {
                     share = existing
                 }
