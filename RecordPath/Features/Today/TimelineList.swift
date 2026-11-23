@@ -15,10 +15,10 @@ struct TimelineList: View {
         VStack(spacing: 0) {
             ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
                 switch entry {
-                case .stay(let stay):
+                case .stay(let stay, let rest):
                     if index > 0, case .stay = entries[index - 1] { GapConnector() }
                     // Not a Button: the photos inside the card take their own taps.
-                    StayRow(stay: stay, day: day, isFirst: index == 0, isLast: index == entries.count - 1)
+                    StayRow(stay: stay, rest: rest, day: day, isFirst: index == 0, isLast: index == entries.count - 1)
                         .onTapGesture { onSelect(stay) }
                         .accessibilityAddTraits(.isButton)
                         .accessibilityAction { onSelect(stay) }
@@ -38,11 +38,11 @@ struct TimelineList: View {
     }
 
     private func neighbourStay(before index: Int) -> Stay? {
-        entries[..<index].reversed().lazy.compactMap { if case .stay(let s) = $0 { s } else { nil } }.first
+        entries[..<index].reversed().lazy.compactMap { if case .stay(let s, _) = $0 { s } else { nil } }.first
     }
 
     private func neighbourStay(after index: Int) -> Stay? {
-        entries[(index + 1)...].lazy.compactMap { if case .stay(let s) = $0 { s } else { nil } }.first
+        entries[(index + 1)...].lazy.compactMap { if case .stay(let s, _) = $0 { s } else { nil } }.first
     }
 }
 
@@ -83,6 +83,8 @@ private struct RailLine: View {
 
 private struct StayRow: View {
     let stay: Stay
+    /// Later stays of the same visit; the visit ends when the last of them does.
+    var rest: [Stay] = []
     let day: Date
     let isFirst: Bool
     let isLast: Bool
@@ -91,8 +93,11 @@ private struct StayRow: View {
     @State private var viewingAsset: AssetPagerStart?
     @State private var viewingPhoto: TripPhoto?
 
-    private var isHere: Bool { stay.departure == nil }
-    private var posted: [TripPhoto] { (stay.photos ?? []).sorted { $0.takenAt < $1.takenAt } }
+    private var departure: Date? { (rest.last ?? stay).departure }
+    private var isHere: Bool { departure == nil }
+    private var duration: TimeInterval { (departure ?? Date()).timeIntervalSince(stay.arrival) }
+    private var posted: [TripPhoto] { ([stay] + rest).flatMap { $0.photos ?? [] }.sorted { $0.takenAt < $1.takenAt } }
+    private var notes: [String] { ([stay] + rest).compactMap { $0.note?.nilIfEmpty } }
 
     var body: some View {
         HStack(alignment: .top, spacing: 0) {
@@ -104,8 +109,8 @@ private struct StayRow: View {
             card.padding(.bottom, 10)
         }
         .foregroundStyle(.primary)
-        .task(id: "\(stay.arrival.timeIntervalSince1970)-\(stay.departure?.timeIntervalSince1970 ?? 0)") {
-            libraryPhotos = DayPhotos.assets(in: DayPhotos.interval(of: stay))
+        .task(id: "\(stay.arrival.timeIntervalSince1970)-\(departure?.timeIntervalSince1970 ?? 0)") {
+            libraryPhotos = DayPhotos.assets(in: DateInterval(start: stay.arrival, end: max(departure ?? Date(), stay.arrival)))
         }
         .accessibilityElement(children: .combine)
     }
@@ -119,7 +124,7 @@ private struct StayRow: View {
             if let date = otherDay(stay.arrival) {
                 Text(date).font(.caption2).foregroundStyle(.tertiary)
             }
-            if let departure = stay.departure {
+            if let departure {
                 Text(Self.clock(departure, zone: zone))
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -193,7 +198,7 @@ private struct StayRow: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
-            if let note = stay.note, !note.isEmpty {
+            ForEach(notes, id: \.self) { note in
                 Text(note)
                     .font(.subheadline)
                     .foregroundStyle(.primary.opacity(0.85))
@@ -222,7 +227,7 @@ private struct StayRow: View {
     /// "上海 · 1 小时 36 分钟": the times are in the margin.
     private var detail: String {
         if stay.tagState == .pending { return String(localized: "正在识别地点…", bundle: .appLanguage) }
-        let length = isHere ? String(localized: "已停留 \(Format.duration(stay.duration))", bundle: .appLanguage) : Format.duration(stay.duration)
+        let length = isHere ? String(localized: "已停留 \(Format.duration(duration))", bundle: .appLanguage) : Format.duration(duration)
         var parts = [stay.city, length].compactMap { $0 }
         if stay.localTimeZone != nil { parts.append(String(localized: "当地时间", bundle: .appLanguage)) }
         return parts.joined(separator: " · ")

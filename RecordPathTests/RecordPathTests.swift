@@ -174,13 +174,54 @@ struct TimelineTests {
 
         let entries = Timeline.entries(stays: [school, home], chunks: [chunk])
         #expect(entries.count == 3)
-        guard case .stay(let first) = entries[0], case .move(let move) = entries[1], case .stay(let last) = entries[2] else {
+        guard case .stay(let first, _) = entries[0], case .move(let move) = entries[1], case .stay(let last, _) = entries[2] else {
             Issue.record("Unexpected order: \(entries.map(\.id))")
             return
         }
         #expect(first === home)
         #expect(last === school)
         #expect(move.mode == .automotive)
+    }
+
+    /// Two buildings of one campus, 330 m apart, with a walk between them.
+    private func campus(gap: TimeInterval, secondName: String? = "学校") -> (stays: [Stay], walk: TrackChunk) {
+        let base = Date(timeIntervalSince1970: 1_800_000_000)
+        let library = Stay(arrival: base, coordinate: CLLocationCoordinate2D(latitude: 1.2966, longitude: 103.7764))
+        library.departure = base.addingTimeInterval(2600)
+        let lab = Stay(arrival: base.addingTimeInterval(2600 + gap), coordinate: CLLocationCoordinate2D(latitude: 1.2996, longitude: 103.7764))
+        lab.departure = lab.arrival.addingTimeInterval(1700)
+        library.customName = "学校"; library.categoryRaw = "school"
+        lab.customName = secondName; lab.categoryRaw = secondName == nil ? nil : "school"
+        let steps = (0...20).map { point(1.2966 + Double($0) * 0.00015, 103.7764, 2610 + Double($0) * (gap - 20) / 20, speed: 1.2) }
+        return ([library, lab], TrackChunk(points: steps, mode: .walking, tripID: nil))
+    }
+
+    @Test func twoPartsOfOneNamedPlaceAreOneVisit() throws {
+        let context = ModelContext(PersistenceController.makeContainer(inMemory: true))
+        let (stays, walk) = campus(gap: 300)
+        stays.forEach(context.insert)
+        context.insert(walk)
+
+        let entries = Timeline.entries(stays: stays, chunks: [walk])
+        guard entries.count == 1, case .stay(let first, let rest) = entries[0] else {
+            Issue.record("Unexpected entries: \(entries.map(\.id))")
+            return
+        }
+        #expect(first === stays[0])
+        #expect(rest.count == 1 && rest[0] === stays[1])
+    }
+
+    @Test func aPlaceOfAnotherNameOrALongAbsenceStartsANewVisit() throws {
+        let context = ModelContext(PersistenceController.makeContainer(inMemory: true))
+        let (unnamed, walk) = campus(gap: 300, secondName: nil)
+        unnamed.forEach(context.insert)
+        context.insert(walk)
+        #expect(Timeline.entries(stays: unnamed, chunks: [walk]).count == 3)
+
+        let (later, stroll) = campus(gap: 40 * 60)
+        later.forEach(context.insert)
+        context.insert(stroll)
+        #expect(Timeline.entries(stays: later, chunks: [stroll]).count == 3)
     }
 }
 

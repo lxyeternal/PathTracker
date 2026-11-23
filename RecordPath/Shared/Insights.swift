@@ -19,19 +19,21 @@ struct Move: Identifiable {
 }
 
 enum TimelineEntry: Identifiable {
-    case stay(Stay)
+    /// A visit: the stay it began with and, when the person only moved about within the same
+    /// place (one building of a campus to another), the stays that carried it on.
+    case stay(Stay, rest: [Stay])
     case move(Move)
 
     var id: String {
         switch self {
-        case .stay(let stay): "stay-\(stay.id)"
+        case .stay(let stay, _): "stay-\(stay.id)"
         case .move(let move): "move-\(move.start.timeIntervalSince1970)"
         }
     }
 
     var start: Date {
         switch self {
-        case .stay(let stay): stay.arrival
+        case .stay(let stay, _): stay.arrival
         case .move(let move): move.start
         }
     }
@@ -42,7 +44,15 @@ enum Timeline {
     static func entries(stays: [Stay], chunks: [TrackChunk]) -> [TimelineEntry] {
         let stays = stays.sorted { $0.arrival < $1.arrival }
         let chunks = chunks.sorted { $0.startDate < $1.startDate }
-        var entries: [TimelineEntry] = stays.map { .stay($0) }
+        var visits: [[Stay]] = []
+        for stay in stays {
+            if let last = visits.last?.last, continues(last, stay) {
+                visits[visits.count - 1].append(stay)
+            } else {
+                visits.append([stay])
+            }
+        }
+        var entries: [TimelineEntry] = visits.map { .stay($0[0], rest: Array($0.dropFirst())) }
 
         var group: [TrackChunk] = []
         func closeGroup() {
@@ -60,7 +70,29 @@ enum Timeline {
             group.append(chunk)
         }
         closeGroup()
+        // Walking from one part of a place to another is part of being there, not a journey.
+        let within = visits.compactMap { visit in visit.count > 1 ? visit[0].arrival..<visit[visit.count - 1].arrival : nil }
+        entries.removeAll { entry in
+            guard case .move(let move) = entry else { return false }
+            return within.contains { $0.contains(move.start) }
+        }
         return entries.sorted { $0.start < $1.start }
+    }
+
+    /// How long someone can be out between two parts of one place and still be on one visit.
+    static let sameVisitGap: TimeInterval = 20 * 60
+    /// How far apart two parts of one place can be: a campus, not two offices across town.
+    static let sameVisitDistance: CLLocationDistance = 1_000
+
+    /// Whether `next` carries on the visit `stay` began: the person gave both the same name and
+    /// type, and went from one to the other within minutes.
+    static func continues(_ stay: Stay, _ next: Stay) -> Bool {
+        guard let name = stay.customName, name == next.customName,
+              let type = stay.categoryRaw, type == next.categoryRaw, PlaceCategory.chosenRawValues.contains(type),
+              !stay.isFromPhotos, !next.isFromPhotos,
+              let left = stay.departure else { return false }
+        let away = next.arrival.timeIntervalSince(left)
+        return away > -60 && away < sameVisitGap && stay.location.distance(from: next.location) <= sameVisitDistance
     }
 
     /// A journey split where the way of travelling changes (walk, bus, walk), each a move of
