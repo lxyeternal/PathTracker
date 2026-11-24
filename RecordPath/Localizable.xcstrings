@@ -6928,12 +6928,12 @@
         }
       }
     },
-    "点“更改”，在“位置”里选“始终”，锁屏或关掉 App 时也能继续记录。": {
+    "点“更改”，在“位置”里选“始终”：关掉 App 后也能继续记录，灵动岛上也不再一直显示定位图标。": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tap Change, then choose Always under Location, so recording continues while your iPhone is locked or the app is closed."
+            "value": "Tap Change and choose Always under Location: recording continues after the app is closed, and the location icon no longer stays in the Dynamic Island."
           }
         }
       }
@@ -8770,12 +8770,12 @@
         }
       }
     },
-    "选择“始终允许”后，即使你没有打开 App，轨迹也会被记录下来。系统会在手机静止时自动暂停定位，尽量省电。": {
+    "选择“始终允许”后，即使你没有打开 App，轨迹也会被记录下来，记录更完整，灵动岛上也不会一直显示定位图标。手机静止时会自动暂停定位，尽量省电。": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "With “Always”, your tracks are recorded even when the app isn't open. Location pauses automatically while your phone is still, to save battery."
+            "value": "With “Always Allow”, your path is recorded even when the app isn’t open, the record is more complete, and the location icon doesn’t stay in the Dynamic Island. Location pauses by itself while the phone is still, to save battery."
           }
         }
       }

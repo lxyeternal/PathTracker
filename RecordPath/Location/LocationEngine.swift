@@ -9,6 +9,12 @@ import os
 /// themselves when the phone is still, so battery use follows how much you move),
 /// writes the path into `TrackChunk`s and detects `Stay`s along the way. During a long stay
 /// it turns GPS off and waits on a geofence around the stay instead.
+///
+/// Live updates only run in the background under a `CLBackgroundActivitySession`, and iOS
+/// shows its location indicator in the Dynamic Island for as long as one is held. Someone who
+/// allowed location "Always" has already agreed to recording in the background, so for them
+/// the fixes come from a plain location manager instead, which needs no session and shows
+/// no indicator. With "While Using" the session, and its indicator, is the only way.
 @MainActor
 @Observable
 final class LocationEngine {
@@ -64,6 +70,15 @@ final class LocationEngine {
     private let delegate = AuthorizationDelegate()
     private var updatesTask: Task<Void, Never>?
     private var backgroundSession: CLBackgroundActivitySession?
+    /// The source of fixes under "Always": kept apart from `manager`, whose locations are the
+    /// coarse ones of significant changes.
+    private let quietManager = CLLocationManager()
+    private let quietDelegate = QuietUpdatesDelegate()
+    private var isUpdatingQuietly = false
+    /// Stands in for live updates' "stationary": no fix for a while means the phone is still.
+    private var stillTask: Task<Void, Never>?
+    /// Whether fixes are coming in, from either source.
+    private var isUpdating: Bool { updatesTask != nil || isUpdatingQuietly }
     private var anchor: (location: CLLocation, since: Date, latSum: Double, lonSum: Double, count: Int)?
     private var lastAcceptedLocation: CLLocation?
     private var rejectedJumps = 0
@@ -144,6 +159,13 @@ final class LocationEngine {
         delegate.onVisit = { [weak self] visit in
             Task { @MainActor in self?.handleVisit(visit) }
         }
+        quietManager.delegate = quietDelegate
+        quietDelegate.onLocations = { [weak self] locations in
+            Task { @MainActor in self?.handleQuiet(locations) }
+        }
+        quietDelegate.onFailure = { error in
+            Diagnostics.record("quiet updates error=\(error.localizedDescription)")
+        }
         if isPaused { schedulePauseEnd() }
         pendingPoints = PendingTrackStore.load()
         restoreOpenStay()
@@ -184,7 +206,9 @@ final class LocationEngine {
         authorization = manager.authorizationStatus
         isPreciseLocation = manager.accuracyAuthorization == .fullAccuracy
         Diagnostics.record("authorization status=\(authorization.rawValue) precise=\(isPreciseLocation)")
-        if isRecording, hasAnyPermission, updatesTask == nil, !isSettled { start() }
+        // Also when "Always" was given or taken away while recording: the source follows it.
+        let wrongSource = isUpdating && usesLiveUpdates && isUpdatingQuietly != hasAlwaysPermission
+        if isRecording, hasAnyPermission, !isUpdating || wrongSource, !isSettled { start() }
         if !hasAnyPermission { activity = .unavailable }
     }
 
@@ -200,8 +224,9 @@ final class LocationEngine {
         }
         updatesTask?.cancel()
         updatesTask = nil
+        stopQuietUpdates()
         unsettle()
-        Diagnostics.record("start precision=\(precision.rawValue) trip=\(activeTripID != nil) live=\(usesLiveUpdates) \(Diagnostics.battery)")
+        Diagnostics.record("start precision=\(precision.rawValue) trip=\(activeTripID != nil) live=\(usesLiveUpdates) always=\(hasAlwaysPermission) \(Diagnostics.battery)")
         // Lets iOS relaunch the app after it was terminated while the user moves on.
         manager.startMonitoringSignificantLocationChanges()
         activity = .starting
@@ -214,16 +239,34 @@ final class LocationEngine {
             return
         }
         manager.stopMonitoringVisits()
-        // Keep the session we have: a new one only takes effect in the foreground, so replacing it
-        // when a geofence wakes us in the background would leave GPS unable to run there.
-        if backgroundSession == nil { backgroundSession = CLBackgroundActivitySession() }
         // A phone lying still may get no fix at all; don't say "starting" forever.
         Task { [weak self] in
             try? await Task.sleep(for: .seconds(15))
             if self?.activity == .starting { self?.activity = .stationary }
         }
-        let configuration: CLLocationUpdate.LiveConfiguration =
-            activeTripID != nil || precision == .precise ? .fitness : .default
+        let detailed = activeTripID != nil || precision == .precise
+        if hasAlwaysPermission {
+            // No session, so no indicator in the Dynamic Island; "Always" lets these run in the
+            // background and start there too, after a geofence or a significant change wakes us.
+            backgroundSession?.invalidate()
+            backgroundSession = nil
+            quietManager.allowsBackgroundLocationUpdates = true
+            quietManager.showsBackgroundLocationIndicator = false
+            // Stops are noticed here, by `stillTask` and the stay geofence, not by iOS: once it
+            // pauses updates in the background it doesn't bring them back on its own.
+            quietManager.pausesLocationUpdatesAutomatically = false
+            quietManager.desiredAccuracy = detailed ? kCLLocationAccuracyBest : kCLLocationAccuracyNearestTenMeters
+            quietManager.distanceFilter = detailed ? kCLDistanceFilterNone : 5
+            quietManager.activityType = detailed ? .fitness : .other
+            quietManager.startUpdatingLocation()
+            isUpdatingQuietly = true
+            watchForStillness()
+            return
+        }
+        // Keep the session we have: a new one only takes effect in the foreground, so replacing it
+        // when a geofence wakes us in the background would leave GPS unable to run there.
+        if backgroundSession == nil { backgroundSession = CLBackgroundActivitySession() }
+        let configuration: CLLocationUpdate.LiveConfiguration = detailed ? .fitness : .default
         updatesTask = Task { [weak self] in
             do {
                 for try await update in CLLocationUpdate.liveUpdates(configuration) {
@@ -243,6 +286,7 @@ final class LocationEngine {
         Diagnostics.record("stop paused=\(isPaused)")
         updatesTask?.cancel()
         updatesTask = nil
+        stopQuietUpdates()
         unsettle()
         // A new session only takes effect in the foreground, so without this one a wake-up
         // after the pause couldn't turn GPS back on.
@@ -256,6 +300,14 @@ final class LocationEngine {
         anchor = nil
         dwellTask?.cancel()
         activity = .off
+    }
+
+    private func stopQuietUpdates() {
+        stillTask?.cancel()
+        stillTask = nil
+        guard isUpdatingQuietly else { return }
+        quietManager.stopUpdatingLocation()
+        isUpdatingQuietly = false
     }
 
     /// Lets go of everything that watches where the phone is: visits, significant changes and
@@ -344,7 +396,7 @@ final class LocationEngine {
         }
         pausedUntil = nil
         UserDefaults.standard.removeObject(forKey: Keys.pausedUntil)
-        if isRecording, updatesTask == nil || !usesLiveUpdates { start() }
+        if isRecording, !isUpdating || !usesLiveUpdates { start() }
     }
 
     /// Resumes when the pause ends while the app is running; otherwise opening the app (the
@@ -376,7 +428,7 @@ final class LocationEngine {
         flushChunk(carryOver: true)
         activeTripID = trip.id
         UserDefaults.standard.set(trip.id.uuidString, forKey: Keys.tripID)
-        if updatesTask == nil { start() } else { restart() }
+        if !isUpdating { start() } else { restart() }
     }
 
     func endTrip(_ trip: Trip) {
@@ -404,14 +456,47 @@ final class LocationEngine {
             return
         }
         if update.stationary {
-            if activity != .stationary { Diagnostics.record("stationary") }
-            activity = .stationary
-            if let location = stillLocation(update.location) { promoteAnchorIfStill(at: location) }
-            flushChunk(carryOver: true)
-            scheduleSettle()
+            becameStill(at: update.location)
             return
         }
         guard let location = update.location else { return }
+        handle(location)
+    }
+
+    /// The phone has stopped: where it is counts as a stay right away, the path so far is
+    /// saved, and a long stop hands over to the geofence.
+    private func becameStill(at location: CLLocation?) {
+        if activity != .stationary { Diagnostics.record("stationary") }
+        activity = .stationary
+        if let location = stillLocation(location) { promoteAnchorIfStill(at: location) }
+        flushChunk(carryOver: true)
+        scheduleSettle()
+    }
+
+    /// Fixes from the plain location manager, oldest first.
+    private func handleQuiet(_ locations: [CLLocation]) {
+        guard isUpdatingQuietly else { return }
+        locations.forEach(handle)
+        watchForStillness()
+    }
+
+    /// A phone that isn't moving sends no fixes (they come every few metres), so a quiet
+    /// half minute, with the motion chip agreeing, is what live updates called stationary.
+    private func watchForStillness() {
+        stillTask?.cancel()
+        stillTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(30))
+            // Fixes also stop underground. The motion chip still feels a ride, so while it
+            // does this isn't a stop; the gap is filled in when the signal comes back.
+            while !Task.isCancelled, let self, self.isUpdatingQuietly, await self.classifier.isMoving() {
+                try? await Task.sleep(for: .seconds(30))
+            }
+            guard let self, !Task.isCancelled, self.isUpdatingQuietly, self.activity != .unavailable else { return }
+            self.becameStill(at: nil)
+        }
+    }
+
+    private func handle(_ location: CLLocation) {
         currentLocation = location
         // Any fix ends "starting"; a slow one reads as still until movement is confirmed.
         if activity == .starting { activity = location.speed > 0.5 ? .moving : .stationary }
@@ -839,7 +924,10 @@ final class LocationEngine {
                 Diagnostics.record("settle held: still moving")
                 try? await Task.sleep(for: .seconds(120))
             }
-            guard let self, !Task.isCancelled, self.openStay === stay, self.activity == .stationary else { return }
+            // Without live updates' own "stationary", a stay still open after this long is the
+            // sign: leaving its radius would have closed it.
+            guard let self, !Task.isCancelled, self.openStay === stay,
+                  self.activity == .stationary || self.isUpdatingQuietly else { return }
             self.settle()
         }
     }
@@ -849,6 +937,7 @@ final class LocationEngine {
         isSettled = true
         updatesTask?.cancel()
         updatesTask = nil
+        stopQuietUpdates()
         flushChunk(carryOver: false)
         Diagnostics.record("settle radius=\(Int(Tuning.fenceRadius))m \(Diagnostics.battery)")
         updateFence(around: stay.location.coordinate)
@@ -937,6 +1026,19 @@ final class LocationEngine {
         openStay = open.first
         // Another device or an old crash may have left extra open stays behind.
         for stale in open.dropFirst() { stale.departure = stale.arrival.addingTimeInterval(Tuning.stayMinimumDuration) }
+    }
+}
+
+private final class QuietUpdatesDelegate: NSObject, CLLocationManagerDelegate {
+    var onLocations: (([CLLocation]) -> Void)?
+    var onFailure: ((Error) -> Void)?
+
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        onLocations?(locations)
+    }
+
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        onFailure?(error)
     }
 }
 

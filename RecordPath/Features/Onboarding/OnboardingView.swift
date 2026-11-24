@@ -203,7 +203,7 @@ struct OnboardingView: View {
         case .authorizedWhenInUse where !needsAlways:
             "可以开始了。在“今天”页右上角点“开始记录”，锁屏后也会继续记录，直到你结束。"
         case .authorizedWhenInUse:
-            "选择“始终允许”后，即使你没有打开 App，轨迹也会被记录下来。系统会在手机静止时自动暂停定位，尽量省电。"
+            "选择“始终允许”后，即使你没有打开 App，轨迹也会被记录下来，记录更完整，灵动岛上也不会一直显示定位图标。手机静止时会自动暂停定位，尽量省电。"
         case .denied, .restricted:
             "定位权限已关闭。你可以在“设置”里打开，漫迹才能记录轨迹。"
         default:

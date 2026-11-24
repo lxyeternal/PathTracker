@@ -41,7 +41,7 @@ struct TrackingStatusCard: View {
                         action: "允许") { engine.requestWhenInUse() }
             } else if !engine.hasAlwaysPermission {
                 problem(symbol: "location.circle.fill", tint: .yellow,
-                        title: "仅在使用时记录", detail: "点“更改”，在“位置”里选“始终”，锁屏或关掉 App 时也能继续记录。",
+                        title: "仅在使用时记录", detail: "点“更改”，在“位置”里选“始终”：关掉 App 后也能继续记录，灵动岛上也不再一直显示定位图标。",
                         action: "更改") { engine.requestAlways() }
             } else if !engine.isPreciseLocation {
                 problem(symbol: "scope", tint: .yellow,
