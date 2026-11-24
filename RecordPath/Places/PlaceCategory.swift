@@ -101,6 +101,30 @@ enum PlaceCategory: Equatable {
         }
     }
 
+    /// The kind of place in a word, over its name on the timeline. Nil when it says nothing.
+    var label: String? {
+        switch self {
+        case .home: String(localized: "家", bundle: .appLanguage)
+        case .school: String(localized: "学校", bundle: .appLanguage)
+        case .work: String(localized: "公司", bundle: .appLanguage)
+        case .food: String(localized: "餐厅", bundle: .appLanguage)
+        case .cafe: String(localized: "category.cafe", defaultValue: "咖啡", bundle: .appLanguage)
+        case .nightlife: String(localized: "category.nightlife", defaultValue: "夜生活", bundle: .appLanguage)
+        case .shopping: String(localized: "category.shopping", defaultValue: "购物", bundle: .appLanguage)
+        case .landmark: String(localized: "place.kind.sight", defaultValue: "景点", bundle: .appLanguage)
+        case .museum: String(localized: "category.museum", defaultValue: "博物馆", bundle: .appLanguage)
+        case .park: String(localized: "category.park", defaultValue: "公园", bundle: .appLanguage)
+        case .nature: String(localized: "category.nature", defaultValue: "户外", bundle: .appLanguage)
+        case .entertainment: String(localized: "category.entertainment", defaultValue: "娱乐", bundle: .appLanguage)
+        case .sports: String(localized: "category.sports", defaultValue: "运动", bundle: .appLanguage)
+        case .transport: String(localized: "category.transport", defaultValue: "交通", bundle: .appLanguage)
+        case .airport: String(localized: "category.airport", defaultValue: "机场", bundle: .appLanguage)
+        case .hotel: String(localized: "category.hotel", defaultValue: "住宿", bundle: .appLanguage)
+        case .health: String(localized: "category.health", defaultValue: "医疗", bundle: .appLanguage)
+        case .other: nil
+        }
+    }
+
     var tint: Color {
         switch self {
         case .home: .blue

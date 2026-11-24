@@ -18,7 +18,8 @@ struct TimelineList: View {
                 case .stay(let stay, let rest):
                     if index > 0, case .stay = entries[index - 1] { GapConnector() }
                     // Not a Button: the photos inside the card take their own taps.
-                    StayRow(stay: stay, rest: rest, day: day, isFirst: index == 0, isLast: index == entries.count - 1)
+                    StayRow(stay: stay, rest: rest, showsCity: stay.city != neighbourStay(before: index)?.city,
+                            day: day, isFirst: index == 0, isLast: index == entries.count - 1)
                         .onTapGesture { onSelect(stay) }
                         .accessibilityAddTraits(.isButton)
                         .accessibilityAction { onSelect(stay) }
@@ -49,8 +50,13 @@ struct TimelineList: View {
 /// The day's spine: times on the left, a fine line with each place as a node on it, and the
 /// cards to its right.
 private enum Rail {
-    static let times: CGFloat = 48
-    static let width: CGFloat = 34
+    static let times: CGFloat = 46
+    /// Room between the times and the line, so a time never touches a node.
+    static let afterTimes: CGFloat = 6
+    /// Wide enough that a node and the ring around the place you're at stay inside it.
+    static let width: CGFloat = 44
+    /// Between the line and the cards.
+    static let beforeCard: CGFloat = 8
     static let node: CGFloat = 26
     /// Where a node sits: level with the card's first line.
     static let nodeTop: CGFloat = 13
@@ -85,6 +91,8 @@ private struct StayRow: View {
     let stay: Stay
     /// Later stays of the same visit; the visit ends when the last of them does.
     var rest: [Stay] = []
+    /// Only where the day reaches another city: a day in Shanghai says "上海" once.
+    var showsCity = true
     let day: Date
     let isFirst: Bool
     let isLast: Bool
@@ -106,7 +114,10 @@ private struct StayRow: View {
                 RailLine(fadesIn: isFirst, fadesOut: isLast && !isHere)
                 node.padding(.top, Rail.nodeTop - (Rail.node - 22) / 2)
             }
-            card.padding(.bottom, 10)
+            .padding(.leading, Rail.afterTimes)
+            card
+                .padding(.leading, Rail.beforeCard)
+                .padding(.bottom, 10)
         }
         .foregroundStyle(.primary)
         .task(id: "\(stay.arrival.timeIntervalSince1970)-\(departure?.timeIntervalSince1970 ?? 0)") {
@@ -176,27 +187,32 @@ private struct StayRow: View {
 
     private var card: some View {
         VStack(alignment: .leading, spacing: 10) {
+            // Two lines: the place and how long; then what kind of place it is and, when the day
+            // has moved to another city, which.
             VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(stay.displayName)
                         .font(.headline)
                         .lineLimit(typeSize.isAccessibilitySize ? 3 : 1)
                     if stay.isLandmark {
                         Image(systemName: "star.fill").font(.caption2).foregroundStyle(.yellow)
                     }
-                    Spacer(minLength: 4)
+                    Spacer(minLength: 6)
                     if isHere {
                         HStack(spacing: 5) {
-                            PulsingDot(color: stay.category.tint)
+                            PulsingDot(color: tint)
                             Text("现在").font(.caption.weight(.semibold))
                         }
-                        .foregroundStyle(stay.category.tint)
+                        .foregroundStyle(tint)
+                    } else if stay.tagState != .pending {
+                        Text(Format.duration(duration))
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                            .fixedSize()
                     }
                 }
-                Text(detail)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
+                if let meta { meta.font(.footnote).lineLimit(1) }
             }
             ForEach(notes, id: \.self) { note in
                 Text(note)
@@ -207,30 +223,48 @@ private struct StayRow: View {
             }
             if !posted.isEmpty || !libraryPhotos.isEmpty { photos }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .fill(.background.secondary)
+                // A breath of the place's colour, so a day reads by what kind of places it had.
+                .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(tint.opacity(0.06)))
                 .overlay {
                     if isHere {
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .strokeBorder(stay.category.tint.opacity(0.35), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .strokeBorder(tint.opacity(0.35), lineWidth: 1)
                     }
                 }
         }
-        .clipShape(.rect(cornerRadius: 20, style: .continuous))
-        .contentShape(.rect(cornerRadius: 20, style: .continuous))
+        .clipShape(.rect(cornerRadius: 18, style: .continuous))
+        .contentShape(.rect(cornerRadius: 18, style: .continuous))
     }
 
-    /// "上海 · 1 小时 36 分钟": the times are in the margin.
-    private var detail: String {
-        if stay.tagState == .pending { return String(localized: "正在识别地点…", bundle: .appLanguage) }
-        let length = isHere ? String(localized: "已停留 \(Format.duration(duration))", bundle: .appLanguage) : Format.duration(duration)
-        var parts = [stay.city, length].compactMap { $0 }
-        if stay.localTimeZone != nil { parts.append(String(localized: "当地时间", bundle: .appLanguage)) }
-        return parts.joined(separator: " · ")
+    private var tint: Color { stay.isLandmark ? PlaceCategory.landmark.tint : stay.category.tint }
+
+    /// "景点", "学校": left out when the name already says it.
+    private var kind: String? {
+        let label = stay.isLandmark ? PlaceCategory.landmark.label : stay.category.label
+        return label == stay.displayName ? nil : label
+    }
+
+    /// "学校 · 上海": the kind in its colour, then whatever else is worth saying, quietly.
+    private var meta: Text? {
+        if stay.tagState == .pending { return Text("正在识别地点…").foregroundStyle(.secondary) }
+        var rest: [String] = []
+        if showsCity, let city = stay.city { rest.append(city) }
+        if isHere { rest.append(String(localized: "已停留 \(Format.duration(duration))", bundle: .appLanguage)) }
+        if stay.localTimeZone != nil { rest.append(String(localized: "当地时间", bundle: .appLanguage)) }
+        let tail = rest.joined(separator: " · ")
+        switch (kind, tail.isEmpty) {
+        case (nil, true): return nil
+        case (nil, false): return Text(tail).foregroundStyle(.secondary)
+        case (let kind?, true): return Text(kind).fontWeight(.medium).foregroundStyle(tint)
+        case (let kind?, false):
+            return Text("\(Text(kind).fontWeight(.medium).foregroundStyle(tint))\(Text(verbatim: " · \(tail)").foregroundStyle(.secondary))")
+        }
     }
 
     /// Posted photos, else the ones taken here, as a filmstrip.
@@ -274,7 +308,7 @@ private struct MoveRow: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            Color.clear.frame(width: Rail.times)
+            Color.clear.frame(width: Rail.times + Rail.afterTimes)
             RailLine(color: move.mode.color.opacity(0.75), width: 3, dashed: move.mode == .subway, fadesIn: isFirst, fadesOut: isLast)
             HStack(spacing: 8) {
                 Image(systemName: move.mode.symbol)
@@ -284,19 +318,21 @@ private struct MoveRow: View {
                     .background(move.mode.color.opacity(0.12), in: .circle)
                 Text(move.mode.title)
                     .font(.footnote.weight(.semibold))
+                    .fixedSize()
                 Text("\(Format.distance(move.distance)) · \(Format.duration(move.duration))")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
                     .lineLimit(1)
-                Spacer(minLength: 6)
+                    .minimumScaleFactor(0.75)
+                    .layoutPriority(1)
+                Spacer(minLength: 4)
+                // The route's shape says it can be opened; no chevron, like the cards.
                 RouteSketch(lines: lines, tint: move.mode.color, bare: true)
-                    .frame(width: 60, height: 34)
-                Image(systemName: "chevron.right")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.tertiary)
+                    .frame(width: 44, height: 30)
             }
-            .padding(.leading, 6)
+            // Lined up with the cards' text.
+            .padding(.leading, Rail.beforeCard + 12)
             .padding(.trailing, 14)
             .padding(.vertical, 10)
         }
@@ -315,7 +351,7 @@ private struct MoveRow: View {
 private struct GapConnector: View {
     var body: some View {
         HStack(spacing: 0) {
-            Color.clear.frame(width: Rail.times)
+            Color.clear.frame(width: Rail.times + Rail.afterTimes)
             RailLine(dashed: true)
             Spacer()
         }
@@ -331,7 +367,8 @@ private struct NowRing: View {
     var body: some View {
         Circle()
             .stroke(color.opacity(breathe ? 0 : 0.55), lineWidth: 2)
-            .scaleEffect(breathe ? 1.45 : 1)
+            // Stays within the rail: it never reaches the card or the times.
+            .scaleEffect(breathe ? 1.3 : 1)
             .onAppear { withAnimation(.easeOut(duration: 1.8).repeatForever(autoreverses: false)) { breathe = true } }
             .allowsHitTesting(false)
     }
