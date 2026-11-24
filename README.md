@@ -29,7 +29,7 @@
 </p>
 
 <p align="center">
-  简体中文 · <a href="README_en.md">English</a>
+  简体中文 · <a href="README_en.md">English</a> · <a href="CHANGELOG.md">更新日志</a>
 </p>
 
 <p align="center">
@@ -53,6 +53,7 @@
   <a href="#-那些会让你停一下的时刻">时刻</a> ·
   <a href="#-apple-watch">Apple Watch</a> ·
   <a href="#隐私">隐私</a> ·
+  <a href="CHANGELOG.md">更新日志</a> ·
   <a href="#技术">技术</a>
 </p>
 
@@ -250,6 +251,10 @@
 - 表盘复杂功能：今天走了多远、现在在哪。
 
 ---
+
+## 更新日志
+
+每个版本新增、调整和修复了什么，都写在 [更新日志](CHANGELOG.md) 里，最新的版本在最上面。
 
 ## 遇到问题
 

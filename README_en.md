@@ -29,7 +29,7 @@
 </p>
 
 <p align="center">
-  <a href="README.md">简体中文</a> · English
+  <a href="README.md">简体中文</a> · English · <a href="CHANGELOG_en.md">Changelog</a>
 </p>
 
 <p align="center">
@@ -53,6 +53,7 @@
   <a href="#-moments-that-make-you-pause">Moments</a> ·
   <a href="#-apple-watch">Apple Watch</a> ·
   <a href="#privacy">Privacy</a> ·
+  <a href="CHANGELOG_en.md">Changelog</a> ·
   <a href="#under-the-hood">Under the hood</a>
 </p>
 
@@ -250,6 +251,10 @@ At the bottom of Stats, a set of cards about you:
 - Complications: how far you've gone today and where you are.
 
 ---
+
+## Changelog
+
+What each version added, changed and fixed is in the [changelog](CHANGELOG_en.md), newest first.
 
 ## If something goes wrong
 
