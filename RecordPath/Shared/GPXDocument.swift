@@ -63,6 +63,16 @@ struct GPXDocument: Transferable {
 
 extension UTType {
     static let gpx = UTType(importedAs: "com.topografix.gpx", conformingTo: .xml)
+
+    /// What the file picker lets through for a GPX import. Which type a ".gpx" file has depends
+    /// on the apps installed: another app may declare its own, and a file from a share sheet or
+    /// a download can have none at all, which left it greyed out. Any type declared for the
+    /// extension is accepted, and plain data last so that no GPX file is ever unselectable;
+    /// a file that isn't GPX is turned down when it is read.
+    static var gpxFiles: [UTType] {
+        ([.gpx] + UTType.types(tag: "gpx", tagClass: .filenameExtension, conformingTo: nil) + [.xml, .text, .data])
+            .reduce(into: []) { types, type in if !types.contains(type) { types.append(type) } }
+    }
 }
 
 /// Everything recorded, as one GPX file. The file is only built once the user picks where to

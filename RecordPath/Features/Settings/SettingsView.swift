@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 import SwiftData
 import AuthenticationServices
 import CoreLocation
@@ -55,7 +56,7 @@ struct SettingsView: View {
                 refreshCounts()
             }
             .sheet(isPresented: $importingPhotos) { PhotoImportSheet() }
-            .fileImporter(isPresented: $importing, allowedContentTypes: [.gpx, .xml], allowsMultipleSelection: true) { result in
+            .fileImporter(isPresented: $importing, allowedContentTypes: UTType.gpxFiles, allowsMultipleSelection: true) { result in
                 guard case .success(let urls) = result else { return }
                 var tracks = 0, places = 0, duplicates = 0
                 var failures: [String] = []
