@@ -13,12 +13,17 @@ What changed in each version of Waytrace: what's new, what was adjusted and what
 - Countries can be searched when adding a visa or choosing a nationality: by Chinese or English name, pinyin, pinyin initials or country code.
 - A new setting, “Only photos with a location”. When on, downloaded or saved pictures no longer appear in the timeline, places and trips. ([#8](https://github.com/lxyeternal/PathTracker/issues/8))
 - The travel blind box has more to draw from for a day out: it searches the map in three rings (in town, nearby, farther out) for sights, museums, old towns, parks and trails, not only the must-see lists.
+- An immersive globe: pull down at the top of Places, or tap the globe, for the Earth at night full screen. Countries you've visited are outlined and flagged; tap a flag to fly there, and zoom in to see every road you've travelled.
+- Sights in Places can be filtered by the must-see lists or by country.
 
 **Changed**
 
 - With location set to “Always”, all-day recording no longer keeps the location icon in the Dynamic Island; recording in the background is unchanged. ([#6](https://github.com/lxyeternal/PathTracker/issues/6))
 - Moving about within one place (from one campus building to another) shows as a single visit on the timeline.
 - A photo taken somewhere else (it has a location more than 2 km from the place) no longer counts as that place's photo.
+- Places is redesigned: the page is a night sky with the globe at the top and your countries, cities, sights and days written beneath it; countries are shown by their flags and cities as satellite views; the passport and stamps and the visa wallet each have a row, with the must-see lists and the blind box side by side.
+- Timeline cards are two lines, and the city appears only when it changes; times, dots, the line and the cards no longer crowd each other.
+- The album in Places only holds what you've posted, and no longer shows as an empty section when there's nothing yet.
 
 **Fixed**
 
