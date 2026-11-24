@@ -24,6 +24,7 @@ struct SettingsView: View {
     @State private var importing = false
     @State private var importingPhotos = false
     @AppStorage("photoImport.lastRun") private var photoImportRun: Double = 0
+    @AppStorage(DayPhotos.locatedOnlyKey) private var photosLocatedOnly = false
     @State private var importMessage: String?
     private var zones = PrivacyZones.shared
 
@@ -36,6 +37,7 @@ struct SettingsView: View {
                 trackingSection
                 notificationsSection
                 permissionsSection
+                photosSection
                 privacySection
                 parallelSection
                 dataSection
@@ -203,6 +205,14 @@ struct SettingsView: View {
             Text("通知")
         } footer: {
             Text("第一次到达新的国家、省份或城市，达成里程碑，以及每周一早上回顾上周。通知在手机上生成，不经过任何服务器。")
+        }
+    }
+
+    private var photosSection: some View {
+        Section {
+            Toggle(isOn: $photosLocatedOnly) { Label("只显示带位置信息的照片", systemImage: "mappin.circle.fill") }
+        } footer: {
+            Text("打开后，没有位置信息的图片（比如下载或保存的图片）不会出现在时间线、地点和旅程里。如果相机关闭了定位，拍的照片也没有位置，同样不会显示。")
         }
     }
 

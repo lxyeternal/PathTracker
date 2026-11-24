@@ -65,7 +65,7 @@ struct PostComposer: View {
             .task {
                 text = stay.note ?? ""
                 if DayPhotos.status == .notDetermined { _ = await DayPhotos.requestAccess() }
-                nearby = DayPhotos.assets(in: DayPhotos.interval(of: stay))
+                nearby = DayPhotos.assets(in: DayPhotos.interval(of: stay), near: stay.location)
             }
             .onChange(of: pickerItems) { _, items in load(items) }
             .sensoryFeedback(.selection, trigger: chosenAssets.count)

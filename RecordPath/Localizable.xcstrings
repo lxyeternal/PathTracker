@@ -13983,6 +13983,26 @@
           }
         }
       }
+    },
+    "只显示带位置信息的照片": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only photos with a location"
+          }
+        }
+      }
+    },
+    "打开后，没有位置信息的图片（比如下载或保存的图片）不会出现在时间线、地点和旅程里。如果相机关闭了定位，拍的照片也没有位置，同样不会显示。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When on, pictures with no location (downloaded or saved images, for example) are left out of the timeline, places and trips. Photos taken with the camera’s location turned off have none either, and are left out too."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

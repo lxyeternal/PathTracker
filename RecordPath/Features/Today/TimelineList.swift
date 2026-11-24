@@ -110,7 +110,7 @@ private struct StayRow: View {
         }
         .foregroundStyle(.primary)
         .task(id: "\(stay.arrival.timeIntervalSince1970)-\(departure?.timeIntervalSince1970 ?? 0)") {
-            libraryPhotos = DayPhotos.assets(in: DateInterval(start: stay.arrival, end: max(departure ?? Date(), stay.arrival)))
+            libraryPhotos = DayPhotos.assets(in: DateInterval(start: stay.arrival, end: max(departure ?? Date(), stay.arrival)), near: stay.location)
         }
         .accessibilityElement(children: .combine)
     }

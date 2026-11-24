@@ -200,7 +200,7 @@ struct StayDetailView: View {
             }
             .animation(.smooth, value: isEditing)
             .fullScreenCover(item: $viewingAsset) { AssetPager(assets: photos, selection: $0.id) }
-            .task { photos = DayPhotos.assets(in: DayPhotos.interval(of: stay)) }
+            .task { photos = DayPhotos.assets(in: DayPhotos.interval(of: stay), near: stay.location) }
             .sheet(isPresented: $composing) { PostComposer(stay: stay) }
             .fullScreenCover(item: $pagerStart) { PhotoPager(photos: posted, selection: $0.id) }
             .navigationTitle(stay.displayName)

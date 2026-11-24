@@ -42,8 +42,8 @@ struct PlacePicture: View {
             .frame(width: proxy.size.width, height: proxy.size.height)
             .task(id: "\(stay.id)-\(colorScheme)-\(Int(proxy.size.width))") {
                 // The library search runs off the main thread so scrolling stays smooth.
-                let interval = DayPhotos.interval(of: stay)
-                if let first = await Task.detached(priority: .userInitiated, operation: { DayPhotos.assets(in: interval).first }).value {
+                let interval = DayPhotos.interval(of: stay), place = stay.location
+                if let first = await Task.detached(priority: .userInitiated, operation: { DayPhotos.assets(in: interval, near: place).first }).value {
                     asset = first
                 } else if (stay.photos ?? []).isEmpty, let coverID, let image = await MustSeePhotos.cover(coverID) {
                     withAnimation(.easeOut(duration: 0.25)) { cover = image }

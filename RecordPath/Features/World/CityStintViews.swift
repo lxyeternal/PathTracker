@@ -9,7 +9,8 @@ enum PlacePhotos {
 
     static func assets(in interval: DateInterval, near location: CLLocation, within meters: CLLocationDistance) -> [PHAsset] {
         DayPhotos.assets(in: interval).filter { asset in
-            // Photos without a location were probably taken there too.
+            // Photos without a location were probably taken there too (unless the person
+            // chose to leave those out, which `DayPhotos.assets` has already done).
             guard let place = asset.location else { return true }
             return place.distance(from: location) <= meters
         }

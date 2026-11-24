@@ -1,5 +1,6 @@
 import SwiftUI
 import Photos
+import CoreLocation
 
 /// Photos taken at a place, shown on the timeline. Read on the device only, never copied.
 enum DayPhotos {
@@ -8,6 +9,29 @@ enum DayPhotos {
 
     static func requestAccess() async -> PHAuthorizationStatus {
         await PHPhotoLibrary.requestAuthorization(for: .readWrite)
+    }
+
+    /// Whether pictures that carry no location are left out. The library can't tell a photo
+    /// taken with the camera's location off from a picture saved out of a chat or a browser:
+    /// neither says where it was made. So it is the person's choice, off unless they ask.
+    static let locatedOnlyKey = "photos.locatedOnly"
+    static var locatedOnly: Bool { UserDefaults.standard.bool(forKey: locatedOnlyKey) }
+
+    /// A photo that says where it was taken belongs to a place only when that is nearby;
+    /// this far allows for a large site and for a rough fix indoors.
+    static let placeRadius: CLLocationDistance = 2_000
+
+    /// Whether a picture taken while at `place` counts as taken there.
+    static func belongs(photoAt location: CLLocation?, to place: CLLocation, locatedOnly: Bool) -> Bool {
+        guard let location else { return !locatedOnly }
+        return location.distance(from: place) <= placeRadius
+    }
+
+    /// Photos taken during the interval at a place: one that was taken somewhere else in that
+    /// time (received from a friend, or taken on a trip the phone didn't record) is left out.
+    static func assets(in interval: DateInterval, near place: CLLocation) -> [PHAsset] {
+        let locatedOnly = locatedOnly
+        return assets(in: interval).filter { belongs(photoAt: $0.location, to: place, locatedOnly: locatedOnly) }
     }
 
     /// Photos (not screenshots) taken during the interval, oldest first.
@@ -19,7 +43,8 @@ enum DayPhotos {
                                         PHAssetMediaSubtype.photoScreenshot.rawValue)
         options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: true)]
         let result = PHAsset.fetchAssets(with: options)
-        return (0..<result.count).map { result.object(at: $0) }
+        let all = (0..<result.count).map { result.object(at: $0) }
+        return locatedOnly ? all.filter { $0.location != nil } : all
     }
 
     static func interval(of stay: Stay) -> DateInterval {
