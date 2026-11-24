@@ -594,10 +594,6 @@ struct VisaEditor: View {
         _hasStay = State(initialValue: document.stayDays != nil)
     }
 
-    private var countries: [(code: String, name: String)] {
-        [(TravelDocument.schengen, String(localized: "申根区", bundle: .appLanguage))] + Nationality.all
-    }
-
     var body: some View {
         NavigationStack {
             Form {
@@ -617,13 +613,10 @@ struct VisaEditor: View {
                     .listRowInsets(EdgeInsets())
                 }
                 Section {
-                    Picker(document.kind == .passport ? "签发国" : "国家或地区", selection: $document.country) {
-                        ForEach(countries, id: \.code) { country in
-                            Text(verbatim: "\(country.code == TravelDocument.schengen ? "🇪🇺" : String.flag(for: country.code)) \(country.name)")
-                                .tag(country.code)
-                        }
-                    }
-                    .pickerStyle(.navigationLink)
+                    CountryPickerRow(title: document.kind == .passport ? "签发国" : "国家或地区", selection: $document.country,
+                                     leading: [CountryChoice(code: TravelDocument.schengen, flag: "🇪🇺",
+                                                             name: String(localized: "申根区", bundle: .appLanguage),
+                                                             alsoFoundBy: ["申根", "Schengen", "EU"])])
                     if document.kind != .passport {
                         TextField("类型，比如 B1/B2、C、旅游", text: $document.category)
                         Picker("入境次数", selection: $document.entries) {

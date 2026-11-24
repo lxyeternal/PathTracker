@@ -110,13 +110,8 @@ struct ProfileEditView: View {
 
     private var nationalitySection: some View {
         Section {
-            Picker("国籍", selection: $nationality) {
-                Text("自动（停留最久的国家）").tag("")
-                ForEach(Nationality.all, id: \.code) { country in
-                    Text("\(String.flag(for: country.code)) \(country.name)").tag(country.code)
-                }
-            }
-            .pickerStyle(.navigationLink)
+            CountryPickerRow(title: "国籍", selection: $nationality,
+                             leading: [CountryChoice(code: "", flag: "", name: String(localized: "自动（停留最久的国家）", bundle: .appLanguage))])
             .onChange(of: nationality) { _, code in
                 Nationality.code = code.isEmpty ? nil : code
                 PlaceSummaries.shared.refresh()
