@@ -98,6 +98,12 @@ struct GalleryPreview: View {
     @Query(sort: \TripPhoto.takenAt, order: .reverse) private var photos: [TripPhoto]
 
     var body: some View {
+        // Only what you posted gathers here; the photos the timeline finds on its own don't.
+        // With nothing posted there's nothing to show, so it isn't shown.
+        if !photos.isEmpty { preview }
+    }
+
+    private var preview: some View {
         NavigationLink(value: GalleryRoute()) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .firstTextBaseline) {

@@ -12,15 +12,18 @@ struct WorldView: View {
     @State private var selectedStay: Stay?
     @State private var showingMap = false
     @State private var search = ""
-    @State private var countryContinent = ""
+    /// The sights shown: "" for all, "mustSee", or a country's code.
+    @State private var sightFilter = ""
     @Namespace private var namespace
 
     var body: some View {
         NavigationStack {
             ScrollView {
+                // Edge to edge, outside the page's margins: the globe isn't in a box, it's in the sky.
+                if !stays.isEmpty, search.isEmpty { globe }
                 // Lazy: sections further down are built when they come into view, so the tab
                 // opens at once however many places there are.
-                LazyVStack(alignment: .leading, spacing: 16) {
+                LazyVStack(alignment: .leading, spacing: 34) {
                     if stays.isEmpty {
                         ContentUnavailableView("足迹会在这里出现",
                                                systemImage: "globe.asia.australia",
@@ -30,24 +33,44 @@ struct WorldView: View {
                     } else if !search.isEmpty {
                         PlaceSearchResults(query: search, stays: stays, countries: insights.countries)
                     } else {
-                        summaryGrid
-                        passportCard
-                        NavigationLink(value: MustSeeRoute()) { MustSeeCard() }
-                            .buttonStyle(PressableStyle())
-                        NavigationLink(value: BlindBoxRoute()) { BlindBoxCard() }
-                            .buttonStyle(PressableStyle())
-                        mapCard
+                        // The globe, the figures and the flags are one picture: the world at
+                        // night with what you've seen of it written across the sky.
+                        VStack(spacing: 18) {
+                            FootprintFigures(countries: insights.countries.count, cities: insights.cityCount,
+                                             sights: insights.landmarks.count, days: insights.trackedDays,
+                                             since: insights.firstDay)
+                                .padding(.top, 4)
+                            if !insights.countries.isEmpty { countries.padding(.top, 10) }
+                        }
+                        FootprintCollections(book: summaries.stamps)
+                        if !insights.cities.isEmpty { cities }
                         GalleryPreview()
-                        if !insights.countries.isEmpty { countries }
                         if !insights.frequentPlaces.isEmpty { frequentPlaces }
                         if !insights.landmarks.isEmpty { landmarks }
                     }
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 24)
+                // The whole page is the night sky the globe hangs in.
+                .environment(\.colorScheme, .dark)
             }
+            .background { FootprintNight.background }
+            // Pulling the globe down past the top of the page opens it full screen.
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { _, pulled in
+                if pulled < -110, !showingMap, !stays.isEmpty, search.isEmpty {
+                    showingMap = true
+                }
+            }
+            .sensoryFeedback(.impact(weight: .light), trigger: showingMap) { _, open in open }
+            .scrollIndicators(.hidden)
             .navigationTitle("足迹")
-            .searchable(text: $search, prompt: "搜索地点、城市或国家")
+            .navigationBarTitleDisplayMode(.inline)
+            // A bar the colour of the sky, so the title reads white and nothing shows its edge.
+            .toolbarBackground(Color.black, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            // Pulled down into view, so the page opens on the sky.
+            .searchable(text: $search, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "搜索地点、城市或国家")
             .navigationDestination(for: PlaceVisits.self) { PlaceVisitsView(place: $0) }
             .navigationDestination(for: PlaceAround.self) { route in
                 if let stay = summaries.stay(route.id) {
@@ -55,6 +78,8 @@ struct WorldView: View {
                 }
             }
             .toolbar {
+                // The title is drawn on the page itself; the bar only holds the buttons.
+                ToolbarItem(placement: .principal) { Color.clear.frame(width: 1, height: 1) }
                 ToolbarItem(placement: .topBarTrailing) {
                     ProfileToolbarButton(showingSettings: $showingSettings)
                 }
@@ -63,6 +88,12 @@ struct WorldView: View {
                 CountryDetailView(country: country)
             }
             .navigationDestination(for: CountriesRoute.self) { CountriesListView(route: $0) }
+            .navigationDestination(for: CityRoute.self) { route in
+                let names = CityNames.canonical(for: summaries.stays)
+                let visits = summaries.stays.filter { stay in CityNames.key(stay).flatMap { names[$0] } == route.name
+                    && route.key.hasPrefix("\(stay.countryCode ?? "")|") }
+                if !visits.isEmpty { PlaceVisitsView(place: PlaceVisits(name: route.name, visits: visits)) }
+            }
             .navigationDestination(for: PlacesList.self) { list in
                 PlacesListView(list: list)
             }
@@ -85,96 +116,90 @@ struct WorldView: View {
                 tagger?.nameFrequentPlaces(insights.frequentPlaces.map(\.representative))
             }
             .fullScreenCover(isPresented: $showingMap) {
-                WorldMapScreen(dots: summaries.dots)
+                FootprintExplorer(countries: insights.countries, cities: insights.cities, dots: summaries.dots,
+                                  home: insights.frequentPlaces.first?.representative.coordinate)
                     .navigationTransition(.zoom(sourceID: "world", in: namespace))
             }
         }
     }
 
-    private var summaryGrid: some View {
-        MetricGrid {
-            MetricTile(title: "国家与地区", value: "\(insights.countries.count)", symbol: "flag.fill", tint: .red)
-            MetricTile(title: "城市", value: "\(insights.cityCount)", symbol: "building.2.fill", tint: .indigo)
-            MetricTile(title: "景点", value: "\(insights.landmarks.count)", symbol: "star.fill", tint: .yellow)
-            MetricTile(title: "记录天数", value: "\(insights.trackedDays)", symbol: "calendar", tint: .teal)
-        }
-    }
-
-    /// The way into the passport and the stamp book.
-    private var passportCard: some View {
-        NavigationLink(value: StampBookRoute()) {
-            PassportCard(book: summaries.stamps)
-        }
-        .buttonStyle(PressableStyle())
-    }
-
-    private var mapCard: some View {
+    private var globe: some View {
         Button { showingMap = true } label: {
-            WorldMap(dots: summaries.dots, interactive: false, focused: true)
-                .allowsHitTesting(false)
-                .frame(height: 240)
-                .clipShape(.rect(cornerRadius: 28, style: .continuous))
-                .overlay(alignment: .bottomLeading) {
-                    Label("全部足迹", systemImage: "arrow.up.left.and.arrow.down.right")
-                        .font(.footnote.weight(.semibold))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .glassEffect(.regular, in: .capsule)
-                        .padding(12)
+            FootprintGlobe(dots: summaries.dots,
+                           home: insights.frequentPlaces.first?.representative.coordinate,
+                           cities: insights.cities)
+                .frame(height: 430)
+                .frame(maxWidth: .infinity)
+                // The page's title is written in the sky above the Earth.
+                .overlay(alignment: .topLeading) {
+                    Text("足迹")
+                        .font(.system(size: 34, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(.leading, 20)
+                        .accessibilityAddTraits(.isHeader)
                 }
         }
         .buttonStyle(PressableStyle())
         .matchedTransitionSource(id: "world", in: namespace)
     }
 
-    /// A handful at a time: the continent chips narrow it, "全部" opens the whole list.
+    /// Countries by their flags, most days first, swiped through.
     private var countries: some View {
         let all = insights.countries
-        let shown = all.filter { countryContinent.isEmpty || Continent.of($0.code)?.id == countryContinent }
-        return VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                SectionHeader(title: "国家和地区")
-                if all.count > Self.countriesShown {
-                    NavigationLink("全部 \(all.count)", value: CountriesRoute(continent: countryContinent))
-                        .font(.subheadline).padding(.top, 8).padding(.trailing, 4)
-                }
-            }
-            if Continent.options(for: all).count > 2 {
-                FilterChips(options: Continent.options(for: all), selection: $countryContinent)
-            }
-            VStack(spacing: 0) {
-                ForEach(shown.prefix(Self.countriesShown)) { country in
-                    NavigationLink(value: country) { CountryRow(country: country) }.buttonStyle(.plain)
-                    if country.id != shown.prefix(Self.countriesShown).last?.id { Divider().padding(.leading, 64) }
-                }
-                if shown.count > Self.countriesShown {
-                    Divider().padding(.leading, 16)
-                    NavigationLink(value: CountriesRoute(continent: countryContinent)) {
-                        HStack {
-                            Text("查看其余 \(shown.count - Self.countriesShown) 个").font(.subheadline.weight(.medium))
-                            Spacer()
-                            Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
-                        }
-                        .foregroundStyle(Color.accentColor)
-                        .padding(.horizontal, 16).padding(.vertical, 12)
-                        .contentShape(.rect)
+        return VStack(alignment: .leading, spacing: 14) {
+            NightHeader(title: "国家和地区") {
+                NavigationLink(value: CountriesRoute(continent: "")) {
+                    HStack(spacing: 3) {
+                        Text("全部 \(all.count)")
+                        Image(systemName: "chevron.forward").font(.caption.weight(.semibold))
                     }
-                    .buttonStyle(.plain)
                 }
             }
-            .padding(.vertical, 6)
-            .background(.background.secondary, in: .rect(cornerRadius: 24, style: .continuous))
-            .animation(.smooth, value: countryContinent)
+            ScrollView(.horizontal) {
+                HStack(spacing: 8) {
+                    ForEach(all.prefix(Self.countriesShown)) { country in
+                        NavigationLink(value: country) { CountryFlag(country: country) }
+                            .buttonStyle(PressableStyle())
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .scrollIndicators(.hidden)
+            .scrollTargetBehavior(.viewAligned)
+            .scrollClipDisabled()
         }
     }
 
-    private static let countriesShown = 5
+    private static let countriesShown = 20
+
+    /// Cities as small night maps, most days first.
+    private var cities: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NightHeader(title: "城市") { Text("\(insights.cityCount) 座") }
+            ScrollView(.horizontal) {
+                LazyHStack(spacing: 12) {
+                    ForEach(insights.cities.prefix(30)) { city in
+                        NavigationLink(value: CityRoute(key: city.key, name: city.name)) { CityCard(city: city) }
+                            .buttonStyle(PressableStyle())
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .scrollIndicators(.hidden)
+            .scrollTargetBehavior(.viewAligned)
+            .scrollClipDisabled()
+        }
+    }
 
     private var frequentPlaces: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                SectionHeader(title: "常去的地方")
-                NavigationLink("全部", value: PlacesList.frequent).font(.subheadline).padding(.top, 8).padding(.trailing, 4)
+            NightHeader(title: "常去的地方") {
+                NavigationLink(value: PlacesList.frequent) {
+                    HStack(spacing: 3) {
+                        Text("全部")
+                        Image(systemName: "chevron.forward").font(.caption.weight(.semibold))
+                    }
+                }
             }
             ScrollView(.horizontal) {
                 HStack(spacing: 12) {
@@ -198,16 +223,72 @@ struct WorldView: View {
         }
     }
 
+    /// What the sights can be narrowed to: the places worth a lifetime, then each country
+    /// with sights in it, most first. Only offered when there's a choice to make.
+    private var sightFilters: [(id: String, title: String)] {
+        let sights = insights.landmarks
+        var options: [(String, String)] = []
+        if sights.contains(where: { MustSee.place(for: $0) != nil }) {
+            options.append(("mustSee", String(localized: "此生必去", bundle: .appLanguage)))
+        }
+        let byCountry = Dictionary(grouping: sights.compactMap(\.countryCode), by: { $0 }).mapValues(\.count)
+        if byCountry.count > 1 {
+            for code in byCountry.keys.sorted(by: { byCountry[$0]! > byCountry[$1]! }) {
+                options.append((code, "\(String.flag(for: code)) \(WorldInsights.countryName(code: code, fallback: nil))"))
+            }
+        }
+        return options.isEmpty ? [] : [("", String(localized: "route.span.all", defaultValue: "全部", bundle: .appLanguage))] + options
+    }
+
+    private var filteredSights: [Stay] {
+        switch sightFilter {
+        case "": insights.landmarks
+        case "mustSee": insights.landmarks.filter { MustSee.place(for: $0) != nil }
+        case let code: insights.landmarks.filter { $0.countryCode == code }
+        }
+    }
+
     private var landmarks: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                SectionHeader(title: "去过的景点")
-                NavigationLink("全部", value: PlacesList.landmarks).font(.subheadline).padding(.top, 8).padding(.trailing, 4)
+        let filters = sightFilters
+        return VStack(alignment: .leading, spacing: 12) {
+            NightHeader(title: "景点") {
+                NavigationLink(value: PlacesList.landmarks) {
+                    HStack(spacing: 3) {
+                        Text("全部 \(insights.landmarks.count)")
+                        Image(systemName: "chevron.forward").font(.caption.weight(.semibold))
+                    }
+                }
+            }
+            if filters.count > 1 {
+                ScrollView(.horizontal) {
+                    HStack(spacing: 8) {
+                        ForEach(filters, id: \.id) { option in
+                            Button {
+                                withAnimation(.smooth) { sightFilter = option.id }
+                            } label: {
+                                Text(verbatim: option.title)
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(sightFilter == option.id ? Color.black : .white)
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 7)
+                                    .background {
+                                        if sightFilter == option.id { Capsule().fill(.white) }
+                                        else { Capsule().strokeBorder(FootprintNight.hairline, lineWidth: 1) }
+                                    }
+                                    .contentShape(.capsule)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .scrollIndicators(.hidden)
+                .scrollClipDisabled()
+                .sensoryFeedback(.selection, trigger: sightFilter)
             }
             ScrollView(.horizontal) {
                 HStack(spacing: 12) {
-                    ForEach(insights.landmarks.prefix(10)) { stay in
-                        NavigationLink(value: PlaceAround(stay)) { SightCard(stay: stay) }
+                    ForEach(filteredSights.prefix(20)) { stay in
+                        NavigationLink(value: PlaceAround(stay)) { SightPoster(stay: stay) }
                             .buttonStyle(PressableStyle())
                             .scrollTransition(.interactive, axis: .horizontal) { content, phase in
                                 content.scaleEffect(phase.isIdentity ? 1 : 0.94).opacity(phase.isIdentity ? 1 : 0.8)
@@ -219,6 +300,7 @@ struct WorldView: View {
             .scrollIndicators(.hidden)
             .scrollTargetBehavior(.viewAligned)
             .scrollClipDisabled()
+            .id(sightFilter)
         }
     }
 }
@@ -374,51 +456,5 @@ struct WorldMap: View {
                 && abs(($0.coordinate.longitude - region.center.longitude).remainder(dividingBy: 360)) <= span.longitudeDelta * 0.75
         }
         shown = MapDot.thinned(visible, cell: max(span.latitudeDelta / 22, 0.002), limit: 200)
-    }
-}
-
-private struct WorldMapScreen: View {
-    let dots: [MapDot]
-    @Environment(\.dismiss) private var dismiss
-    @Environment(AppNavigator.self) private var navigator
-    @State private var selected: Stay?
-    @AppStorage("world.layer") private var layer: Layer = .places
-
-    enum Layer: String { case places, routes }
-
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                switch layer {
-                case .places:
-                    WorldMap(dots: dots, interactive: true, focused: true, onSelect: { selected = $0 })
-                        .ignoresSafeArea()
-                        .transition(.opacity)
-                case .routes:
-                    RouteAtlasView()
-                        .transition(.opacity)
-                }
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.hidden, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("关闭", systemImage: "xmark") { dismiss() }
-                }
-                ToolbarItem(placement: .principal) {
-                    Picker("显示", selection: $layer.animation(.smooth(duration: 0.45))) {
-                        Text("地点").tag(Layer.places)
-                        Text("路线").tag(Layer.routes)
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(width: 180)
-                }
-            }
-            .sensoryFeedback(.selection, trigger: layer)
-            .toolbarColorScheme(layer == .routes ? .dark : nil, for: .navigationBar)
-            .sheet(item: $selected) { StayDetailView(stay: $0) }
-            .onChange(of: navigator.jumpCount) { dismiss() }
-        }
-        .preferredColorScheme(layer == .routes ? .dark : nil)
     }
 }

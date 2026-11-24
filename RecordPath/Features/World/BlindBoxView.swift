@@ -376,7 +376,7 @@ enum BlindBoxPlanner {
 /// A parcel in brown paper, tied with string: airmail stripes along the lid, a postmark, a
 /// luggage tag that doesn't say where to, and light leaking from under the lid as it's about
 /// to open. It belongs with the boarding pass and the arrival postmark that come out of it.
-private struct MysteryBox: View {
+struct MysteryBox: View {
     /// 0 shut, 1 lid gone.
     var open: Double
     var glow: Double

@@ -156,9 +156,26 @@ struct FrequentPlace: Identifiable {
     var id: UUID { representative.id }
 }
 
+/// A city visited, for the city cards: where it is and how much time was spent there.
+struct CitySummary: Identifiable, Hashable {
+    /// `CityNames.key` of its stays: "JP|东京".
+    let key: String
+    let name: String
+    let countryCode: String
+    var days: Int
+    var center: CLLocationCoordinate2D
+    var lastVisit: Date
+
+    var id: String { key }
+    static func == (lhs: Self, rhs: Self) -> Bool { lhs.key == rhs.key && lhs.days == rhs.days }
+    func hash(into hasher: inout Hasher) { hasher.combine(key) }
+}
+
 struct WorldInsights {
     var countries: [CountrySummary] = []
     var cityCount = 0
+    /// Most days first.
+    var cities: [CitySummary] = []
     var landmarks: [Stay] = []
     var frequentPlaces: [FrequentPlace] = []
     var trackedDays = 0
@@ -172,6 +189,7 @@ struct WorldInsights {
         var cities = Set<String>()
         var days = Set<Date>()
         var landmarkNames = Set<String>()
+        var cityTally: [String: (name: String, code: String, days: Set<Date>, lat: Double, lon: Double, count: Int, last: Date)] = [:]
         let cityNames = CityNames.canonical(for: stays)
         // Blips and window-seat photos count as days recorded, not as countries or cities visited.
         let passingThrough = StampBook.passingThrough(stays)
@@ -188,6 +206,14 @@ struct WorldInsights {
             if let key = CityNames.key(stay), let city = cityNames[key] {
                 summary.cities[city, default: 0] += 1
                 cities.insert("\(code)|\(city)")
+                let cityKey = "\(code)|\(city)"
+                var entry = cityTally[cityKey] ?? (city, code, [], 0, 0, 0, .distantPast)
+                entry.days.formUnion(stayDays)
+                entry.lat += stay.latitude
+                entry.lon += stay.longitude
+                entry.count += 1
+                entry.last = max(entry.last, stay.departure ?? Date())
+                cityTally[cityKey] = entry
             }
             // By name within a city: another town's "Old Town" is another place.
             if stay.isLandmark, let name = stay.placeName, landmarkNames.insert("\(name)|\(stay.city ?? "")").inserted {
@@ -199,6 +225,12 @@ struct WorldInsights {
 
         countries = byCountry.values.sorted { $0.days.count > $1.days.count }
         cityCount = cities.count
+        self.cities = cityTally.map { key, entry in
+            CitySummary(key: key, name: entry.name, countryCode: entry.code, days: entry.days.count,
+                        center: CLLocationCoordinate2D(latitude: entry.lat / Double(entry.count), longitude: entry.lon / Double(entry.count)),
+                        lastVisit: entry.last)
+        }
+        .sorted { ($0.days, $0.lastVisit) > ($1.days, $1.lastVisit) }
         trackedDays = days.count
         firstDay = days.min()
         landmarks.sort { $0.arrival > $1.arrival }
