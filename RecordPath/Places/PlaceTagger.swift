@@ -357,6 +357,7 @@ final class PlaceTagger {
             Diagnostics.record("geocode failed \(error.localizedDescription)")
         }
         guard !Self.isGone(stay) else { return .done }
+        Self.fillCountryOffline(stay)
 
         if stay.isFromPhotos {
             stay.tagState = stay.country == nil ? .failed : .tagged
@@ -384,6 +385,16 @@ final class PlaceTagger {
         guard !Self.isGone(stay) else { return .done }
         stay.tagState = stay.country == nil ? .failed : .tagged
         return .done
+    }
+
+    /// When Apple had nothing to say about a place (as it often hasn't, from mainland China,
+    /// about one abroad), its country still comes from the outlines the app carries. The city
+    /// stays unknown.
+    static func fillCountryOffline(_ stay: Stay) {
+        guard stay.countryCode == nil, let code = CountryLookup.code(at: stay.coordinate) else { return }
+        stay.countryCode = code
+        if stay.country == nil { stay.country = appLocale.localizedString(forRegionCode: code) }
+        Diagnostics.count("countryOffline")
     }
 
     private func nearestTagged(to stay: Stay, within radius: CLLocationDistance) -> Stay? {
