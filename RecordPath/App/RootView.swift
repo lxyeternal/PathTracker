@@ -22,6 +22,10 @@ struct RootView: View {
             }
         }
         .animation(.smooth(duration: 0.5), value: onboardingCompleted)
+        // One look throughout: dark, on black, like the night the globe and the roads are
+        // drawn in. Maps, photos and flags read best on it; the passport and visas, being
+        // objects, keep their own colours.
+        .preferredColorScheme(.dark)
         // Rebuilding on a language change re-renders every string, including ones computed
         // in code; Settings stays open because it's presented from outside this subtree.
         .id(language.language)

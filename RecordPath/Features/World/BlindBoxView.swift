@@ -4,7 +4,7 @@ import WeatherKit
 
 struct BlindBoxRoute: Hashable {}
 
-/// The same night as the must-see list, so the two read as one place.
+/// A deep ink, for words set on the gold buttons and tags.
 private let night = Color(red: 0.06, green: 0.07, blue: 0.13)
 private let gold = LinearGradient(colors: [Color(red: 1, green: 0.88, blue: 0.55), Color(red: 1, green: 0.62, blue: 0.22)], startPoint: .top, endPoint: .bottom)
 /// The gold as one colour, for outlines and tints.
@@ -12,8 +12,9 @@ private let amber = Color(red: 1, green: 0.76, blue: 0.40)
 
 // MARK: - The sky
 
-/// A deep-blue night, stars that twinkle, a faint blue glow high up and an amber one low down
-/// that brightens while the parcel is opening.
+/// The app's night: black, stars that twinkle, a faint warm light high up and an amber one
+/// low down that brightens while the parcel is opening. The same black and gold as the globe,
+/// so the blind box reads as part of the footprints rather than a page of its own.
 private struct BlindBoxSky: View {
     var glow: Double
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -31,7 +32,7 @@ private struct BlindBoxSky: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Color(red: 0.03, green: 0.04, blue: 0.09), night, Color(red: 0.07, green: 0.09, blue: 0.18), Color(red: 0.10, green: 0.11, blue: 0.21)],
+            LinearGradient(colors: [.black, .black, Color(red: 0.04, green: 0.035, blue: 0.03)],
                            startPoint: .top, endPoint: .bottom)
             TimelineView(.animation(minimumInterval: 1 / 15, paused: reduceMotion)) { timeline in
                 let time = timeline.date.timeIntervalSinceReferenceDate
@@ -45,7 +46,7 @@ private struct BlindBoxSky: View {
             }
             GeometryReader { geo in
                 Ellipse()
-                    .fill(Color(red: 0.24, green: 0.40, blue: 0.90).opacity(0.16))
+                    .fill(FootprintNight.glow.opacity(0.07))
                     .frame(width: geo.size.width * 1.1, height: 300)
                     .blur(radius: 90)
                     .position(x: geo.size.width * 0.2, y: geo.size.height * 0.08)

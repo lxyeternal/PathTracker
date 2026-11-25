@@ -602,7 +602,7 @@ struct MustSeeCard: View {
     }
 }
 
-private struct MiniLitGrid: View {
+struct MiniLitGrid: View {
     let lit: [Bool]
 
     var body: some View {

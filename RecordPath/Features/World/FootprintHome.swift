@@ -123,12 +123,23 @@ struct FootprintFigures: View {
     let since: Date?
 
     var body: some View {
-        VStack(spacing: 14) {
-            HStack(alignment: .top, spacing: 0) {
+        VStack(spacing: 12) {
+            // A faint plate under the four, ruled between them: one group, set apart from the
+            // sky, without a solid box competing with the globe.
+            HStack(alignment: .center, spacing: 0) {
                 figure(countries, "国家和地区")
+                rule
                 figure(cities, "城市")
+                rule
                 figure(sights, "景点")
+                rule
                 figure(days, "天")
+            }
+            .padding(.vertical, 16)
+            .background {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(LinearGradient(colors: [.white.opacity(0.08), .white.opacity(0.03)], startPoint: .top, endPoint: .bottom))
+                    .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(.white.opacity(0.12), lineWidth: 0.5))
             }
             if let since {
                 Text("自 \(since.formatted(.dateTime.year().month(.wide).locale(appLocale))) 起记录")
@@ -136,6 +147,10 @@ struct FootprintFigures: View {
                     .foregroundStyle(FootprintNight.tertiary)
             }
         }
+    }
+
+    private var rule: some View {
+        Rectangle().fill(.white.opacity(0.12)).frame(width: 0.5, height: 40)
     }
 
     private func figure(_ value: Int, _ label: LocalizedStringKey) -> some View {
@@ -261,23 +276,64 @@ struct FootprintCollections: View {
             // the same shape; the two kinds of travel ideas share the row below.
             NavigationLink(value: StampBookRoute()) { passportRow }
             NavigationLink(value: VisaWalletRoute()) { visaRow }
-            HStack(spacing: 12) {
-                NavigationLink(value: MustSeeRoute()) {
-                    CollectionTile(title: "此生必去", value: "\(litCount) / 200", note: String(localized: "中国 \(mustSee.count(.china)) · 世界 \(mustSee.count(.world))", bundle: .appLanguage)) {
-                        MustSeeRing(fraction: Double(litCount) / 200)
-                    }
-                }
-                NavigationLink(value: BlindBoxRoute()) {
-                    CollectionTile(title: "旅行盲盒", value: boxes.waiting.isEmpty ? "?" : "\(boxes.waiting.count)", note: boxNote) {
-                        MysteryBox(open: 0, glow: 0.25)
-                            .scaleEffect(0.32)
-                            .frame(width: 64, height: 64)
-                    }
-                }
-            }
+            NavigationLink(value: MustSeeRoute()) { mustSeeRow }
+            NavigationLink(value: BlindBoxRoute()) { blindBoxRow }
         }
         .buttonStyle(PressableStyle())
         .task(id: summaries.revision) { await mustSee.update(from: summaries.stays) }
+    }
+
+    /// The two lists side by side, a hundred places each: China and the world are two goals,
+    /// not one of two hundred.
+    private var mustSeeRow: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("此生必去").font(.headline).foregroundStyle(.white)
+                Spacer()
+                Image(systemName: "chevron.forward").font(.footnote.weight(.semibold)).foregroundStyle(FootprintNight.tertiary)
+            }
+            HStack(spacing: 18) {
+                mustSeeTally("中国", count: mustSee.count(.china))
+                Rectangle().fill(FootprintNight.hairline).frame(width: 0.5)
+                mustSeeTally("世界", count: mustSee.count(.world))
+            }
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background { NightPlate() }
+        .contentShape(.rect(cornerRadius: 26, style: .continuous))
+    }
+
+    private func mustSeeTally(_ title: LocalizedStringKey, count: Int) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(FootprintNight.secondary)
+                Spacer(minLength: 4)
+                Text(verbatim: "\(count)")
+                    .font(.system(size: 26, weight: .light, design: .rounded))
+                    .foregroundStyle(LinearGradient(colors: [Color(red: 1, green: 0.86, blue: 0.5), .orange], startPoint: .top, endPoint: .bottom))
+                    .contentTransition(.numericText())
+                Text(verbatim: "/ 100").font(.caption.weight(.medium)).foregroundStyle(FootprintNight.tertiary)
+            }
+            MiniLitGrid(lit: MustSeeView.filled(count, of: 100))
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var blindBoxRow: some View {
+        WideRow {
+            MysteryBox(open: 0, glow: 0.25)
+                .scaleEffect(0.34)
+                .frame(width: 70, height: 66)
+        } text: {
+            Text("旅行盲盒").font(.headline).foregroundStyle(.white)
+            Text(boxes.waiting.isEmpty ? String(localized: "不知道去哪儿？这次让它替你选。", bundle: .appLanguage)
+                                       : String(localized: "有 \(boxes.waiting.count) 张登机牌在等你", bundle: .appLanguage))
+                .font(.footnote).foregroundStyle(FootprintNight.secondary)
+        } trailing: {
+            Image(systemName: "chevron.forward").font(.footnote.weight(.semibold)).foregroundStyle(FootprintNight.tertiary)
+        }
     }
 
     /// The latest few stamps, fanned like the ones on the passport's page.
@@ -293,18 +349,16 @@ struct FootprintCollections: View {
         } text: {
             Text("护照与印章").font(.headline).foregroundStyle(.white)
             Text(passportNote).font(.footnote).foregroundStyle(FootprintNight.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .lineLimit(2)
         } trailing: {
             ZStack(alignment: .trailing) {
                 ForEach(Array(latestStamps.enumerated()), id: \.element.id) { index, stamp in
                     StampWithRoute(stamp: stamp)
-                        .frame(width: 42, height: 38)
+                        .frame(width: 38, height: 34)
                         .rotationEffect(.degrees(stamp.tilt))
-                        .offset(x: -CGFloat(latestStamps.count - 1 - index) * 24)
+                        .offset(x: -CGFloat(latestStamps.count - 1 - index) * 17)
                 }
             }
-            .frame(width: 92, height: 44, alignment: .trailing)
+            .frame(width: 72, height: 40, alignment: .trailing)
         }
     }
 
@@ -372,6 +426,15 @@ struct FootprintCollections: View {
             }
         }
         .frame(width: 76, height: 58, alignment: .bottomLeading)
+    }
+}
+
+/// The faint plate every group on the night page sits on.
+struct NightPlate: View {
+    var body: some View {
+        RoundedRectangle(cornerRadius: 26, style: .continuous)
+            .fill(LinearGradient(colors: [.white.opacity(0.075), .white.opacity(0.035)], startPoint: .top, endPoint: .bottom))
+            .overlay(RoundedRectangle(cornerRadius: 26, style: .continuous).strokeBorder(FootprintNight.hairline, lineWidth: 0.5))
     }
 }
 

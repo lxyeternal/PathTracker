@@ -21,8 +21,9 @@ What changed in each version of Waytrace: what's new, what was adjusted and what
 - With location set to “Always”, all-day recording no longer keeps the location icon in the Dynamic Island; recording in the background is unchanged. ([#6](https://github.com/lxyeternal/PathTracker/issues/6))
 - Moving about within one place (from one campus building to another) shows as a single visit on the timeline.
 - A photo taken somewhere else (it has a location more than 2 km from the place) no longer counts as that place's photo.
-- Places is redesigned: the page is a night sky with the globe at the top and your countries, cities, sights and days written beneath it; countries are shown by their flags and cities as satellite views; the passport and stamps and the visa wallet each have a row, with the must-see lists and the blind box side by side.
+- Places is redesigned: the page is a night sky with the globe at the top and your countries, cities, sights and days written beneath it; countries are shown by their flags and cities as satellite views; the passport and stamps, the visa wallet, the must-see lists and the blind box each have a row, and the must-see lists show China and the world apart, each out of 100.
 - Timeline cards are two lines, and the city appears only when it changes; times, dots, the line and the cards no longer crowd each other.
+- The whole app is now dark, to match the night sky of Places. The blind box page is black and warm gold too, the same light as the globe.
 - The album in Places only holds what you've posted, and no longer shows as an empty section when there's nothing yet.
 
 **Fixed**
