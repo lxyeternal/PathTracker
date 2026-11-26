@@ -46,7 +46,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reads your steps and walking distance to show how far you walk each day. This data stays on your devices and in your iCloud."
+            "value": "Reads your steps and walking distance to show how far you walk each day and, when you choose to import them, your workouts and their routes to fill in past tracks. This data stays on your devices and in your iCloud."
           }
         }
       }

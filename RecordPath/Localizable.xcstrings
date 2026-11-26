@@ -4652,12 +4652,12 @@
         }
       }
     },
-    "如果你允许，App 会读取“健康”中的步数和步行距离，以及设备的运动状态（步行、骑行、乘车），只用于在 App 内展示统计。这些数据不会被写入“健康”，也不会离开你的设备和 iCloud。": {
+    "如果你允许，App 会读取“健康”中的步数和步行距离，以及设备的运动状态（步行、骑行、乘车），只用于在 App 内展示统计。当你选择从“健康”导入运动路线时，App 会读取体能训练和它们的路线，保存为你的轨迹。这些数据不会被写入“健康”，也不会离开你的设备和 iCloud。": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "If you allow it, the app reads steps and walking distance from Health, and your device's motion activity (walking, cycling, driving), only to show statistics in the app. Nothing is written to Health, and the data never leaves your devices and iCloud."
+            "value": "If you allow it, the app reads steps and walking distance from Health, and your device's motion activity (walking, cycling, driving), only to show statistics in the app. When you choose to import workout routes from Health, the app reads your workouts and their routes and saves them as your tracks. Nothing is written to Health, and the data never leaves your devices and iCloud."
           }
         }
       }
@@ -4788,6 +4788,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Import GPX Files"
+          }
+        }
+      }
+    },
+    "从“健康”导入运动路线": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import Workout Routes from Health"
+          }
+        }
+      }
+    },
+    "“健康”里带路线的体能训练（Apple Watch 记录的户外步行、跑步、骑行等）会变成轨迹，补上安装漫迹之前的里程。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workouts with a route in Health (outdoor walks, runs and rides recorded on Apple Watch, for one) become tracks, filling in the distance from before you installed Waytrace."
+          }
+        }
+      }
+    },
+    "没有读到体能训练。如果“健康”里有记录，请在 设置 › 健康 › 数据访问与设备 › 漫迹 里打开“体能训练”和“体能训练路线”。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No workouts were found. If Health has some, turn on Workouts and Workout Routes in Settings › Health › Data Access & Devices › Waytrace."
+          }
+        }
+      }
+    },
+    "导入了 %lld 次运动的路线，共 %@。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workouts imported: %1$lld, %2$@ in all."
+          }
+        }
+      }
+    },
+    "没有新的路线可以导入。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No new routes to import."
+          }
+        }
+      }
+    },
+    "%lld 次已经有记录，跳过了。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already recorded, skipped: %lld."
+          }
+        }
+      }
+    },
+    "%lld 次没有路线（室内训练，或记录它的应用没有把路线存进“健康”）。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Without a route (indoor, or recorded by an app that keeps its routes out of Health): %lld."
           }
         }
       }

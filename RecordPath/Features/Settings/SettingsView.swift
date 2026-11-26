@@ -26,6 +26,8 @@ struct SettingsView: View {
     @AppStorage("photoImport.lastRun") private var photoImportRun: Double = 0
     @AppStorage(DayPhotos.locatedOnlyKey) private var photosLocatedOnly = false
     @State private var importMessage: String?
+    /// Workouts read so far and in all, while past workouts come in from Health.
+    @State private var workoutProgress: (done: Int, total: Int)?
     private var zones = PrivacyZones.shared
 
     var body: some View {
@@ -292,6 +294,22 @@ struct SettingsView: View {
             .disabled(stats.chunks == 0)
             Button("导入 GPX 文件", systemImage: "square.and.arrow.down") { importing = true }
             Button(photoImportRun > 0 ? LocalizedStringKey("重新从相册导入") : "从相册导入足迹", systemImage: "photo.stack") { importingPhotos = true }
+            if WorkoutImporter.isAvailable {
+                Button { importWorkouts() } label: {
+                    LabeledContent {
+                        if let workoutProgress {
+                            if workoutProgress.total > 0 {
+                                Text(verbatim: "\(workoutProgress.done)/\(workoutProgress.total)").monospacedDigit()
+                            } else {
+                                ProgressView()
+                            }
+                        }
+                    } label: {
+                        Label("从“健康”导入运动路线", systemImage: "figure.outdoor.cycle")
+                    }
+                }
+                .disabled(workoutProgress != nil)
+            }
             Button("重新显示引导", systemImage: "arrow.uturn.backward") {
                 UserDefaults.standard.set(false, forKey: "onboarding.completed")
                 dismiss()
@@ -314,8 +332,39 @@ struct SettingsView: View {
                         .foregroundStyle(.orange)
                 }
                 Text("GPX 可以导入 AllTrails、Strava、Google Earth 等应用。")
+                if WorkoutImporter.isAvailable {
+                    Text("“健康”里带路线的体能训练（Apple Watch 记录的户外步行、跑步、骑行等）会变成轨迹，补上安装漫迹之前的里程。")
+                }
             }
         }
+    }
+
+    /// Past workouts' routes from Health as tracks; what is already recorded is left alone.
+    private func importWorkouts() {
+        workoutProgress = (0, 0)
+        Task {
+            let result = await WorkoutImporter.importAll(into: context) { done, total in workoutProgress = (done, total) }
+            workoutProgress = nil
+            tagger?.enqueue()
+            refreshCounts()
+            importMessage = Self.workoutMessage(result)
+        }
+    }
+
+    static func workoutMessage(_ result: WorkoutImporter.Result) -> String {
+        guard result.total > 0 else {
+            return String(localized: "没有读到体能训练。如果“健康”里有记录，请在 设置 › 健康 › 数据访问与设备 › 漫迹 里打开“体能训练”和“体能训练路线”。", bundle: .appLanguage)
+        }
+        var lines = [result.imported > 0
+            ? String(localized: "导入了 \(result.imported) 次运动的路线，共 \(Format.distance(result.distance))。", bundle: .appLanguage)
+            : String(localized: "没有新的路线可以导入。", bundle: .appLanguage)]
+        if result.alreadyRecorded > 0 {
+            lines.append(String(localized: "\(result.alreadyRecorded) 次已经有记录，跳过了。", bundle: .appLanguage))
+        }
+        if result.withoutRoute > 0 {
+            lines.append(String(localized: "\(result.withoutRoute) 次没有路线（室内训练，或记录它的应用没有把路线存进“健康”）。", bundle: .appLanguage))
+        }
+        return lines.joined(separator: "\n")
     }
 
     private var privacySection: some View {
@@ -385,6 +434,9 @@ struct SettingsView: View {
             Button("生成 6000 个照片地点", systemImage: "photo.stack") {
                 DemoData.photoStress(in: context)
                 refreshCounts()
+            }
+            Button(String("写入示例体能训练"), systemImage: "figure.outdoor.cycle") {
+                Task { await WorkoutImporter.seedSamples() }
             }
             Button("预览庆祝动画", systemImage: "sparkles") {
                 Celebrations.shared.addSamples()

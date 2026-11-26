@@ -6,6 +6,12 @@ What changed in each version of Waytrace: what's new, what was adjusted and what
 
 ---
 
+## 1.0.9 · In progress
+
+**New**
+
+- Import workout routes from Health: outdoor walks, runs, rides and other workouts that an Apple Watch or another app saved to Health come in as tracks with their routes, filling in the distance from before you installed Waytrace. Distance, travel modes, Every Road and the year in review all count them. Find it in Settings › Data. Time that is already recorded is skipped, so it is safe to run again.
+
 ## 1.0.8 · In review
 
 **Changed**
