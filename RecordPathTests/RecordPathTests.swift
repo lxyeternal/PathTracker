@@ -1463,6 +1463,25 @@ struct TravelModeTests {
         // A sliver under 300 m is not a leg of its own.
         #expect(Timeline.legs(of: [walk1, blip]).count == 1)
     }
+
+    @Test func aWalkThatPausedIsStillOneWalk() {
+        // Out of the door, a quarter of an hour standing about, then on: one walk, not two.
+        func walk(from start: Double, seconds: Int) -> TrackChunk {
+            let points = (0..<(seconds / 5)).map { point(1.34, 103.68 + (start + Double($0) * 5) * 1.3 / 111_320, start + Double($0) * 5, speed: 1.3) }
+            return TrackChunk(points: points, mode: .walking, tripID: nil)
+        }
+        let first = walk(from: 0, seconds: 300), second = walk(from: 300 + 15 * 60, seconds: 300)
+        let entries = Timeline.entries(stays: [], chunks: [second, first])
+        #expect(entries.count == 1)
+        guard case .move(let move) = entries.first else { Issue.record("no move"); return }
+        #expect(move.chunks.count == 2)
+        // The time standing about isn't time walking.
+        #expect(move.duration < 11 * 60)
+
+        // Hours apart with nothing recorded between: two outings.
+        let evening = walk(from: 4 * 3600, seconds: 300)
+        #expect(Timeline.entries(stays: [], chunks: [first, evening]).count == 2)
+    }
 }
 
 struct SkyTests {

@@ -10,7 +10,8 @@ struct Move: Identifiable {
     var start: Date { chunks.first?.startDate ?? .distantPast }
     var end: Date { chunks.last?.endDate ?? .distantPast }
     var distance: Double { chunks.reduce(0) { $0 + $1.distance } }
-    var duration: TimeInterval { end.timeIntervalSince(start) }
+    /// Time spent moving: a pause between two parts of one walk isn't part of it.
+    var duration: TimeInterval { chunks.reduce(0) { $0 + max(0, $1.endDate.timeIntervalSince($1.startDate)) } }
 
     var mode: MovementMode {
         Dictionary(grouping: chunks, by: \.mode)
@@ -54,22 +55,25 @@ enum Timeline {
         }
         var entries: [TimelineEntry] = visits.map { .stay($0[0], rest: Array($0.dropFirst())) }
 
-        var group: [TrackChunk] = []
-        func closeGroup() {
-            for leg in legs(of: group) where leg.reduce(0, { $0 + $1.distance }) > 50 {
+        // A journey is everything recorded between two visits. Recording can stop for a few
+        // minutes inside one (waiting at a crossing, the phone losing its fix): the parts
+        // either side are still one walk, not two.
+        var journey: [TrackChunk] = []
+        func closeJourney() {
+            for leg in legs(of: journey) where leg.reduce(0, { $0 + $1.distance }) > 50 {
                 entries.append(.move(Move(chunks: leg)))
             }
-            group = []
+            journey = []
         }
         for chunk in chunks {
-            if let last = group.last {
+            if let last = journey.last {
                 let gap = chunk.startDate.timeIntervalSince(last.endDate)
                 let stayBetween = stays.contains { $0.arrival >= last.endDate.addingTimeInterval(-60) && $0.arrival <= chunk.startDate }
-                if gap > 10 * 60 || stayBetween { closeGroup() }
+                if gap > journeyGap || stayBetween { closeJourney() }
             }
-            group.append(chunk)
+            journey.append(chunk)
         }
-        closeGroup()
+        closeJourney()
         // Walking from one part of a place to another is part of being there, not a journey.
         let within = visits.compactMap { visit in visit.count > 1 ? visit[0].arrival..<visit[visit.count - 1].arrival : nil }
         entries.removeAll { entry in
@@ -78,6 +82,10 @@ enum Timeline {
         }
         return entries.sorted { $0.start < $1.start }
     }
+
+    /// How long recording can stop between two visits and still be one journey. Longer than
+    /// this with no visit in between and recording was off, not paused at a kerb.
+    static let journeyGap: TimeInterval = 45 * 60
 
     /// How long someone can be out between two parts of one place and still be on one visit.
     static let sameVisitGap: TimeInterval = 20 * 60

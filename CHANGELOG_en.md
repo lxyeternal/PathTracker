@@ -8,8 +8,16 @@ What changed in each version of Waytrace: what's new, what was adjusted and what
 
 ## 1.0.8 · In progress
 
+**Changed**
+
+- The immersive globe shows three levels by distance: lights and flags from far out; closer, city names and the routes you travelled, with a tap on a city flying into it; closer still, the places one by one, with a photo where there is one, each opening its page.
+- Countries on the immersive globe are outlined in white, clear on desert and dry land too; close in the outlines step aside instead of cutting across the coast.
+- The globe at the top of Places is smaller, so the figures and your countries are on the first screen.
+
 **Fixed**
 
+- A walk that paused for a few minutes showed as two separate walks on the timeline. Everything between two visits is now one journey, and its time counts only the time moving.
+- Dragging the map down in the immersive globe closed the whole page.
 - Places abroad imported from photos showed as “Unknown place” on the timeline and the map when the lookup had no name for them. They now show the nearby well-known city, or else the country.
 
 ## 1.0.7 · In review

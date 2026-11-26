@@ -128,7 +128,7 @@ struct WorldView: View {
             FootprintGlobe(dots: summaries.dots,
                            home: insights.frequentPlaces.first?.representative.coordinate,
                            cities: insights.cities)
-                .frame(height: 430)
+                .frame(height: 290)
                 .frame(maxWidth: .infinity)
                 // The page's title is written in the sky above the Earth.
                 .overlay(alignment: .topLeading) {
