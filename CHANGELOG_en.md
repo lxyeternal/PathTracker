@@ -6,7 +6,13 @@ What changed in each version of Waytrace: what's new, what was adjusted and what
 
 ---
 
-## 1.0.7 · Coming soon
+## 1.0.8 · In progress
+
+**Fixed**
+
+- Places abroad imported from photos showed as “Unknown place” on the timeline and the map when the lookup had no name for them. They now show the nearby well-known city, or else the country.
+
+## 1.0.7 · In review
 
 **New**
 

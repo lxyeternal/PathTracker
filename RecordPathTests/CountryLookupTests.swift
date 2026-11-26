@@ -39,10 +39,22 @@ struct CountryLookupTests {
         PlaceTagger.fillCountryOffline(stay)
         #expect(stay.countryCode == "FR")
         #expect(stay.country != nil)
+        // Near a well-known city, it gets the city too.
+        #expect(stay.city != nil)
+        #expect(stay.displayName == stay.city)
 
         let named = Stay(arrival: .now, coordinate: CLLocationCoordinate2D(latitude: 48.8584, longitude: 2.2945))
         named.countryCode = "XX"
         PlaceTagger.fillCountryOffline(named)
         #expect(named.countryCode == "XX")
+    }
+
+    @MainActor
+    @Test func aPlaceFarFromAnyKnownCityIsNamedByItsCountry() {
+        let stay = Stay(arrival: .now, coordinate: CLLocationCoordinate2D(latitude: -25.3, longitude: 134.0))
+        PlaceTagger.fillCountryOffline(stay)
+        #expect(stay.countryCode == "AU")
+        #expect(stay.city == nil)
+        #expect(stay.displayName == stay.country)
     }
 }

@@ -95,7 +95,9 @@ final class Stay {
     }
 
     var displayName: String {
-        customName ?? placeName ?? street ?? city ?? String(localized: "未知地点", bundle: .appLanguage)
+        // A place abroad that Apple had no name for (common from inside mainland China) is
+        // still somewhere: its country, rather than "unknown".
+        customName ?? placeName ?? street ?? city ?? country ?? String(localized: "未知地点", bundle: .appLanguage)
     }
 
     var subtitle: String? {

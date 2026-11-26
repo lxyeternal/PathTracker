@@ -388,9 +388,12 @@ final class PlaceTagger {
     }
 
     /// When Apple had nothing to say about a place (as it often hasn't, from mainland China,
-    /// about one abroad), its country still comes from the outlines the app carries. The city
-    /// stays unknown.
+    /// about one abroad), its country still comes from the outlines the app carries, and its
+    /// city from the well-known cities the app knows, when it's near one.
     static func fillCountryOffline(_ stay: Stay) {
+        if stay.city == nil, let city = WorldCities.near(stay.location) {
+            stay.city = appLocale.language.languageCode == .chinese ? city.chinese : city.english
+        }
         guard stay.countryCode == nil, let code = CountryLookup.code(at: stay.coordinate) else { return }
         stay.countryCode = code
         if stay.country == nil { stay.country = appLocale.localizedString(forRegionCode: code) }
