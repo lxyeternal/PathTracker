@@ -33,12 +33,12 @@
 </p>
 
 <p align="center">
-  <a href="https://apps.apple.com/cn/app/id6827694426"><img src="AppStore/screenshots/zh-Hans/1.jpg" width="130" alt=""></a>
-  <a href="https://apps.apple.com/cn/app/id6827694426"><img src="AppStore/screenshots/zh-Hans/2.jpg" width="130" alt=""></a>
-  <a href="https://apps.apple.com/cn/app/id6827694426"><img src="AppStore/screenshots/zh-Hans/3.jpg" width="130" alt=""></a>
-  <a href="https://apps.apple.com/cn/app/id6827694426"><img src="AppStore/screenshots/zh-Hans/4.jpg" width="130" alt=""></a>
-  <a href="https://apps.apple.com/cn/app/id6827694426"><img src="AppStore/screenshots/zh-Hans/5.jpg" width="130" alt=""></a>
-  <a href="https://apps.apple.com/cn/app/id6827694426"><img src="AppStore/screenshots/zh-Hans/6.jpg" width="130" alt=""></a>
+  <a href="https://apps.apple.com/cn/app/id6827694426"><img src="docs/images/hero/zh/1.jpg" width="130" alt=""></a>
+  <a href="https://apps.apple.com/cn/app/id6827694426"><img src="docs/images/hero/zh/2.jpg" width="130" alt=""></a>
+  <a href="https://apps.apple.com/cn/app/id6827694426"><img src="docs/images/hero/zh/3.jpg" width="130" alt=""></a>
+  <a href="https://apps.apple.com/cn/app/id6827694426"><img src="docs/images/hero/zh/4.jpg" width="130" alt=""></a>
+  <a href="https://apps.apple.com/cn/app/id6827694426"><img src="docs/images/hero/zh/5.jpg" width="130" alt=""></a>
+  <a href="https://apps.apple.com/cn/app/id6827694426"><img src="docs/images/hero/zh/6.jpg" width="130" alt=""></a>
 </p>
 
 <p align="center">
@@ -78,6 +78,8 @@
 
 **从相册找回过去**：读取照片和视频的拍摄地点，补上 App 出现之前去过的地方。新用户在引导最后一步或“旅程”页就能做，护照当场翻开，这些年的印章一枚枚盖上。之后随时可以在设置里重新导入，只会补上新的地方。所有读取都在手机上完成，照片不会上传。
 
+**从“健康”找回过去的路**（1.0.9 起）：Apple Watch 或其他应用存进“健康”的户外步行、跑步、骑行等体能训练，连同路线一起导入成轨迹，安装漫迹之前的里程也算进统计、走过的路和年度足迹。在“设置 › 数据”里，已经有记录的时间段会跳过，可以重复导入。
+
 ---
 
 ## 🧳 旅程
@@ -95,16 +97,20 @@
 
 ## 🌏 你去过的世界
 
+<p align="center">
+  <img src="docs/images/places.jpg" width="170" alt="足迹">
+  <img src="docs/images/immersive-globe.jpg" width="170" alt="沉浸地球">
+  <img src="docs/images/places-rows.jpg" width="170" alt="护照、签证夹、此生必去和旅行盲盒">
+  <img src="docs/images/country.jpg" width="170" alt="国家页">
+  <img src="docs/images/routes.jpg" width="170" alt="全部路线">
+</p>
+
+- **一页夜空**：“足迹”页最上面是一颗地球，下面直接写着去过的国家、城市、景点和天数；国家按国旗排列，城市是一张张卫星俯瞰图；护照与印章、签证夹、此生必去、旅行盲盒各占一行。景点可以按“此生必去”或国家筛选。
+- **沉浸地球**：点地球，或在页面顶部下拉，进入全屏的地球。远看是灯光和国旗，去过的国家描出轮廓；近一些出现城市名和走过的路线，点城市名直接飞进去；再近就是一个个地点，有照片的显示照片，点开能看这个地点。
 - **国家和地区**：按大洲筛选（全部 · 亚洲 · 欧洲……），可以搜索，按停留天数、最近去过、最早去过排序；去过的地方再多，也不用一直往下拉。
 - **国家页**：描出国境的地图（中国大陆、港澳台不由 App 绘制边界），每座去过的城市一团光；下面是这个国家的入境章和每座城市的城市章。
 - **每一次到访**：按“同一城市的连续几天”自动归成一段。历史长的话，一次只看一年，上面一排 12 个月的柱状图，点哪个月就跳到哪个月。
 - **走过的路**：在“统计”页点“走过的路”，或在“全部足迹”切到“路线”，所有走过的路铺在一张夜景地图上。常走的街道一遍遍叠亮，只走过一次的路淡淡一笔；可以看今天、本周、本月、今年、全部或往年，也可以按步行 · 骑行 · 乘车 · 飞行筛选，正在记录的那一段也画在上面，底部算出一共走了多远、多少天。多年的轨迹按缩放分三档精度绘制，拖动依然顺滑。
-
-<p align="center">
-  <img src="docs/images/places.jpg" width="190" alt="足迹">
-  <img src="docs/images/country.jpg" width="190" alt="国家页">
-  <img src="docs/images/routes.jpg" width="190" alt="全部路线">
-</p>
 
 ---
 
@@ -236,10 +242,11 @@
 - **年度足迹**：像故事一样一页页翻，有发光的城市地图、转动的点阵地球、最远那天的路线、照片墙，还有一页**“今年的护照”**，最后是一张可以分享的海报。
 
 <p align="center">
-  <img src="docs/images/year.jpg" width="190" alt="年度足迹">
-  <img src="docs/images/globe.jpg" width="190" alt="移动距离">
-  <img src="docs/images/milestones.jpg" width="190" alt="里程碑">
-  <img src="docs/images/stamp-ceremony.jpg" width="190" alt="集齐套章">
+  <img src="docs/images/story.jpg" width="170" alt="你的故事">
+  <img src="docs/images/year.jpg" width="170" alt="年度足迹">
+  <img src="docs/images/globe.jpg" width="170" alt="移动距离">
+  <img src="docs/images/milestones.jpg" width="170" alt="里程碑">
+  <img src="docs/images/stamp-ceremony.jpg" width="170" alt="集齐套章">
 </p>
 
 ---
@@ -278,7 +285,7 @@
 | 全部路线 | 每段轨迹按街道、城市、国家三档精度预先简化，缓存在本地，只增量读取新轨迹；`MKMultiPolyline` 分层绘制，重叠处自然变亮 |
 | 签证识别 | VisionKit `DataScannerViewController` 实时识别，Vision 文字识别读照片；ICAO 9303 机读码按字段纠错、校验位验证，多帧投票；Core Motion 驱动卡面光泽 |
 | 平行足迹 | CloudKit 区域共享（`CKShare`），摘要按天去重上传 |
-| 运动与健康 | CoreMotion 识别出行方式，HealthKit 步数 |
+| 运动与健康 | CoreMotion 识别出行方式，HealthKit 步数；体能训练和路线从 HealthKit 导入成轨迹 |
 | Apple Watch | watchOS SwiftUI App、WidgetKit 复杂功能、`HKWorkoutSession`、WatchConnectivity |
 | 实时活动 | ActivityKit：锁屏、灵动岛、手表智能叠放 |
 | 多语言 | String Catalog，简体中文和英文，App 内切换；印章上印当地文字，周围的名字跟随 App 语言 |
@@ -294,7 +301,7 @@ RecordPath/
 ├── Persistence/    SwiftData 模型、轨迹编码、iCloud 同步
 ├── Location/       后台定位引擎、出行方式识别
 ├── Places/         地点识别、常去地点
-├── Health/         步数
+├── Health/         步数、体能训练路线导入
 ├── Account/        Apple 登录
 ├── Features/
 │   ├── Today/          今天、时间线、那年今日

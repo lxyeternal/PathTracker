@@ -33,12 +33,12 @@
 </p>
 
 <p align="center">
-  <a href="https://apps.apple.com/app/id6827694426"><img src="AppStore/screenshots/en/1.jpg" width="130" alt=""></a>
-  <a href="https://apps.apple.com/app/id6827694426"><img src="AppStore/screenshots/en/2.jpg" width="130" alt=""></a>
-  <a href="https://apps.apple.com/app/id6827694426"><img src="AppStore/screenshots/en/3.jpg" width="130" alt=""></a>
-  <a href="https://apps.apple.com/app/id6827694426"><img src="AppStore/screenshots/en/4.jpg" width="130" alt=""></a>
-  <a href="https://apps.apple.com/app/id6827694426"><img src="AppStore/screenshots/en/5.jpg" width="130" alt=""></a>
-  <a href="https://apps.apple.com/app/id6827694426"><img src="AppStore/screenshots/en/6.jpg" width="130" alt=""></a>
+  <a href="https://apps.apple.com/app/id6827694426"><img src="docs/images/hero/en/1.jpg" width="130" alt=""></a>
+  <a href="https://apps.apple.com/app/id6827694426"><img src="docs/images/hero/en/2.jpg" width="130" alt=""></a>
+  <a href="https://apps.apple.com/app/id6827694426"><img src="docs/images/hero/en/3.jpg" width="130" alt=""></a>
+  <a href="https://apps.apple.com/app/id6827694426"><img src="docs/images/hero/en/4.jpg" width="130" alt=""></a>
+  <a href="https://apps.apple.com/app/id6827694426"><img src="docs/images/hero/en/5.jpg" width="130" alt=""></a>
+  <a href="https://apps.apple.com/app/id6827694426"><img src="docs/images/hero/en/6.jpg" width="130" alt=""></a>
 </p>
 
 <p align="center">
@@ -62,9 +62,9 @@
 ## 🗺️ Records itself
 
 <p align="center">
-  <img src="docs/images/day.jpg" width="190" alt="A day's route">
-  <img src="docs/images/timeline.jpg" width="190" alt="Timeline">
-  <img src="docs/images/stats.jpg" width="190" alt="Stats">
+  <img src="docs/images/day-en.jpg" width="190" alt="A day's route">
+  <img src="docs/images/timeline-en.jpg" width="190" alt="Timeline">
+  <img src="docs/images/stats-en.jpg" width="190" alt="Stats">
 </p>
 
 | | |
@@ -78,13 +78,15 @@
 
 **Bring back the past from Photos**: the places your photos and videos were taken fill in where you went before the app existed. New users can do it in the last step of onboarding or from the Trips tab, and the passport opens as the years of stamps land. Run it again any time from Settings; only new places are added. Everything is read on the phone; photos are never uploaded.
 
+**Bring back past routes from Health** (from 1.0.9): outdoor walks, runs, rides and other workouts that an Apple Watch or another app saved to Health come in as tracks with their routes, so the distance from before you installed Waytrace counts in Stats, Every Road and the year in review. It's in Settings › Data; time that is already recorded is skipped, so it is safe to run again.
+
 ---
 
 ## 🧳 Trips
 
 <p align="center">
-  <img src="docs/images/trips.jpg" width="190" alt="Trips found">
-  <img src="docs/images/trip.jpg" width="190" alt="A trip">
+  <img src="docs/images/trips-en.jpg" width="190" alt="Trips found">
+  <img src="docs/images/trip-en.jpg" width="190" alt="A trip">
 </p>
 
 - **Past trips found for you**: runs of days more than 80 km from home, saved as a trip in one tap.
@@ -95,27 +97,31 @@
 
 ## 🌏 The world you've seen
 
+<p align="center">
+  <img src="docs/images/places-en.jpg" width="170" alt="Places">
+  <img src="docs/images/immersive-globe-en.jpg" width="170" alt="The immersive globe">
+  <img src="docs/images/places-rows-en.jpg" width="170" alt="Passport, visa wallet, places for a lifetime and the blind box">
+  <img src="docs/images/country-en.jpg" width="170" alt="Country page">
+  <img src="docs/images/routes.jpg" width="170" alt="Every road">
+</p>
+
+- **One night sky**: Places opens on a globe, with your countries, cities, sights and days written beneath it. Countries are shown by their flags and cities as satellite views; the passport and stamps, the visa wallet, Places for a Lifetime and the blind box each have a row. Sights can be filtered by the lifetime lists or by country.
+- **The immersive globe**: tap the globe, or pull down at the top of the page, for the Earth full screen. From far out it shows lights and flags, with the countries you've visited outlined; closer, city names and the routes you travelled, and a tap on a city flies into it; closer still, the places one by one, with a photo where there is one, each opening its page.
 - **Countries and regions**: filter by continent (All · Asia · Europe…), search, and sort by days, most recent or earliest, so a long list never means endless scrolling.
 - **Country pages**: the country outlined (the app draws no borders for mainland China, Hong Kong, Macao or Taiwan), each city you visited a glow of light, then the country's entry stamps and every city's stamp.
 - **Every visit**: grouped as runs of days in one city. A long history shows a year at a time, with a twelve-month bar chart on top; tap a month to jump to it.
 - **Every road**: tap Every Road on the Stats tab, or switch All Places to Routes, and every road you've travelled lies on one night map. Streets you take every day glow brighter with each pass; a one-off detour is a faint stroke. See today, this week, this month, this year, everything or an earlier year, and filter by walking, cycling, driving and flying. The stretch being recorded right now is drawn too, with the distance and days totted up below. Years of tracks are drawn at three levels of detail, so the map still pans smoothly.
-
-<p align="center">
-  <img src="docs/images/places.jpg" width="190" alt="Places">
-  <img src="docs/images/country.jpg" width="190" alt="Country page">
-  <img src="docs/images/routes.jpg" width="190" alt="Every road">
-</p>
 
 ---
 
 ## 🛂 Passport and stamps
 
 <p align="center">
-  <img src="docs/images/passport.jpg" width="170" alt="Passport">
-  <img src="docs/images/passport-map.jpg" width="170" alt="The countries you've been to">
-  <img src="docs/images/seals.jpg" width="170" alt="Province seals">
-  <img src="docs/images/city-stamps.jpg" width="170" alt="City stamps">
-  <img src="docs/images/four-corners.jpg" width="170" alt="Four corners">
+  <img src="docs/images/passport-en.jpg" width="170" alt="Passport">
+  <img src="docs/images/passport-map-en.jpg" width="170" alt="The countries you've been to">
+  <img src="docs/images/seals-en.jpg" width="170" alt="Province seals">
+  <img src="docs/images/city-stamps-en.jpg" width="170" alt="City stamps">
+  <img src="docs/images/four-corners-en.jpg" width="170" alt="Four corners">
 </p>
 
 The places you've been aren't a number. They're stamps, pressed one by one into a passport you can leaf through.
@@ -145,8 +151,8 @@ Stamps not yet earned are **blind-embossed**: paper-coloured, in relief, every c
 ## 🪪 Visa wallet
 
 <p align="center">
-  <img src="docs/images/visa-wallet.jpg" width="190" alt="Visa wallet">
-  <img src="docs/images/visa-detail.jpg" width="190" alt="A visa">
+  <img src="docs/images/visa-wallet-en.jpg" width="190" alt="Visa wallet">
+  <img src="docs/images/visa-detail-en.jpg" width="190" alt="A visa">
 </p>
 
 The visas in your passport, stacked like cards in Apple Wallet, each showing how many days it has left.
@@ -173,7 +179,7 @@ See where your footprints and a friend's overlap: **passing within the same hour
 ## 🌟 Places for a lifetime
 
 <p align="center">
-  <img src="docs/images/must-see.jpg" width="190" alt="Places for a lifetime">
+  <img src="docs/images/must-see-en.jpg" width="190" alt="Places for a lifetime">
 </p>
 
 Two lists of Waytrace's own: **China 100** (Hong Kong, Macao and Taiwan included) and **World 100**, drawn from the World Heritage List, China's 5A scenic areas and the places travellers name most.
@@ -236,10 +242,11 @@ At the bottom of Stats, a set of cards about you:
 - **Your year**: page by page like a story, with glowing city maps, a turning dotted globe, your longest day's route, a wall of photos and a page of **this year's passport**, ending in a poster to share.
 
 <p align="center">
-  <img src="docs/images/year.jpg" width="190" alt="Your year">
-  <img src="docs/images/globe.jpg" width="190" alt="Distance">
-  <img src="docs/images/milestones.jpg" width="190" alt="Milestones">
-  <img src="docs/images/stamp-ceremony.jpg" width="190" alt="Set complete">
+  <img src="docs/images/story-en.jpg" width="170" alt="Your story">
+  <img src="docs/images/year-en.jpg" width="170" alt="Your year">
+  <img src="docs/images/globe-en.jpg" width="170" alt="Distance">
+  <img src="docs/images/milestones-en.jpg" width="170" alt="Milestones">
+  <img src="docs/images/stamp-ceremony.jpg" width="170" alt="Set complete">
 </p>
 
 ---
@@ -278,7 +285,7 @@ Waytrace **has no server of its own**. Your routes, places, trips and photos liv
 | Every road | Each track simplified ahead of time at street, city and country detail, cached locally and read incrementally; drawn in layers of `MKMultiPolyline`, so overlaps brighten on their own |
 | Visa reading | VisionKit `DataScannerViewController` live, Vision for photos; ICAO 9303 machine lines corrected per field and verified by check digit, with multi-frame voting; Core Motion drives the cards' sheen |
 | Parallel footprints | CloudKit zone sharing (`CKShare`), summaries uploaded by day only when they change |
-| Motion and health | CoreMotion for how you travel, HealthKit for steps |
+| Motion and health | CoreMotion for how you travel, HealthKit for steps; workouts and their routes come in from HealthKit as tracks |
 | Apple Watch | watchOS SwiftUI app, WidgetKit complications, `HKWorkoutSession`, WatchConnectivity |
 | Live Activities | ActivityKit: Lock Screen, Dynamic Island, watch Smart Stack |
 | Languages | String Catalog, Simplified Chinese and English, switchable in the app; stamps print the place's own script, names around them follow the app's language |
@@ -294,7 +301,7 @@ RecordPath/
 ├── Persistence/    SwiftData models, track encoding, iCloud sync
 ├── Location/       Background location engine, travel mode
 ├── Places/         Place naming, frequent places
-├── Health/         Steps
+├── Health/         Steps, workout route import
 ├── Account/        Sign in with Apple
 ├── Features/
 │   ├── Today/          Today, timeline, on this day

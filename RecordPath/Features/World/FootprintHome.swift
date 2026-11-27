@@ -127,13 +127,14 @@ struct FootprintFigures: View {
             // A faint plate under the four, ruled between them: one group, set apart from the
             // sky, without a solid box competing with the globe.
             HStack(alignment: .center, spacing: 0) {
-                figure(countries, "国家和地区")
+                // Its own, shorter English: "Countries & Regions" doesn't fit a quarter of the row.
+                figure(countries, Text(String(localized: "figure.countries", defaultValue: "国家和地区", bundle: .appLanguage)))
                 rule
-                figure(cities, "城市")
+                figure(cities, Text("城市"))
                 rule
-                figure(sights, "景点")
+                figure(sights, Text("景点"))
                 rule
-                figure(days, "天")
+                figure(days, Text("天"))
             }
             .padding(.vertical, 16)
             .background {
@@ -153,7 +154,7 @@ struct FootprintFigures: View {
         Rectangle().fill(.white.opacity(0.12)).frame(width: 0.5, height: 40)
     }
 
-    private func figure(_ value: Int, _ label: LocalizedStringKey) -> some View {
+    private func figure(_ value: Int, _ label: Text) -> some View {
         VStack(spacing: 2) {
             Text(value, format: .number)
                 .font(.system(size: 34, weight: .light, design: .rounded))
@@ -162,7 +163,7 @@ struct FootprintFigures: View {
                 .contentTransition(.numericText())
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
-            Text(label)
+            label
                 .font(.caption)
                 .tracking(0.5)
                 .foregroundStyle(FootprintNight.secondary)
@@ -348,7 +349,8 @@ struct FootprintCollections: View {
                 .shadow(color: .black.opacity(0.5), radius: 6, y: 3)
         } text: {
             Text("护照与印章").font(.headline).foregroundStyle(.white)
-            Text(passportNote).font(.footnote).foregroundStyle(FootprintNight.secondary)
+            // English names three counts in more words than fit one line beside the stamps.
+            Text(passportNote).font(.footnote).foregroundStyle(FootprintNight.secondary).lineLimit(2)
         } trailing: {
             ZStack(alignment: .trailing) {
                 ForEach(Array(latestStamps.enumerated()), id: \.element.id) { index, stamp in
